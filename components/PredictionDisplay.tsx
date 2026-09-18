@@ -15,6 +15,7 @@ const probabilityTone = (value: number) => {
 };
 
 const factorTone = (factor: DecisionFactor) => {
+  if (factor.includedInScore === false) return 'border-gray-700 bg-gray-900/40';
   if (factor.advantage === 'winner') return 'border-emerald-500/30 bg-emerald-950/15';
   if (factor.advantage === 'loser') return 'border-rose-500/30 bg-rose-950/15';
   return 'border-gray-700 bg-gray-900/40';
@@ -34,12 +35,14 @@ const FactorCard: React.FC<{ factor: DecisionFactor }> = ({ factor }) => (
         </div>
       </div>
       <span className={`text-[10px] uppercase font-bold tracking-wider ${factor.includedInScore === false ? 'text-gray-500' : factor.advantage === 'winner' ? 'text-emerald-300' : factor.advantage === 'loser' ? 'text-rose-300' : 'text-gray-400'}`}>
-        {factor.includedInScore === false ? 'Not scored' : factor.advantage === 'winner' ? 'Supports pick' : factor.advantage === 'loser' ? 'Opposes pick' : 'Neutral'}
+        {factor.includedInScore === false ? 'Research only' : factor.advantage === 'winner' ? 'Supports pick' : factor.advantage === 'loser' ? 'Opposes pick' : 'Neutral'}
       </span>
     </div>
     <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{factor.description}</p>
     {factor.edgeScore > 0 && (
-      <p className="mt-2 text-[11px] text-gray-500">Model adjustment magnitude: {factor.edgeScore.toFixed(1)}</p>
+      <p className="mt-2 text-[11px] text-gray-500">
+        {factor.includedInScore === false ? 'Research adjustment magnitude' : 'Model adjustment magnitude'}: {factor.edgeScore.toFixed(1)}
+      </p>
     )}
   </div>
 );
@@ -105,7 +108,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
   const tabs: Array<[Tab, string]> = [
     ['factors', 'Decision factors'],
     ['personnel', 'Personnel & injuries'],
-    ['numerology', 'Numerology'],
+    ['numerology', 'Numerology research'],
     ['history', 'Venue history']
   ];
 
@@ -157,8 +160,9 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
             <span className="block mt-1 text-sm font-mono font-bold text-white">{scores.finalHomeProbability.toFixed(1)}%</span>
           </div>
           <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-500">Numerology cap</span>
-            <span className="block mt-1 text-sm font-mono font-bold text-white">{scores.numerologyLogitAdjustment >= 0 ? '+' : ''}{scores.numerologyLogitAdjustment.toFixed(3)}</span>
+            <span className="block text-[10px] uppercase tracking-wider text-gray-500">Numerology research</span>
+            <span className="block mt-1 text-sm font-mono font-bold text-gray-300">{scores.numerologyLogitAdjustment >= 0 ? '+' : ''}{scores.numerologyLogitAdjustment.toFixed(3)}</span>
+            <span className="block mt-1 text-[10px] text-gray-600">Not scored in v2.1</span>
           </div>
         </div>
       )}
@@ -225,7 +229,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
       {activeTab === 'numerology' && (
         <div>
           <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/15 p-4 mb-4 text-xs text-gray-300 leading-relaxed">
-            The scoring numerology layer now uses Bayesian-smoothed, verified pregame history. Team, coach and starting-QB inputs may score when their dates are known. Backup QB, tackle and kicker are displayed for research but do not score until they demonstrate incremental performance on untouched games. Owner scoring and the legacy exact/subset archives have been removed from the decision score.
+            Numerology is calculated prospectively from verified pregame history using Bayesian smoothing, but v2.1 does not allow any numerology variable to affect the production pick. The locked 2025 validation test showed the tested numerology adjustment reduced accuracy by 1.11 percentage points. These cards remain visible so the numerology hypotheses can be measured on future untouched games before any factor is promoted into production scoring. Owner scoring and the legacy exact/subset archives remain excluded.
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
