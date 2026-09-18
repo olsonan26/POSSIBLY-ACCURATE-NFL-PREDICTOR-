@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/pure-astrology-phase2.mjs'
+      - 'scripts/phase2-preload.mjs'
       - '.github/workflows/pure-astrology-phase2.yml'
 
 permissions:
@@ -31,4 +32,4 @@ jobs:
         run: bun add --no-save astronomy-engine@2.1.19
 
       - name: Run PURE v3.2 Phase 2 coach/QB ablations
-        run: bun scripts/pure-astrology-phase2.mjs
+        run: bun --preload ./scripts/phase2-preload.mjs scripts/pure-astrology-phase2.mjs
