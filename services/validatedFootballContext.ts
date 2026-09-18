@@ -66,8 +66,12 @@ async function loadGames(): Promise<GameRow[]> {
   return gamesPromise;
 }
 
+function exactGame(games: GameRow[], targetIso: string, home: string, away: string): GameRow | undefined {
+  return games.find(game => game.gameday === targetIso && game.homeTeam === home && game.awayTeam === away);
+}
+
 function seasonForTarget(games: GameRow[], targetIso: string, home: string, away: string): number {
-  const exact = games.find(game => game.gameday === targetIso && game.homeTeam === home && game.awayTeam === away);
+  const exact = exactGame(games, targetIso, home, away);
   if (exact?.season) return exact.season;
   const date = new Date(`${targetIso}T12:00:00Z`);
   const year = date.getUTCFullYear();
@@ -137,6 +141,8 @@ export async function getValidatedFootballContext(
   neutral: boolean
 ): Promise<ValidatedFootballContext> {
   const games = await loadGames();
+  const scheduled = exactGame(games, targetIso, home, away);
+  const effectiveNeutral = neutral || scheduled?.location === 'Neutral';
   const currentSeason = seasonForTarget(games, targetIso, home, away);
 
   const recentHome = getCurrentSeasonForm(games, home, targetIso, currentSeason, 8);
@@ -162,7 +168,7 @@ export async function getValidatedFootballContext(
     : 0;
   const footballLogitAdjustment = recentEdge + seasonEdge;
 
-  const venueLogitAdjustment = neutral
+  const venueLogitAdjustment = effectiveNeutral
     ? 0
     : clamp(
       ((homeVenue.winPct - 0.55) - (awayVenue.winPct - 0.45)) * 0.24,
