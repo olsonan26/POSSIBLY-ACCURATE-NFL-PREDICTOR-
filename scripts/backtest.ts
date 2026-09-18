@@ -1,4 +1,4 @@
-import { parseGamesCsv, parseTeamData, predictWinner } from '../services/numerologyService';
+import { parseGamesCsv, parseTeamData, predictWinner } from '../services/validatedPredictionService';
 
 const SOURCE = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 
@@ -50,11 +50,11 @@ async function main() {
     'Football context, no numerology/rest': { n: 0, correct: 0, brier: 0 },
     'Football context, no numerology/venue/H2H': { n: 0, correct: 0, brier: 0 },
     'Football context, no numerology/rest/venue/H2H': { n: 0, correct: 0, brier: 0 },
-    'Full v2': { n: 0, correct: 0, brier: 0 },
-    'Full minus H2H': { n: 0, correct: 0, brier: 0 },
-    'Full minus home/road refinement': { n: 0, correct: 0, brier: 0 },
-    'Full minus recent/current-season form': { n: 0, correct: 0, brier: 0 },
-    'Full minus rest': { n: 0, correct: 0, brier: 0 }
+    'Research model with numerology/rest': { n: 0, correct: 0, brier: 0 },
+    'Research minus H2H': { n: 0, correct: 0, brier: 0 },
+    'Research minus home/road refinement': { n: 0, correct: 0, brier: 0 },
+    'Research minus recent/current-season form': { n: 0, correct: 0, brier: 0 },
+    'Research minus rest': { n: 0, correct: 0, brier: 0 }
   };
 
   for (const game of sample) {
@@ -109,7 +109,7 @@ async function main() {
       const h2h = s.h2hLogitAdjustment;
       const numerology = s.numerologyLogitAdjustment;
       const football = form + venue + personnel + rest + h2h;
-      const full = football + numerology;
+      const researchFull = football + numerology;
 
       scoreVariant(variants['Elo only'], logistic(base), actualHome);
       scoreVariant(variants['Elo + recent/current form'], logistic(base + form), actualHome);
@@ -118,11 +118,11 @@ async function main() {
       scoreVariant(variants['Football context, no numerology/rest'], logistic(base + football - rest), actualHome);
       scoreVariant(variants['Football context, no numerology/venue/H2H'], logistic(base + football - venue - h2h), actualHome);
       scoreVariant(variants['Football context, no numerology/rest/venue/H2H'], logistic(base + football - rest - venue - h2h), actualHome);
-      scoreVariant(variants['Full v2'], logistic(base + full), actualHome);
-      scoreVariant(variants['Full minus H2H'], logistic(base + full - h2h), actualHome);
-      scoreVariant(variants['Full minus home/road refinement'], logistic(base + full - venue), actualHome);
-      scoreVariant(variants['Full minus recent/current-season form'], logistic(base + full - form), actualHome);
-      scoreVariant(variants['Full minus rest'], logistic(base + full - rest), actualHome);
+      scoreVariant(variants['Research model with numerology/rest'], logistic(base + researchFull), actualHome);
+      scoreVariant(variants['Research minus H2H'], logistic(base + researchFull - h2h), actualHome);
+      scoreVariant(variants['Research minus home/road refinement'], logistic(base + researchFull - venue), actualHome);
+      scoreVariant(variants['Research minus recent/current-season form'], logistic(base + researchFull - form), actualHome);
+      scoreVariant(variants['Research minus rest'], logistic(base + researchFull - rest), actualHome);
     }
   }
 
@@ -132,8 +132,8 @@ async function main() {
   const homeAccuracy = homePicks ? homePickCorrect / homePicks : 0;
   const awayAccuracy = awayPicks ? awayPickCorrect / awayPicks : 0;
 
-  console.log('\nNFL Predictor v2.0 — 2025 Regular-Season Backtest');
-  console.log('================================================');
+  console.log('\nNFL Predictor v2.1 — 2025 Validation Backtest');
+  console.log('==============================================');
   console.log(`Games available: ${sample.length}`);
   console.log(`Games tested: ${tested}`);
   console.log(`Skipped: ${skipped}`);
@@ -154,14 +154,14 @@ async function main() {
     console.log(`  ${name}: ${value.correct}/${value.n} = ${(variantAccuracy * 100).toFixed(2)}%, Brier ${variantBrier.toFixed(4)}`);
   }
 
-  const withNumerology = variants['Full v2'];
+  const withNumerology = variants['Research model with numerology/rest'];
   const withoutNumerology = variants['Football context, no numerology'];
   if (withNumerology.n && withoutNumerology.n) {
     const delta = ((withNumerology.correct / withNumerology.n) - (withoutNumerology.correct / withoutNumerology.n)) * 100;
-    console.log(`  Numerology incremental accuracy at the LOCKED v2 weight: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} points`);
+    console.log(`  Numerology incremental accuracy at the tested v2 research weight: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} points`);
   }
 
-  console.log('\nConfidence calibration:');
+  console.log('\nProduction probability calibration:');
   for (const [key, value] of confidenceBuckets.entries()) {
     console.log(`  ${key}: ${value.n} picks, ${(value.correct / value.n * 100).toFixed(2)}% correct, ${(value.confidence / value.n).toFixed(1)}% mean model probability`);
   }
