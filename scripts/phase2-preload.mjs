@@ -1,9 +1,7 @@
 // Preload for the isolated Phase 2 research runner.
 // 1) TEAM_REGISTRY stores dates as Date objects; the research script expects ISO strings.
-// 2) Wikidata's free-text descriptions are inconsistent for NFL coaches. When the
-//    strict exact-name entity search is insufficient, resolve a verified English
-//    Wikipedia football-coach page, then use that page's Wikidata item. No DOB is
-//    inferred, approximated or fabricated.
+// 2) Coach DOB research resolves verified football pages to Wikidata P569 without
+//    guessing. Wikimedia requests are serialized to avoid rate-limit-driven missingness.
 
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
@@ -30,21 +28,26 @@ const jsonResponse = payload => new Response(JSON.stringify(payload), {
 });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-let wikiTail = Promise.resolve();
 
-async function serializedWiki(task) {
-  const previous = wikiTail;
-  let release;
-  wikiTail = new Promise(resolve => { release = resolve; });
-  await previous;
-  try {
-    const result = await task();
-    await sleep(40);
-    return result;
-  } finally {
-    release();
-  }
+function makeQueue(delayMs) {
+  let tail = Promise.resolve();
+  return async task => {
+    const previous = tail;
+    let release;
+    tail = new Promise(resolve => { release = resolve; });
+    await previous;
+    try {
+      const result = await task();
+      await sleep(delayMs);
+      return result;
+    } finally {
+      release();
+    }
+  };
 }
+
+const serializedWikipedia = makeQueue(40);
+const serializedWikidata = makeQueue(80);
 
 function verifiedFootballCoachPage(page, name) {
   if (!page || page.missing != null || page.pageprops?.disambiguation != null) return false;
@@ -71,9 +74,9 @@ async function resolveExactWikipediaCandidates(name) {
     format: 'json',
     origin: '*'
   });
-  const response = await nativeFetch(`https://en.wikipedia.org/w/api.php?${params}`, {
-    headers: { 'User-Agent': 'NFL-PURE-research/2.2 (GitHub Actions)' }
-  });
+  const response = await serializedWikipedia(() => nativeFetch(`https://en.wikipedia.org/w/api.php?${params}`, {
+    headers: { 'User-Agent': 'NFL-PURE-research/2.3 (GitHub Actions)' }
+  }));
   if (!response.ok) return null;
   const pages = Object.values((await response.json()).query?.pages || {});
   const page = pages.find(row => verifiedFootballCoachPage(row, name));
@@ -90,34 +93,34 @@ async function resolveSearchFallback(name) {
     format: 'json',
     origin: '*'
   });
-  const searchRes = await nativeFetch(`https://en.wikipedia.org/w/api.php?${searchParams}`, {
-    headers: { 'User-Agent': 'NFL-PURE-research/2.2 (GitHub Actions)' }
-  });
+  const searchRes = await serializedWikipedia(() => nativeFetch(`https://en.wikipedia.org/w/api.php?${searchParams}`, {
+    headers: { 'User-Agent': 'NFL-PURE-research/2.3 (GitHub Actions)' }
+  }));
   if (!searchRes.ok) return null;
   const hits = (await searchRes.json()).query?.search || [];
   const target = normalize(name);
-  const candidateTitles = hits
+  const titles = hits
     .filter(row => {
       const title = normalize(row.title);
       return title === target || title.startsWith(`${target} `);
     })
     .slice(0, 4)
     .map(row => row.title);
-  if (!candidateTitles.length) return null;
+  if (!titles.length) return null;
 
   const pageParams = new URLSearchParams({
     action: 'query',
     prop: 'pageprops|extracts',
-    titles: candidateTitles.join('|'),
+    titles: titles.join('|'),
     redirects: '1',
     exintro: '1',
     explaintext: '1',
     format: 'json',
     origin: '*'
   });
-  const pageRes = await nativeFetch(`https://en.wikipedia.org/w/api.php?${pageParams}`, {
-    headers: { 'User-Agent': 'NFL-PURE-research/2.2 (GitHub Actions)' }
-  });
+  const pageRes = await serializedWikipedia(() => nativeFetch(`https://en.wikipedia.org/w/api.php?${pageParams}`, {
+    headers: { 'User-Agent': 'NFL-PURE-research/2.3 (GitHub Actions)' }
+  }));
   if (!pageRes.ok) return null;
   const pages = Object.values((await pageRes.json()).query?.pages || {});
   const page = pages.find(row => verifiedFootballCoachPage(row, name));
@@ -126,24 +129,30 @@ async function resolveSearchFallback(name) {
 }
 
 async function resolveViaWikipedia(name) {
-  return serializedWiki(async () => {
-    const exact = await resolveExactWikipediaCandidates(name);
-    if (exact) return exact;
-    return resolveSearchFallback(name);
-  });
+  const exact = await resolveExactWikipediaCandidates(name);
+  if (exact) return exact;
+  return resolveSearchFallback(name);
 }
 
 globalThis.fetch = async (input, init) => {
   const rawUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input?.url;
-  if (!rawUrl || !rawUrl.startsWith('https://www.wikidata.org/w/api.php?')) {
+  if (!rawUrl) return nativeFetch(input, init);
+
+  if (rawUrl.startsWith('https://www.wikidata.org/wiki/Special:EntityData/')) {
+    return serializedWikidata(() => nativeFetch(input, init));
+  }
+
+  if (!rawUrl.startsWith('https://www.wikidata.org/w/api.php?')) {
     return nativeFetch(input, init);
   }
 
   const url = new URL(rawUrl);
-  if (url.searchParams.get('action') !== 'wbsearchentities') return nativeFetch(input, init);
+  if (url.searchParams.get('action') !== 'wbsearchentities') {
+    return serializedWikidata(() => nativeFetch(input, init));
+  }
 
   const name = url.searchParams.get('search') || '';
-  const original = await nativeFetch(input, init);
+  const original = await serializedWikidata(() => nativeFetch(input, init));
   if (!original.ok) return original;
 
   let payload;
@@ -164,8 +173,6 @@ globalThis.fetch = async (input, init) => {
   const qid = await resolveViaWikipedia(name);
   if (!qid) return original;
 
-  // Feed the existing strict resolver a page-verified exact-name football-coach
-  // candidate. The research script then retrieves P569 from that Wikidata entity.
   payload.search = [{ id: qid, label: name, description: 'American football coach' }];
   return jsonResponse(payload);
 };
