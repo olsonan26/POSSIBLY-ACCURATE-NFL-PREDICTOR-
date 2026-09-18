@@ -12,6 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,3 +30,6 @@ jobs:
 
       - name: Production build
         run: bun run build
+
+      - name: 2025 leakage-safe backtest
+        run: bun run backtest
