@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PredictionResult, Team } from './types';
-import { parseTeamData, predictWinner } from './services/numerologyService';
+import { parseTeamData, predictWinner } from './services/validatedPredictionService';
 import TeamSelector from './components/TeamSelector';
 import DatePicker from './components/DatePicker';
 import PredictionDisplay from './components/PredictionDisplay';
@@ -76,14 +76,14 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.0
+            Verified-data engine v2.1
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">
             NFL Numerology Predictor
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">
-            Pregame-only NFL results, current football context, venue history and a capped numerology layer.
-            Historical calculations exclude the selected game and every later result.
+            Pregame-only NFL results, current football strength, live availability and generalized venue history.
+            Numerology remains fully calculated for prospective research, but does not affect the production pick until it proves incremental value on untouched games.
           </p>
         </header>
 
@@ -149,8 +149,8 @@ const App: React.FC = () => {
               Current/future games attempt live depth-chart and injury retrieval.
             </div>
             <div className="rounded-lg bg-black/20 border border-gray-800 p-3">
-              <strong className="block text-gray-200 mb-1">No one-off matchup rules</strong>
-              Venue/H2H logic is applied consistently to every franchise pairing.
+              <strong className="block text-gray-200 mb-1">Validation-gated factors</strong>
+              Variables only score after demonstrating incremental value; no one-off matchup rules are allowed.
             </div>
           </div>
         </section>
