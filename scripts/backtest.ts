@@ -132,7 +132,7 @@ async function main() {
   const homeAccuracy = homePicks ? homePickCorrect / homePicks : 0;
   const awayAccuracy = awayPicks ? awayPickCorrect / awayPicks : 0;
 
-  console.log('\nNFL Predictor v2.1 — 2025 Validation Backtest');
+  console.log('\nNFL Predictor v2.2 — 2025 Validation Backtest');
   console.log('==============================================');
   console.log(`Games available: ${sample.length}`);
   console.log(`Games tested: ${tested}`);
