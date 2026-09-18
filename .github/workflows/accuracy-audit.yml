@@ -20,5 +20,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run predictor backtest
         run: bun run audit/backtest.ts
+      - name: Audit historical data quality
+        run: bun run audit/data-quality.ts
 
 # Audit-only workflow; not merged into main.
