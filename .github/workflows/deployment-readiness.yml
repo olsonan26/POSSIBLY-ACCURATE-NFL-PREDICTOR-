@@ -31,5 +31,8 @@ jobs:
       - name: Production build
         run: bun run build
 
-      - name: 2025 leakage-safe backtest
+      - name: 2025 validation backtest
         run: bun run backtest
+
+      - name: 2026 locked forward-style check
+        run: bun run forward-test
