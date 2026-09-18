@@ -76,14 +76,14 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.1
+            Verified-data engine v2.2
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">
             NFL Numerology Predictor
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">
-            Pregame-only NFL results, current football strength, live availability and generalized venue history.
-            Numerology remains fully calculated for prospective research, but does not affect the production pick until it proves incremental value on untouched games.
+            Pregame-only NFL results, current-season football form, live availability and generalized venue history.
+            Prior-season recent form resets at each new NFL season. Numerology and PURE Astrology remain calculated for prospective research, but do not affect the production pick until they prove stable incremental value on untouched games.
           </p>
         </header>
 
