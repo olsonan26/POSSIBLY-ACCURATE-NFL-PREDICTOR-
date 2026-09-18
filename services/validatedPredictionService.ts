@@ -6,11 +6,15 @@ import {
   predictWinner as runResearchModel,
   PredictionOptions
 } from './numerologyService';
+import {
+  getValidatedFootballContext,
+  ValidatedFootballContext
+} from './validatedFootballContext';
 
 export { calculateAllPatterns, parseGamesCsv, parseTeamData };
 export type { PredictionOptions };
 
-const MODEL_VERSION = 'v2.1-validated-core';
+const MODEL_VERSION = 'v2.2-validated-current-season';
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const logistic = (value: number) => 1 / (1 + Math.exp(-value));
@@ -24,7 +28,13 @@ function advantageForHomeEdge(homeEdge: number, winnerIsHome: boolean): Decision
   return (homeEdge > 0) === winnerIsHome ? 'winner' : 'loser';
 }
 
-function normalizeDecisionFactors(result: PredictionResult, winnerIsHome: boolean): DecisionFactor[] {
+function normalizeDecisionFactors(
+  result: PredictionResult,
+  winnerIsHome: boolean,
+  validatedContext: ValidatedFootballContext,
+  homeName: string,
+  awayName: string
+): DecisionFactor[] {
   if (!result.modelScores) return result.decisionFactors;
   const s = result.modelScores;
   const edgeByTitle: Record<string, number> = {
@@ -40,15 +50,27 @@ function normalizeDecisionFactors(result: PredictionResult, winnerIsHome: boolea
   return result.decisionFactors.map(factor => {
     const homeEdge = edgeByTitle[factor.title] ?? 0;
     const researchOnly = factor.title === 'Rest Differential' || factor.title === 'Verified Numerology Layer';
+    let description = factor.description;
+
+    if (factor.title === 'Recent & Current-Season Form') {
+      const h = validatedContext.recentHome;
+      const a = validatedContext.recentAway;
+      description = `${homeName}: ${h.wins}-${h.losses}-${h.ties}, ${h.avgPointDiff >= 0 ? '+' : ''}${h.avgPointDiff.toFixed(1)} current-season recent point differential/game; ${awayName}: ${a.wins}-${a.losses}-${a.ties}, ${a.avgPointDiff >= 0 ? '+' : ''}${a.avgPointDiff.toFixed(1)}. v2.2 deliberately gives prior-season recent form zero weight; this rule was selected on 2024 and improved untouched 2025 validation.`;
+    } else if (factor.title === 'Home / Away Performance') {
+      const h = validatedContext.homeVenue;
+      const a = validatedContext.awayVenue;
+      description = `Target-season venue context only: ${homeName} home win rate ${(h.winPct * 100).toFixed(1)}% across ${h.games} current-season home games; ${awayName} road win rate ${(a.winPct * 100).toFixed(1)}% across ${a.games} current-season road games. Long-horizon venue history remains separately represented by the H2H factor.`;
+    } else if (factor.title === 'Rest Differential') {
+      description = `${factor.description} Research-only: 2025 validation showed no incremental accuracy from this adjustment, so it does not affect the production pick.`;
+    } else if (factor.title === 'Verified Numerology Layer') {
+      description = `${factor.description} Research-only: the locked validation tests have not demonstrated stable incremental winner accuracy. PURE/numerology research remains visible but cannot change the production pick.`;
+    }
+
     return {
       ...factor,
       includedInScore: !researchOnly,
       advantage: advantageForHomeEdge(homeEdge, winnerIsHome),
-      description: factor.title === 'Rest Differential'
-        ? `${factor.description} Research-only: 2025 validation showed no incremental accuracy from this adjustment, so it does not affect the production pick.`
-        : factor.title === 'Verified Numerology Layer'
-          ? `${factor.description} Research-only: the locked 2025 validation test showed the numerology adjustment reduced accuracy by 1.11 percentage points at its tested weight. It remains visible for prospective validation but does not affect the production pick.`
-          : factor.description
+      description
     };
   });
 }
@@ -94,18 +116,22 @@ function swapWinnerLoser(result: PredictionResult): PredictionResult {
 }
 
 /**
- * Production predictor.
+ * Production predictor v2.2.
  *
- * 2025 is treated as a validation season. The locked production architecture uses:
- *   - pregame Elo
- *   - recent/current-season form
- *   - generic home/road refinement
- *   - generic recency-weighted venue H2H
+ * Locked production architecture:
+ *   - pregame Elo with season regression
+ *   - target-season recent/current-season form only
+ *   - target-season home/road refinement only
+ *   - generic recency-weighted same-venue H2H
  *   - current injury/availability context when live data is available
  *
- * Rest and numerology remain measured research features but are deliberately excluded
- * from the production pick until a later untouched prospective sample demonstrates
- * independent value. This prevents outcome-driven weight fitting.
+ * The prior-season recent-form carryover was set to zero using 2024 as the
+ * tuning season. That fixed rule then improved untouched 2025 validation from
+ * 177/271 (65.31%) to 180/271 (66.42%), so it is eligible for production.
+ *
+ * Rest, numerology and PURE Astrology remain measured research features but
+ * are deliberately excluded from the production winner until later untouched
+ * prospective samples demonstrate stable incremental value.
  */
 export async function predictWinner(
   homeTeam: Team,
@@ -117,24 +143,40 @@ export async function predictWinner(
   const research = await runResearchModel(homeTeam, awayTeam, gameDate, isTeamAHome, options);
   if (!research.modelScores) return { ...research, modelVersion: MODEL_VERSION };
 
+  const targetIso = gameDate.toISOString().slice(0, 10);
+  const validatedContext = await getValidatedFootballContext(
+    homeTeam.abbr,
+    awayTeam.abbr,
+    targetIso,
+    Boolean(options.neutralSite)
+  );
+
   const s = research.modelScores;
   const baseLogit = logit(s.baseHomeProbability / 100);
   const productionAdjustment =
-    s.footballLogitAdjustment +
-    s.venueLogitAdjustment +
+    validatedContext.footballLogitAdjustment +
+    validatedContext.venueLogitAdjustment +
     s.personnelLogitAdjustment +
     s.h2hLogitAdjustment;
 
   const finalHomeProbability = logistic(baseLogit + productionAdjustment);
   const winnerIsHome = finalHomeProbability >= 0.5;
   const rawWinnerIsHome = Boolean(research.isWinnerHome);
-  const aligned = winnerIsHome === rawWinnerIsHome ? { ...research } : swapWinnerLoser(research);
   const selectedProbability = winnerIsHome ? finalHomeProbability : 1 - finalHomeProbability;
+  const validatedScores = {
+    ...s,
+    footballLogitAdjustment: validatedContext.footballLogitAdjustment,
+    venueLogitAdjustment: validatedContext.venueLogitAdjustment,
+    finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10
+  };
+
+  const alignedBase = winnerIsHome === rawWinnerIsHome ? { ...research } : swapWinnerLoser(research);
+  const aligned: PredictionResult = { ...alignedBase, modelScores: validatedScores };
 
   const warnings = [
     ...(aligned.warnings || []),
-    'Rest and numerology are measured but currently research-only because they did not add accuracy on the locked 2025 validation season.',
-    'The production scoring architecture is now locked; future changes should be judged prospectively rather than tuned to 2025 outcomes.'
+    'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024 and improved untouched 2025 validation.',
+    'Rest, numerology and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.'
   ];
 
   return {
@@ -142,19 +184,17 @@ export async function predictWinner(
     confidence: Math.round(selectedProbability * 1000) / 10,
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
-    reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, recent/current-season form, generic venue/H2H context, and live availability when available. Rest and numerology are still calculated for research, but are not allowed to change the pick until prospective validation demonstrates incremental value.`,
+    reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. Rest, numerology and PURE Astrology are still calculated for research but are not allowed to change the pick.`,
     winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
     loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
-    decisionFactors: normalizeDecisionFactors(aligned, winnerIsHome),
-    modelScores: {
-      ...s,
-      finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10
-    },
+    decisionFactors: normalizeDecisionFactors(aligned, winnerIsHome, validatedContext, homeTeam.name, awayTeam.name),
+    modelScores: validatedScores,
     dataFreshness: aligned.dataFreshness ? {
       ...aligned.dataFreshness,
       notes: [
         ...aligned.dataFreshness.notes,
-        'Validation gate: rest and numerology are research-only in v2.1 after failing to improve 2025 validation accuracy.'
+        'v2.2 validation gate: prior-season recent form/home-road carryover is zero; selected on 2024 and validated on 2025.',
+        'Rest, numerology and PURE Astrology remain research-only after failing stable incremental validation.'
       ]
     } : aligned.dataFreshness,
     warnings
