@@ -30,7 +30,7 @@ async function main() {
   let awayCorrect = 0;
   let actualHomeWins = 0;
 
-  console.log(`\nLocked v2.1 forward-style check — 2026 through ${SAFE_CUTOFF}`);
+  console.log(`\nLocked v2.2 forward-style check — 2026 through ${SAFE_CUTOFF}`);
   console.log('=========================================================');
 
   for (const game of sample) {
