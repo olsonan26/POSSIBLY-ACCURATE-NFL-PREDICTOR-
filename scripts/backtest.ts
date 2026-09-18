@@ -2,6 +2,21 @@ import { parseGamesCsv, parseTeamData, predictWinner } from '../services/numerol
 
 const SOURCE = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 
+type Variant = { n: number; correct: number; brier: number };
+
+const logistic = (x: number) => 1 / (1 + Math.exp(-x));
+const logit = (p: number) => {
+  const bounded = Math.max(0.001, Math.min(0.999, p));
+  return Math.log(bounded / (1 - bounded));
+};
+
+function scoreVariant(variant: Variant, pHome: number, actualHome: boolean) {
+  variant.n++;
+  const pickedHome = pHome >= 0.5;
+  if (pickedHome === actualHome) variant.correct++;
+  variant.brier += Math.pow(pHome - (actualHome ? 1 : 0), 2);
+}
+
 async function main() {
   const response = await fetch(SOURCE);
   if (!response.ok) throw new Error(`Could not load nflverse games.csv: ${response.status}`);
@@ -27,6 +42,15 @@ async function main() {
   let skipped = 0;
   let brier = 0;
   const confidenceBuckets = new Map<string, { n: number; correct: number; confidence: number }>();
+  const variants: Record<string, Variant> = {
+    'Elo only': { n: 0, correct: 0, brier: 0 },
+    'Football context, no numerology': { n: 0, correct: 0, brier: 0 },
+    'Full v2': { n: 0, correct: 0, brier: 0 },
+    'Full minus H2H': { n: 0, correct: 0, brier: 0 },
+    'Full minus home/road refinement': { n: 0, correct: 0, brier: 0 },
+    'Full minus recent/current-season form': { n: 0, correct: 0, brier: 0 },
+    'Full minus rest': { n: 0, correct: 0, brier: 0 }
+  };
 
   for (const game of sample) {
     const home = byAbbr.get(game.homeTeam);
@@ -69,6 +93,21 @@ async function main() {
     bucket.correct += hit ? 1 : 0;
     bucket.confidence += c;
     confidenceBuckets.set(key, bucket);
+
+    if (result.modelScores) {
+      const s = result.modelScores;
+      const base = logit(s.baseHomeProbability / 100);
+      const football = s.footballLogitAdjustment + s.venueLogitAdjustment + s.personnelLogitAdjustment + s.restLogitAdjustment + s.h2hLogitAdjustment;
+      const full = football + s.numerologyLogitAdjustment;
+
+      scoreVariant(variants['Elo only'], logistic(base), actualHome);
+      scoreVariant(variants['Football context, no numerology'], logistic(base + football), actualHome);
+      scoreVariant(variants['Full v2'], logistic(base + full), actualHome);
+      scoreVariant(variants['Full minus H2H'], logistic(base + full - s.h2hLogitAdjustment), actualHome);
+      scoreVariant(variants['Full minus home/road refinement'], logistic(base + full - s.venueLogitAdjustment), actualHome);
+      scoreVariant(variants['Full minus recent/current-season form'], logistic(base + full - s.footballLogitAdjustment), actualHome);
+      scoreVariant(variants['Full minus rest'], logistic(base + full - s.restLogitAdjustment), actualHome);
+    }
   }
 
   const tested = correct + incorrect;
@@ -91,6 +130,21 @@ async function main() {
   console.log(`Home picks: ${homePicks}; accuracy ${(homeAccuracy * 100).toFixed(2)}%`);
   console.log(`Away picks: ${awayPicks}; accuracy ${(awayAccuracy * 100).toFixed(2)}%`);
   console.log(`Brier score: ${tested ? (brier / tested).toFixed(4) : 'n/a'}`);
+
+  console.log('\nAblation / incremental-value check:');
+  for (const [name, value] of Object.entries(variants)) {
+    const variantAccuracy = value.n ? value.correct / value.n : 0;
+    const variantBrier = value.n ? value.brier / value.n : 0;
+    console.log(`  ${name}: ${value.correct}/${value.n} = ${(variantAccuracy * 100).toFixed(2)}%, Brier ${variantBrier.toFixed(4)}`);
+  }
+
+  const withNumerology = variants['Full v2'];
+  const withoutNumerology = variants['Football context, no numerology'];
+  if (withNumerology.n && withoutNumerology.n) {
+    const delta = ((withNumerology.correct / withNumerology.n) - (withoutNumerology.correct / withoutNumerology.n)) * 100;
+    console.log(`  Numerology incremental accuracy at the LOCKED v2 weight: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} points`);
+  }
+
   console.log('\nConfidence calibration:');
   for (const [key, value] of confidenceBuckets.entries()) {
     console.log(`  ${key}: ${value.n} picks, ${(value.correct / value.n * 100).toFixed(2)}% correct, ${(value.confidence / value.n).toFixed(1)}% mean model probability`);
