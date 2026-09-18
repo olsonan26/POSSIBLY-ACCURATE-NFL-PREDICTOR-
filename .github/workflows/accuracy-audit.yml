@@ -20,6 +20,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run predictor backtest
         run: bun run audit/backtest.ts
+      - name: Run full-season nflverse holdout
+        run: bun run audit/full-season-backtest.ts
       - name: Audit historical data quality
         run: bun run audit/data-quality.ts
 
