@@ -143,6 +143,8 @@ export async function predictWinner(
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
     reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, recent/current-season form, generic venue/H2H context, and live availability when available. Rest and numerology are still calculated for research, but are not allowed to change the pick until prospective validation demonstrates incremental value.`,
+    winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
+    loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
     decisionFactors: normalizeDecisionFactors(aligned, winnerIsHome),
     modelScores: {
       ...s,
