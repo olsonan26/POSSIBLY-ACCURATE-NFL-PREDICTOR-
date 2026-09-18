@@ -44,7 +44,12 @@ async function main() {
   const confidenceBuckets = new Map<string, { n: number; correct: number; confidence: number }>();
   const variants: Record<string, Variant> = {
     'Elo only': { n: 0, correct: 0, brier: 0 },
+    'Elo + recent/current form': { n: 0, correct: 0, brier: 0 },
+    'Core + venue/H2H': { n: 0, correct: 0, brier: 0 },
     'Football context, no numerology': { n: 0, correct: 0, brier: 0 },
+    'Football context, no numerology/rest': { n: 0, correct: 0, brier: 0 },
+    'Football context, no numerology/venue/H2H': { n: 0, correct: 0, brier: 0 },
+    'Football context, no numerology/rest/venue/H2H': { n: 0, correct: 0, brier: 0 },
     'Full v2': { n: 0, correct: 0, brier: 0 },
     'Full minus H2H': { n: 0, correct: 0, brier: 0 },
     'Full minus home/road refinement': { n: 0, correct: 0, brier: 0 },
@@ -97,16 +102,27 @@ async function main() {
     if (result.modelScores) {
       const s = result.modelScores;
       const base = logit(s.baseHomeProbability / 100);
-      const football = s.footballLogitAdjustment + s.venueLogitAdjustment + s.personnelLogitAdjustment + s.restLogitAdjustment + s.h2hLogitAdjustment;
-      const full = football + s.numerologyLogitAdjustment;
+      const form = s.footballLogitAdjustment;
+      const venue = s.venueLogitAdjustment;
+      const personnel = s.personnelLogitAdjustment;
+      const rest = s.restLogitAdjustment;
+      const h2h = s.h2hLogitAdjustment;
+      const numerology = s.numerologyLogitAdjustment;
+      const football = form + venue + personnel + rest + h2h;
+      const full = football + numerology;
 
       scoreVariant(variants['Elo only'], logistic(base), actualHome);
+      scoreVariant(variants['Elo + recent/current form'], logistic(base + form), actualHome);
+      scoreVariant(variants['Core + venue/H2H'], logistic(base + form + venue + h2h), actualHome);
       scoreVariant(variants['Football context, no numerology'], logistic(base + football), actualHome);
+      scoreVariant(variants['Football context, no numerology/rest'], logistic(base + football - rest), actualHome);
+      scoreVariant(variants['Football context, no numerology/venue/H2H'], logistic(base + football - venue - h2h), actualHome);
+      scoreVariant(variants['Football context, no numerology/rest/venue/H2H'], logistic(base + football - rest - venue - h2h), actualHome);
       scoreVariant(variants['Full v2'], logistic(base + full), actualHome);
-      scoreVariant(variants['Full minus H2H'], logistic(base + full - s.h2hLogitAdjustment), actualHome);
-      scoreVariant(variants['Full minus home/road refinement'], logistic(base + full - s.venueLogitAdjustment), actualHome);
-      scoreVariant(variants['Full minus recent/current-season form'], logistic(base + full - s.footballLogitAdjustment), actualHome);
-      scoreVariant(variants['Full minus rest'], logistic(base + full - s.restLogitAdjustment), actualHome);
+      scoreVariant(variants['Full minus H2H'], logistic(base + full - h2h), actualHome);
+      scoreVariant(variants['Full minus home/road refinement'], logistic(base + full - venue), actualHome);
+      scoreVariant(variants['Full minus recent/current-season form'], logistic(base + full - form), actualHome);
+      scoreVariant(variants['Full minus rest'], logistic(base + full - rest), actualHome);
     }
   }
 
