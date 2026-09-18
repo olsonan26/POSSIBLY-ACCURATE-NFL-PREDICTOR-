@@ -1,20 +1,32 @@
 export interface Person {
   name: string;
-  birthday: Date;
+  birthday?: Date;
+  source?: string;
+  status?: string;
+  position?: string;
 }
 
 export interface Team {
   name: string;
+  abbr: string;
   birthday: Date;
   coach: Person;
   qb: Person;
-  owner: Person;
-  blindsideTackle: Person;
+  owner?: Person;
+  blindsideTackle?: Person;
 }
 
-export type Role = 'Team' | 'Coach' | 'Owner' | 'Qb' | 'Blindside Tackle';
+export type Role =
+  | 'Team'
+  | 'Coach'
+  | 'Owner'
+  | 'Qb'
+  | 'Backup Qb'
+  | 'Blindside Tackle'
+  | 'Kicker'
+  | 'Key Offense'
+  | 'Key Defense';
 
-// Simplified for top-level display card
 export interface DisplayNumbers {
   yearEssence: number;
   personalYear: number;
@@ -23,7 +35,6 @@ export interface DisplayNumbers {
   dailyEssence: number;
 }
 
-// The full set of calculated patterns as strings from the user's formulas
 export interface NumerologyPatterns {
   yrPersonalEss: string;
   py: string;
@@ -46,12 +57,23 @@ export interface EvalResult {
   subset: EvalCounts;
 }
 
+export interface PatternStats {
+  pattern: string;
+  wins: number;
+  losses: number;
+  total: number;
+  winPct: number;
+  smoothedWinPct?: number;
+}
+
 export interface Breakdown {
   role: Role;
   name: string;
   patterns: NumerologyPatterns;
   evalResult?: EvalResult;
   deStats?: PatternStats;
+  includedInScore?: boolean;
+  source?: string;
 }
 
 export interface HistoricalGame {
@@ -73,6 +95,8 @@ export interface HistoricalGame {
   winnerDay: string;
   loserDE: string;
   loserDay: string;
+  location?: 'Home' | 'Neutral';
+  stadium?: string;
 }
 
 export interface DecisionFactor {
@@ -86,14 +110,54 @@ export interface DecisionFactor {
   winnerScore?: number;
   loserScore?: number;
   edgeScore: number;
+  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data';
+  includedInScore?: boolean;
 }
 
-export interface PatternStats {
-  pattern: string;
-  wins: number;
-  losses: number;
-  total: number;
-  winPct: number;
+export interface PersonnelSnapshot {
+  team: string;
+  teamAbbr: string;
+  coach?: Person;
+  startingQb?: Person;
+  backupQb?: Person;
+  blindsideTackle?: Person;
+  kicker?: Person;
+  keyOffense?: Person[];
+  keyDefense?: Person[];
+  injuries?: Array<{
+    name: string;
+    position?: string;
+    status?: string;
+    injury?: string;
+    impact: number;
+  }>;
+  sourceStatus: 'live' | 'partial' | 'fallback';
+}
+
+export interface DataFreshness {
+  historicalSource: string;
+  livePersonnelSource: string;
+  historicalGamesUsed: number;
+  cutoffDate: string;
+  leakageGuard: boolean;
+  livePersonnelLoaded: boolean;
+  injuryDataLoaded: boolean;
+  scheduleMatched: boolean;
+  neutralSite: boolean;
+  notes: string[];
+}
+
+export interface ModelScores {
+  baseHomeProbability: number;
+  finalHomeProbability: number;
+  eloHome: number;
+  eloAway: number;
+  footballLogitAdjustment: number;
+  venueLogitAdjustment: number;
+  personnelLogitAdjustment: number;
+  numerologyLogitAdjustment: number;
+  restLogitAdjustment: number;
+  h2hLogitAdjustment: number;
 }
 
 export interface PredictionResult {
@@ -105,7 +169,6 @@ export interface PredictionResult {
   loserStats: DisplayNumbers;
   winnerBreakdown: Breakdown[];
   loserBreakdown: Breakdown[];
-  // Calculated Pattern Analytics
   winnerDE: string;
   loserDE: string;
   winnerDay: string;
@@ -144,7 +207,18 @@ export interface PredictionResult {
     streakYears?: number;
     lastRoadWinDate?: string;
     narrativeNotes?: string;
+    meetings?: number;
+    homeWins?: number;
+    awayWins?: number;
+    ties?: number;
+    recencyWeightedHomePct?: number;
   };
   decisionFactors: DecisionFactor[];
   precedentGames: HistoricalGame[];
+  modelScores?: ModelScores;
+  dataFreshness?: DataFreshness;
+  homePersonnel?: PersonnelSnapshot;
+  awayPersonnel?: PersonnelSnapshot;
+  warnings?: string[];
+  modelVersion?: string;
 }
