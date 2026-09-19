@@ -55,7 +55,7 @@ function normalizeDecisionFactors(
     if (factor.title === 'Recent & Current-Season Form') {
       const h = validatedContext.recentHome;
       const a = validatedContext.recentAway;
-      description = `${homeName}: ${h.wins}-${h.losses}-${h.ties}, ${h.avgPointDiff >= 0 ? '+' : ''}${h.avgPointDiff.toFixed(1)} current-season recent point differential/game; ${awayName}: ${a.wins}-${a.losses}-${a.ties}, ${a.avgPointDiff >= 0 ? '+' : ''}${a.avgPointDiff.toFixed(1)}. v2.2 deliberately gives prior-season recent form zero weight; this rule was selected on 2024 and improved untouched 2025 validation.`;
+      description = `${homeName}: ${h.wins}-${h.losses}-${h.ties}, ${h.avgPointDiff >= 0 ? '+' : ''}${h.avgPointDiff.toFixed(1)} current-season recent point differential/game; ${awayName}: ${a.wins}-${a.losses}-${a.ties}, ${a.avgPointDiff >= 0 ? '+' : ''}${a.avgPointDiff.toFixed(1)}. v2.2 deliberately gives prior-season recent form zero weight. The rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.`;
     } else if (factor.title === 'Home / Away Performance') {
       const h = validatedContext.homeVenue;
       const a = validatedContext.awayVenue;
@@ -126,8 +126,10 @@ function swapWinnerLoser(result: PredictionResult): PredictionResult {
  *   - current injury/availability context when live data is available
  *
  * The prior-season recent-form carryover was set to zero using 2024 as the
- * tuning season. That fixed rule then improved untouched 2025 validation from
- * 177/271 (65.31%) to 180/271 (66.42%), so it is eligible for production.
+ * tuning season. On untouched 2025, that fixed rule improved winner accuracy
+ * from 177/271 (65.31%) to 180/271 (66.42%), while Brier and log loss worsened
+ * slightly. v2.2 therefore records an accuracy/calibration tradeoff rather than
+ * claiming universal improvement across every validation metric.
  *
  * Rest, numerology and PURE Astrology remain measured research features but
  * are deliberately excluded from the production winner until later untouched
@@ -175,7 +177,7 @@ export async function predictWinner(
 
   const warnings = [
     ...(aligned.warnings || []),
-    'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024 and improved untouched 2025 validation.',
+    'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
     'Rest, numerology and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.'
   ];
 
@@ -193,7 +195,7 @@ export async function predictWinner(
       ...aligned.dataFreshness,
       notes: [
         ...aligned.dataFreshness.notes,
-        'v2.2 validation gate: prior-season recent form/home-road carryover is zero; selected on 2024 and validated on 2025.',
+        'v2.2 validation gate: prior-season recent form/home-road carryover is zero. It was selected on 2024; 2025 winner accuracy improved, with a small Brier/log-loss tradeoff.',
         'Rest, numerology and PURE Astrology remain research-only after failing stable incremental validation.'
       ]
     } : aligned.dataFreshness,
