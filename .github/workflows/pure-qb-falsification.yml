@@ -1,0 +1,37 @@
+name: PURE QB Signal Falsification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/pure-astrology-phase2.mjs'
+      - 'scripts/phase2-preload.mjs'
+      - 'scripts/phase2-pregame-qb-preload.mjs'
+      - 'scripts/phase2-qb-falsification-runner.mjs'
+      - '.github/workflows/pure-qb-falsification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked application dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Astronomy Engine for isolated research run
+        run: bun add --no-save astronomy-engine@2.1.19
+
+      - name: Run strict pregame-QB PURE falsification
+        run: bun scripts/phase2-qb-falsification-runner.mjs
