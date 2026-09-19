@@ -1,797 +1,1065 @@
-import { Team, Person, PredictionResult, Role, Breakdown, NumerologyPatterns, DisplayNumbers, EvalResult, EvalCounts, DecisionFactor, PatternStats, HistoricalGame } from '../types';
-import { winningPatternsCSV } from '../data/winning_patterns';
-import { losingPatternsCSV } from '../data/losing_patterns';
-import { getDEPatternStats, getDayPatternStats, getComboWins, findPrecedents, OFFICIAL_WINNING_DE_STATS, OFFICIAL_WINNING_DAY_STATS, HISTORICAL_GAMES } from '../data/historicalGames';
+import {
+  Breakdown,
+  DataFreshness,
+  DecisionFactor,
+  DisplayNumbers,
+  HistoricalGame,
+  ModelScores,
+  NumerologyPatterns,
+  PatternStats,
+  Person,
+  PersonnelSnapshot,
+  PredictionResult,
+  Role,
+  Team
+} from '../types';
+import { TEAM_BY_ABBR, TEAM_REGISTRY, normalizeTeamAbbr } from '../data/teamRegistry';
 
-const TEAM_BIRTHDAY_DATA = `Team,Team Bday,Coach,Coach Bday,QB,QB Bday,Owner,Owner Bday,Blindside Tackle,Blindside Tackle Bday
-Arizona Cardinals,1/17/1917,Jonathan Gannon,1/4/1983,Kyler Murray,8/7/1997,Michael Bidwill,4/22/1964,Paris Johnson Jr.,7/3/2001
-Atlanta Falcons,6/30/1965,Raheem Morris,9/3/1976,Michael Penix Jr.,5/8/2000,Arthur Blank,9/27/1942,Jake Matthews,2/11/1992
-Baltimore Ravens,2/9/1996,John Harbaugh,9/23/1962,Lamar Jackson,1/7/1997,Steve Bisciotti,4/10/1960,Ronnie Stanley,3/18/1994
-Buffalo Bills,10/28/1959,Sean McDermott,3/21/1974,Josh Allen,5/21/1996,Terry Pegula,3/27/1951,Dion Dawkins,4/26/1994
-Carolina Panthers,10/26/1993,Dave Canales,5/7/1981,Bryce Young,7/25/2001,David Tepper,9/11/1957,Ikem Ekwonu,10/31/2000
-Chicago Bears,9/17/1920,Matt Eberflus,5/17/1970,Caleb Williams,11/18/2001,George McCaskey,3/29/1956,Braxton Jones,3/27/1999
-Cincinnati Bengals,5/23/1967,Zac Taylor,5/10/1983,Joe Burrow,12/10/1996,Mike Brown,8/10/1935,Orlando Brown Jr.,5/2/1996
-Cleveland Browns,6/4/1944,Kevin Stefanski,5/8/1982,Deshaun Watson,9/14/1995,Jimmy Haslam,3/9/1954,Jedrick Wills Jr.,5/17/1999
-Dallas Cowboys,1/28/1960,Mike McCarthy,11/10/1963,Dak Prescott,7/29/1993,Jerry Jones,10/13/1942,Tyler Smith,4/3/2001
-Denver Broncos,8/14/1959,Sean Payton,12/29/1963,Bo Nix,2/25/2000,Rob Walton,10/27/1944,Garett Bolles,5/27/1992
-Detroit Lions,7/12/1930,Dan Campbell,4/13/1976,Jared Goff,10/14/1994,Sheila Ford Hamp,10/31/1951,Taylor Decker,8/23/1993
-Green Bay Packers,8/11/1919,Matt LaFleur,11/3/1979,Jordan Love,11/2/1998,Mark Murphy,7/13/1955,Rasheed Walker,2/13/2000
-Houston Texans,10/6/1999,DeMeco Ryans,7/28/1984,C.J. Stroud,10/3/2001,Cal McNair,10/24/1961,Laremy Tunsil,8/2/1994
-Indianapolis Colts,1/23/1953,Shane Steichen,5/11/1985,Anthony Richardson,5/22/2002,Jim Irsay,7/13/1959,Bernhard Raimann,9/23/1997
-Jacksonville Jaguars,11/30/1993,Doug Pederson,1/31/1968,Trevor Lawrence,10/6/1999,Shahid Khan,7/18/1950,Cam Robinson,10/9/1995
-Kansas City Chiefs,8/14/1959,Andy Reid,3/19/1958,Patrick Mahomes,9/17/1995,Clark Hunt,2/19/1965,Wanya Morris,10/10/2000
-Las Vegas Raiders,1/30/1960,Antonio Pierce,10/26/1978,Gardner Minshew,5/16/1996,Mark Davis,5/18/1955,Kolton Miller,10/9/1995
-Los Angeles Chargers,8/14/1959,Jim Harbaugh,12/23/1963,Justin Herbert,3/10/1998,Dean Spanos,5/26/1950,Rashawn Slater,3/18/1999
-Los Angeles Rams,2/12/1937,Sean McVay,1/24/1986,Matthew Stafford,2/7/1988,Stan Kroenke,7/29/1947,Alaric Jackson,7/14/1998
-Miami Dolphins,8/16/1965,Mike McDaniel,3/6/1983,Tua Tagovailoa,3/2/1998,Stephen Ross,5/10/1940,Terron Armstead,7/23/1991
-Minnesota Vikings,1/28/1960,Kevin O'Connell,5/25/1985,J.J. McCarthy,1/20/2003,Zygi Wilf,4/22/1950,Christian Darrisaw,6/2/1999
-New England Patriots,11/22/1959,Jerod Mayo,2/23/1986,Drake Maye,8/30/2002,Robert Kraft,6/5/1941,Chukwuma Okorafor,8/8/1997
-New Orleans Saints,11/1/1966,Dennis Allen,9/22/1972,Derek Carr,3/28/1991,Gayle Benson,1/26/1947,Taliese Fuaga,4/2/2002
-New York Giants,8/1/1925,Brian Daboll,4/14/1975,Daniel Jones,5/27/1997,John Mara,12/1/1954,Andrew Thomas,1/22/1999
-New York Jets,8/14/1959,Robert Saleh,1/31/1979,Aaron Rodgers,12/2/1983,Woody Johnson,4/12/1947,Tyron Smith,12/12/1990
-Philadelphia Eagles,7/8/1933,Nick Sirianni,6/15/1981,Jalen Hurts,8/7/1998,Jeffrey Lurie,9/8/1951,Jordan Mailata,3/31/1997
-Pittsburgh Steelers,7/8/1933,Mike Tomlin,3/15/1972,Russell Wilson,11/29/1988,Art Rooney II,9/14/1952,Broderick Jones,5/16/2001
-San Francisco 49ers,3/28/1946,Kyle Shanahan,12/14/1979,Brock Purdy,12/27/1999,Jed York,1/9/1981,Trent Williams,7/19/1988
-Seattle Seahawks,6/15/1972,Mike Macdonald,6/26/1987,Geno Smith,10/10/1990,Jody Allen,2/3/1959,Charles Cross,11/25/2000
-Tampa Bay Buccaneers,4/24/1974,Todd Bowles,11/18/1963,Baker Mayfield,4/14/1995,Glazer family,1/1/1970,Tristan Wirfs,1/24/1999
-Tennessee Titans,8/3/1959,Brian Callahan,6/10/1984,Will Levis,6/27/1999,Amy Adams Strunk,9/29/1955,JC Latham,2/8/2003
-Washington Commanders,7/9/1932,Dan Quinn,9/11/1970,Jayden Daniels,12/18/2000,Josh Harris,12/4/1964,Cornelius Lucas,7/18/1991`;
+const MODEL_VERSION = 'v2.0-verified-pregame';
+const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
+const BAYES_PRIOR_GAMES = 16;
+const HOME_ELO_ADVANTAGE = 55;
+const ELO_K = 20;
+const NUMEROLOGY_HISTORY_START = '2020-01-01';
 
-function parseDate(dateStr: string): Date {
-  if (isNaN(new Date(dateStr).getTime())) {
-    return new Date('1970-01-01');
+interface NflGameRow {
+  gameId: string;
+  season: number;
+  gameType: string;
+  week: number;
+  gameday: string;
+  awayTeam: string;
+  awayScore?: number;
+  homeTeam: string;
+  homeScore?: number;
+  location: 'Home' | 'Neutral';
+  awayRest?: number;
+  homeRest?: number;
+  awayQbName?: string;
+  homeQbName?: string;
+  awayCoach?: string;
+  homeCoach?: string;
+  stadium?: string;
+}
+
+interface LiveAthlete extends Person {
+  id?: string;
+  rank?: number;
+}
+
+interface LiveTeamContext {
+  rosterLoaded: boolean;
+  depthLoaded: boolean;
+  injuriesLoaded: boolean;
+  startingQb?: LiveAthlete;
+  backupQb?: LiveAthlete;
+  blindsideTackle?: LiveAthlete;
+  kicker?: LiveAthlete;
+  keyOffense: LiveAthlete[];
+  keyDefense: LiveAthlete[];
+  injuries: PersonnelSnapshot['injuries'];
+}
+
+interface PatternCounter {
+  wins: number;
+  losses: number;
+}
+
+interface PatternIndex {
+  de: Map<string, PatternCounter>;
+  day: Map<string, PatternCounter>;
+  combo: Map<string, PatternCounter>;
+}
+
+interface TeamForm {
+  games: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  winPct: number;
+  avgPointDiff: number;
+}
+
+interface EloSnapshot {
+  home: number;
+  away: number;
+  baseHomeProbability: number;
+}
+
+let gamesPromise: Promise<NflGameRow[]> | null = null;
+const liveContextCache = new Map<string, Promise<LiveTeamContext>>();
+
+export function parseTeamData(): Team[] {
+  return TEAM_REGISTRY.map(team => ({
+    ...team,
+    birthday: new Date(team.birthday),
+    coach: { ...team.coach, birthday: team.coach.birthday ? new Date(team.coach.birthday) : undefined },
+    qb: { ...team.qb, birthday: team.qb.birthday ? new Date(team.qb.birthday) : undefined }
+  }));
+}
+
+function getLetterValue(value: string): number {
+  const letter = String(value || '').toUpperCase();
+  const values: Record<string, number> = {
+    A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9,
+    J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9,
+    S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8
+  };
+  return values[letter] || 0;
+}
+
+function reduceSequence(n: number): string {
+  const sequence = [Math.abs(Math.trunc(n))];
+  let current = sequence[0];
+  while (current > 9) {
+    current = String(current).split('').reduce((sum, digit) => sum + Number(digit), 0);
+    sequence.push(current);
   }
-  return new Date(dateStr);
+  return sequence.join('/');
 }
 
-/* ===== Core math (ported from user's code) ===== */
-const getLetterValue = (t: string): number => {
-    const letter = String(t || '').toUpperCase();
-    const valueMap: { [key: string]: number } = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9, S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8 };
-    return valueMap[letter] || 0;
-};
+function reduceToSingleDigit(n: number): number {
+  if (n === 0) return 9;
+  let current = Math.abs(Math.trunc(n));
+  while (current > 9) {
+    current = String(current).split('').reduce((sum, digit) => sum + Number(digit), 0);
+  }
+  return current;
+}
 
-const reduceSequence = (n: number): string => {
-    const sequence: number[] = [n];
-    let current = n;
-    while (current > 9) {
-        current = String(current).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
-        sequence.push(current);
+function getCycleString(name: string): string {
+  return String(name || '')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
+    .split('')
+    .map(char => char.repeat(getLetterValue(char)))
+    .join('');
+}
+
+function calculateEssence(name: string, index: number): { e: number; raw: number } {
+  let total = 0;
+  const parts = String(name || '').split(/\s+/).filter(Boolean);
+  for (const part of parts) {
+    const cycle = getCycleString(part);
+    if (!cycle) continue;
+    const safeIndex = Math.max(1, index);
+    const char = cycle[(safeIndex - 1) % cycle.length];
+    total += getLetterValue(char);
+  }
+  return { e: reduceToSingleDigit(total), raw: total };
+}
+
+function calculateAge(target: Date, birthday: Date): number {
+  let age = target.getUTCFullYear() - birthday.getUTCFullYear();
+  const targetMonth = target.getUTCMonth();
+  const birthMonth = birthday.getUTCMonth();
+  if (targetMonth < birthMonth || (targetMonth === birthMonth && target.getUTCDate() < birthday.getUTCDate())) age--;
+  return Math.max(1, age);
+}
+
+export function calculateAllPatterns(name: string, birthday: Date, gameDate: Date): NumerologyPatterns {
+  const gameMonth = gameDate.getUTCMonth() + 1;
+  const gameDay = gameDate.getUTCDate();
+  const gameYear = gameDate.getUTCFullYear();
+  const birthMonth = birthday.getUTCMonth() + 1;
+  const birthDay = birthday.getUTCDate();
+  const age = calculateAge(gameDate, birthday);
+  const essence = calculateEssence(name, age);
+
+  const pyRaw = birthDay + birthMonth + gameYear;
+  const personalYear = reduceToSingleDigit(pyRaw);
+  const pmRaw = personalYear + gameMonth;
+  const personalMonth = reduceToSingleDigit(pmRaw);
+  const pmeRaw = essence.e + personalMonth;
+  const monthCombinerRaw = reduceToSingleDigit(pmeRaw) + personalMonth;
+  const yearCombinerRaw = essence.e + personalYear;
+  const dailyEssenceRaw = personalMonth + gameDay + essence.e;
+
+  return {
+    yrPersonalEss: reduceSequence(essence.raw),
+    py: reduceSequence(pyRaw),
+    pm: reduceSequence(pmRaw),
+    pme: reduceSequence(pmeRaw),
+    monCombiner: reduceSequence(monthCombinerRaw),
+    yearCom: reduceSequence(yearCombinerRaw),
+    dayNum: reduceSequence(gameDay),
+    dailyEssenceFull: reduceSequence(dailyEssenceRaw)
+  };
+}
+
+function toDisplayNumbers(patterns: NumerologyPatterns): DisplayNumbers {
+  const tail = (value: string) => Number(value.split('/').pop() || 0);
+  return {
+    yearEssence: tail(patterns.yrPersonalEss),
+    personalYear: tail(patterns.py),
+    personalMonth: tail(patterns.pm),
+    personalMonthEssence: tail(patterns.pme),
+    dailyEssence: tail(patterns.dailyEssenceFull)
+  };
+}
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (quoted && line[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === ',' && !quoted) {
+      cells.push(cell);
+      cell = '';
+    } else {
+      cell += char;
     }
-    return sequence.join('/');
-};
+  }
+  cells.push(cell);
+  return cells;
+}
 
-const reduceToSingleDigit = (n: number): number => {
-    if (n === 0) return 9;
-    let sum = Math.abs(n);
-    while (sum > 9) {
-        sum = String(sum).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+function parseOptionalNumber(value: string | undefined): number | undefined {
+  if (value == null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+export function parseGamesCsv(text: string): NflGameRow[] {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = parseCsvLine(lines[0]);
+  const idx = (name: string) => headers.indexOf(name);
+
+  const column = {
+    gameId: idx('game_id'), season: idx('season'), gameType: idx('game_type'), week: idx('week'),
+    gameday: idx('gameday'), awayTeam: idx('away_team'), awayScore: idx('away_score'),
+    homeTeam: idx('home_team'), homeScore: idx('home_score'), location: idx('location'),
+    awayRest: idx('away_rest'), homeRest: idx('home_rest'), awayQbName: idx('away_qb_name'),
+    homeQbName: idx('home_qb_name'), awayCoach: idx('away_coach'), homeCoach: idx('home_coach'),
+    stadium: idx('stadium')
+  };
+
+  return lines.slice(1).map(line => {
+    const cells = parseCsvLine(line);
+    const get = (i: number) => i >= 0 ? (cells[i] ?? '').trim() : '';
+    return {
+      gameId: get(column.gameId),
+      season: Number(get(column.season) || 0),
+      gameType: get(column.gameType),
+      week: Number(get(column.week) || 0),
+      gameday: get(column.gameday),
+      awayTeam: normalizeTeamAbbr(get(column.awayTeam)),
+      awayScore: parseOptionalNumber(get(column.awayScore)),
+      homeTeam: normalizeTeamAbbr(get(column.homeTeam)),
+      homeScore: parseOptionalNumber(get(column.homeScore)),
+      location: get(column.location) === 'Neutral' ? 'Neutral' : 'Home',
+      awayRest: parseOptionalNumber(get(column.awayRest)),
+      homeRest: parseOptionalNumber(get(column.homeRest)),
+      awayQbName: get(column.awayQbName) || undefined,
+      homeQbName: get(column.homeQbName) || undefined,
+      awayCoach: get(column.awayCoach) || undefined,
+      homeCoach: get(column.homeCoach) || undefined,
+      stadium: get(column.stadium) || undefined
+    } as NflGameRow;
+  }).filter(game => game.gameday && game.homeTeam && game.awayTeam && game.season >= 1999);
+}
+
+async function fetchTextWithFallback(primary: string, fallback: string): Promise<string> {
+  let firstError: unknown;
+  try {
+    const response = await fetch(primary);
+    if (response.ok) return response.text();
+    firstError = new Error(`${response.status} ${response.statusText}`);
+  } catch (error) {
+    firstError = error;
+  }
+
+  try {
+    const response = await fetch(fallback);
+    if (response.ok) return response.text();
+    throw new Error(`${response.status} ${response.statusText}`);
+  } catch (error) {
+    throw new Error(`Verified NFL history unavailable. Proxy error: ${String(firstError)}. Direct error: ${String(error)}`);
+  }
+}
+
+async function loadGames(): Promise<NflGameRow[]> {
+  if (!gamesPromise) {
+    gamesPromise = fetchTextWithFallback('/api/nfl-data?dataset=games', NFLVERSE_GAMES_URL)
+      .then(parseGamesCsv)
+      .then(games => {
+        if (games.length < 1000) throw new Error(`NFL history feed returned only ${games.length} games`);
+        return games;
+      })
+      .catch(error => {
+        gamesPromise = null;
+        throw error;
+      });
+  }
+  return gamesPromise;
+}
+
+async function fetchJson(primary: string, fallback: string): Promise<any> {
+  try {
+    const response = await fetch(primary);
+    if (response.ok) return response.json();
+  } catch {
+    // Direct source fallback below.
+  }
+  const response = await fetch(fallback);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.json();
+}
+
+function normalizeName(value: string): string {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function parseBirthDate(value: unknown): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function collectRosterAthletes(data: any): LiveAthlete[] {
+  const athletes: LiveAthlete[] = [];
+  const groups = Array.isArray(data?.athletes) ? data.athletes : [];
+  for (const group of groups) {
+    const items = Array.isArray(group?.items) ? group.items : [];
+    for (const item of items) {
+      const name = item?.fullName || item?.displayName || item?.name;
+      if (!name) continue;
+      athletes.push({
+        id: String(item?.id ?? item?.uid ?? ''),
+        name,
+        birthday: parseBirthDate(item?.dateOfBirth || item?.birthDate),
+        position: item?.position?.abbreviation || group?.position || group?.name,
+        status: item?.status?.name || item?.status?.type || item?.status
+      });
     }
-    return sum;
-};
+  }
+  return athletes;
+}
 
-const getCycleString = (name: string): string => {
-    return String(name || '').toUpperCase().replace(/[^A-Z]/g, '').split('').map(char => {
-        const lv = getLetterValue(char);
-        return char.repeat(lv);
-    }).join('');
-};
-
-const calculateEssence = (name: string, index: number): { e: number, raw: number } => {
-    let total = 0;
-    const parts = String(name || '').split(/\s+/).filter(Boolean);
-    for (const part of parts) {
-        const cycle = getCycleString(part);
-        if (!cycle) continue;
-        const char = cycle[(index - 1) % cycle.length];
-        total += getLetterValue(char);
+function collectDepthAthletes(data: any): LiveAthlete[] {
+  const athletes: LiveAthlete[] = [];
+  const depthCharts = Array.isArray(data?.depthCharts) ? data.depthCharts : [];
+  for (const chart of depthCharts) {
+    const positions = chart?.positions && typeof chart.positions === 'object' ? Object.values(chart.positions) : [];
+    for (const positionEntry of positions as any[]) {
+      const position = positionEntry?.position?.abbreviation || positionEntry?.position?.name || '';
+      const entries = Array.isArray(positionEntry?.athletes) ? positionEntry.athletes : [];
+      for (const entry of entries) {
+        const athlete = entry?.athlete || entry;
+        const name = athlete?.displayName || athlete?.fullName || athlete?.name;
+        if (!name) continue;
+        athletes.push({
+          id: String(athlete?.id ?? athlete?.uid ?? ''),
+          name,
+          position,
+          rank: Number(entry?.rank ?? entry?.depth ?? 99)
+        });
+      }
     }
-    return { e: reduceToSingleDigit(total), raw: total };
-};
+  }
+  return athletes;
+}
 
-const calculateAge = (targetDate: { y: number; m: number; d: number; }, birthDate: { y: number; m: number; d: number; }): number => {
-    let age = targetDate.y - birthDate.y;
-    if (targetDate.m < birthDate.m || (targetDate.m === birthDate.m && targetDate.d < birthDate.d)) {
-        age--;
+function injuryStatusFactor(status: string | undefined): number {
+  const s = String(status || '').toLowerCase();
+  if (s.includes('out') || s.includes('injured reserve')) return 1;
+  if (s.includes('doubt')) return 0.8;
+  if (s.includes('question')) return 0.35;
+  if (s.includes('probable')) return 0.1;
+  return 0.15;
+}
+
+function injuryPositionWeight(position: string | undefined): number {
+  const p = String(position || '').toUpperCase();
+  if (p === 'QB') return 10;
+  if (['LT', 'RT', 'OT', 'T'].includes(p)) return 4;
+  if (['DE', 'EDGE', 'OLB'].includes(p)) return 3;
+  if (['CB', 'S', 'DB'].includes(p)) return 2.4;
+  if (['WR', 'TE'].includes(p)) return 2.2;
+  if (['DT', 'NT', 'LB', 'ILB'].includes(p)) return 1.8;
+  if (['RB', 'C', 'G', 'OG'].includes(p)) return 1.5;
+  if (p === 'K') return 0.8;
+  return 1;
+}
+
+function collectInjuries(data: any): NonNullable<PersonnelSnapshot['injuries']> {
+  const out: NonNullable<PersonnelSnapshot['injuries']> = [];
+  const seen = new Set<string>();
+
+  const walk = (node: any) => {
+    if (!node || typeof node !== 'object') return;
+    const athlete = node.athlete || node.player;
+    const name = athlete?.displayName || athlete?.fullName || athlete?.name || node?.displayName;
+    const status = node?.status?.name || node?.status?.type?.name || node?.status || node?.designation;
+    const injury = node?.type?.description || node?.details?.type || node?.injury?.description || node?.description;
+    const position = athlete?.position?.abbreviation || node?.position?.abbreviation || node?.position;
+
+    if (name && (status || injury)) {
+      const key = `${normalizeName(name)}|${String(status || '')}|${String(injury || '')}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const impact = injuryStatusFactor(String(status || '')) * injuryPositionWeight(String(position || ''));
+        out.push({ name, position: String(position || ''), status: String(status || ''), injury: String(injury || ''), impact });
+      }
     }
-    return age;
-};
 
-const calculatePersonalYear = (birthDay: number, birthMonth: number, gameYear: number): number => {
-    const result = (birthDay + birthMonth + gameYear) % 9;
-    return result === 0 ? 9 : result;
-};
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+    } else {
+      Object.values(node).forEach(value => {
+        if (value && typeof value === 'object') walk(value);
+      });
+    }
+  };
 
-const calculateAllPatterns = (name: string, birthday: Date, gameDate: Date): NumerologyPatterns => {
-    const gameMonth = gameDate.getUTCMonth() + 1;
-    const gameDay = gameDate.getUTCDate();
-    const seasonYear = gameDate.getUTCFullYear();
+  walk(data?.injuries ?? data);
+  return out.sort((a, b) => b.impact - a.impact).slice(0, 25);
+}
 
-    const birthMonth = birthday.getUTCMonth() + 1;
-    const birthDay = birthday.getUTCDate();
-    const birthYear = birthday.getUTCFullYear();
+function mergeDepthWithRoster(depth: LiveAthlete[], roster: LiveAthlete[]): LiveAthlete[] {
+  const byId = new Map(roster.filter(p => p.id).map(p => [p.id!, p]));
+  const byName = new Map(roster.map(p => [normalizeName(p.name), p]));
+  return depth.map(player => {
+    const match = (player.id && byId.get(player.id)) || byName.get(normalizeName(player.name));
+    return { ...match, ...player, birthday: match?.birthday, status: match?.status };
+  });
+}
 
-    const yrIdx = calculateAge(
-        { y: seasonYear, m: gameMonth, d: gameDay },
-        { y: birthYear, m: birthMonth, d: birthDay }
-    );
+function pickRankOne(players: LiveAthlete[], positions: string[]): LiveAthlete | undefined {
+  const wanted = new Set(positions.map(v => v.toUpperCase()));
+  return players
+    .filter(player => wanted.has(String(player.position || '').toUpperCase()))
+    .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))[0];
+}
 
-    const essence = calculateEssence(name, yrIdx);
-    
-    const pyRaw = birthDay + birthMonth + seasonYear;
-    const personalYearNum = calculatePersonalYear(birthDay, birthMonth, seasonYear);
+async function loadLiveTeamContext(teamAbbr: string): Promise<LiveTeamContext> {
+  const team = normalizeTeamAbbr(teamAbbr);
+  if (liveContextCache.has(team)) return liveContextCache.get(team)!;
 
-    const pmRaw = personalYearNum + gameMonth;
-    const personalMonthNum = reduceToSingleDigit(pmRaw);
+  const promise = (async () => {
+    const base = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
+    const espnIdMap: Record<string, string> = {
+      ARI: '22', ATL: '1', BAL: '33', BUF: '2', CAR: '29', CHI: '3', CIN: '4', CLE: '5', DAL: '6', DEN: '7', DET: '8', GB: '9',
+      HOU: '34', IND: '11', JAX: '30', KC: '12', LV: '13', LAC: '24', LA: '14', MIA: '15', MIN: '16', NE: '17', NO: '18', NYG: '19',
+      NYJ: '20', PHI: '21', PIT: '23', SF: '25', SEA: '26', TB: '27', TEN: '10', WAS: '28'
+    };
+    const id = espnIdMap[team];
+    if (!id) throw new Error(`No ESPN team id for ${team}`);
 
-    const pmeRaw = essence.e + personalMonthNum;
-    
-    const mcomRaw = reduceToSingleDigit(pmeRaw) + personalMonthNum;
-    
-    const combRaw = essence.e + personalYearNum;
-    
-    const dailyEssenceRaw = personalMonthNum + gameDay + essence.e;
+    const [rosterResult, depthResult, injuryResult] = await Promise.allSettled([
+      fetchJson(`/api/nfl-data?dataset=roster&team=${team}`, `${base}/teams/${id}/roster`),
+      fetchJson(`/api/nfl-data?dataset=depth&team=${team}`, `${base}/teams/${id}/depthcharts`),
+      fetchJson(`/api/nfl-data?dataset=injuries&team=${team}`, `${base}/teams/${id}/injuries`)
+    ]);
+
+    const roster = rosterResult.status === 'fulfilled' ? collectRosterAthletes(rosterResult.value) : [];
+    const rawDepth = depthResult.status === 'fulfilled' ? collectDepthAthletes(depthResult.value) : [];
+    const depth = mergeDepthWithRoster(rawDepth, roster);
+    const injuries = injuryResult.status === 'fulfilled' ? collectInjuries(injuryResult.value) : [];
+
+    const qbPlayers = depth.filter(p => String(p.position || '').toUpperCase() === 'QB').sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+    const startingQb = qbPlayers[0] || roster.find(p => String(p.position || '').toUpperCase() === 'QB');
+    const backupQb = qbPlayers[1] || roster.filter(p => String(p.position || '').toUpperCase() === 'QB').find(p => normalizeName(p.name) !== normalizeName(startingQb?.name || ''));
+    const blindsideTackle = pickRankOne(depth, ['LT']) || pickRankOne(depth, ['T', 'OT']);
+    const kicker = pickRankOne(depth, ['K']) || roster.find(p => String(p.position || '').toUpperCase() === 'K');
+
+    const keyOffensePositions = ['RB', 'WR', 'TE'];
+    const keyDefensePositions = ['DE', 'EDGE', 'OLB', 'LB', 'CB', 'S', 'DT'];
+    const keyOffense = keyOffensePositions.map(position => pickRankOne(depth, [position])).filter(Boolean) as LiveAthlete[];
+    const keyDefense = keyDefensePositions.map(position => pickRankOne(depth, [position])).filter(Boolean).slice(0, 4) as LiveAthlete[];
 
     return {
-        yrPersonalEss: reduceSequence(essence.raw),
-        py: reduceSequence(pyRaw),
-        pm: reduceSequence(pmRaw),
-        pme: reduceSequence(pmeRaw),
-        monCombiner: reduceSequence(mcomRaw),
-        yearCom: reduceSequence(combRaw),
-        dayNum: reduceSequence(gameDay),
-        dailyEssenceFull: reduceSequence(dailyEssenceRaw)
+      rosterLoaded: rosterResult.status === 'fulfilled' && roster.length > 0,
+      depthLoaded: depthResult.status === 'fulfilled' && depth.length > 0,
+      injuriesLoaded: injuryResult.status === 'fulfilled',
+      startingQb,
+      backupQb,
+      blindsideTackle,
+      kicker,
+      keyOffense,
+      keyDefense,
+      injuries
     };
-};
+  })();
 
-// ---------- Start: User-provided pattern matching logic ----------
-
-// CardPattern represents the 8 key values for a person on a given day.
-type CardPattern = {
-    yrESS: string;
-    py: string;
-    pm: string;
-    pme: string;
-    monCombiner: string;
-    yearCOM: string;
-    dayNum: string;
-    dailyEss: string;
-};
-
-function parseCSV(text: string): Record<string, string>[] {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",").map(h => h.trim());
-    return lines.slice(1).map(line => {
-        const cells = line.split(",");
-        const row: Record<string, string> = {};
-        headers.forEach((h, i) => (row[h] = (cells[i] ?? "").trim()));
-        return row;
-    });
+  liveContextCache.set(team, promise);
+  promise.catch(() => liveContextCache.delete(team));
+  return promise;
 }
 
-function norm(v: string) {
-    if (!v) return "";
-    const trimmed = String(v).trim().replace(/^20\d\d\//, '');
-    if (trimmed.includes('/')) {
-        const parts = trimmed.split('/');
-        if (parts.length === 3 && parts[1].length <= 2) {
-            return `${parts[1]}/${parts[2]}`; // e.g. 28/10/1 -> 10/1
-        }
-        if (parseInt(parts[0], 10) > 18) {
-            return parts[parts.length - 1]; // e.g. 27/9 -> 9
-        }
-        return trimmed;
+function completed(game: NflGameRow): boolean {
+  return Number.isFinite(game.homeScore) && Number.isFinite(game.awayScore);
+}
+
+function beforeDate(game: NflGameRow, targetIso: string): boolean {
+  return game.gameday < targetIso;
+}
+
+function exactScheduledGame(games: NflGameRow[], targetIso: string, home: string, away: string): NflGameRow | undefined {
+  return games.find(game => game.gameday === targetIso && game.homeTeam === home && game.awayTeam === away);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function logistic(value: number): number {
+  return 1 / (1 + Math.exp(-value));
+}
+
+function logit(probability: number): number {
+  const p = clamp(probability, 0.01, 0.99);
+  return Math.log(p / (1 - p));
+}
+
+function expectedHomeProbability(homeRating: number, awayRating: number, neutral: boolean): number {
+  const homeAdjusted = homeRating + (neutral ? 0 : HOME_ELO_ADVANTAGE);
+  return 1 / (1 + Math.pow(10, (awayRating - homeAdjusted) / 400));
+}
+
+function buildEloSnapshot(games: NflGameRow[], targetIso: string, home: string, away: string, neutral: boolean): EloSnapshot {
+  const relevant = games.filter(game => completed(game) && beforeDate(game, targetIso)).sort((a, b) => a.gameday.localeCompare(b.gameday));
+  const ratings = new Map<string, number>();
+  let priorSeason = 0;
+
+  const rating = (team: string) => ratings.get(team) ?? 1500;
+  const setRating = (team: string, value: number) => ratings.set(team, value);
+
+  for (const game of relevant) {
+    if (priorSeason && game.season !== priorSeason) {
+      for (const [team, value] of ratings.entries()) setRating(team, 1500 + (value - 1500) * 0.67);
     }
-    return trimmed;
+    priorSeason = game.season;
+
+    const homeRating = rating(game.homeTeam);
+    const awayRating = rating(game.awayTeam);
+    const expected = expectedHomeProbability(homeRating, awayRating, game.location === 'Neutral');
+    const homeScore = game.homeScore!;
+    const awayScore = game.awayScore!;
+    const actual = homeScore === awayScore ? 0.5 : homeScore > awayScore ? 1 : 0;
+    const margin = Math.abs(homeScore - awayScore);
+    const movMultiplier = clamp(Math.log(margin + 1) / Math.log(8), 0.75, 1.65);
+    const change = ELO_K * movMultiplier * (actual - expected);
+    setRating(game.homeTeam, homeRating + change);
+    setRating(game.awayTeam, awayRating - change);
+  }
+
+  const homeRating = rating(home);
+  const awayRating = rating(away);
+  return {
+    home: homeRating,
+    away: awayRating,
+    baseHomeProbability: expectedHomeProbability(homeRating, awayRating, neutral)
+  };
 }
 
-// Key builders (must keep field order)
-function key8_fromCard(p: CardPattern) {
-    return [norm(p.yrESS), norm(p.py), norm(p.pm), norm(p.pme), norm(p.monCombiner), norm(p.yearCOM), norm(p.dayNum), norm(p.dailyEss)].join("|");
+function getTeamForm(games: NflGameRow[], team: string, targetIso: string, limit = 8, season?: number, venue?: 'home' | 'away'): TeamForm {
+  const selected = games
+    .filter(game => completed(game) && beforeDate(game, targetIso) && (game.homeTeam === team || game.awayTeam === team))
+    .filter(game => season == null || game.season === season)
+    .filter(game => venue == null || (venue === 'home' ? game.homeTeam === team && game.location !== 'Neutral' : game.awayTeam === team && game.location !== 'Neutral'))
+    .sort((a, b) => b.gameday.localeCompare(a.gameday))
+    .slice(0, limit);
+
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+  let pointDiff = 0;
+  selected.forEach((game, index) => {
+    const isHome = game.homeTeam === team;
+    const scored = isHome ? game.homeScore! : game.awayScore!;
+    const allowed = isHome ? game.awayScore! : game.homeScore!;
+    const recencyWeight = Math.pow(0.9, index);
+    pointDiff += (scored - allowed) * recencyWeight;
+    if (scored > allowed) wins++;
+    else if (scored < allowed) losses++;
+    else ties++;
+  });
+
+  const gamesPlayed = selected.length;
+  const weightedDenominator = selected.reduce((sum, _game, index) => sum + Math.pow(0.9, index), 0) || 1;
+  return {
+    games: gamesPlayed,
+    wins,
+    losses,
+    ties,
+    winPct: gamesPlayed ? (wins + ties * 0.5) / gamesPlayed : 0.5,
+    avgPointDiff: gamesPlayed ? pointDiff / weightedDenominator : 0
+  };
 }
 
-function key8_fromWinningRow(r: Record<string, string>) {
-    return [norm(r["Yr Personal ESS"]), norm(r["PY"]), norm(r["WINNING PM"]), norm(r["WINNING PME"]), norm(r["WINNING MonCombiner"]), norm(r["WINNING YearCOM"]), norm(r["WINNING Day Number"]), norm(r["WINNING Daily Essence"])].join("|");
+function getRestDays(games: NflGameRow[], team: string, targetIso: string): number | undefined {
+  const prior = games
+    .filter(game => completed(game) && beforeDate(game, targetIso) && (game.homeTeam === team || game.awayTeam === team))
+    .sort((a, b) => b.gameday.localeCompare(a.gameday))[0];
+  if (!prior) return undefined;
+  const ms = new Date(`${targetIso}T12:00:00Z`).getTime() - new Date(`${prior.gameday}T12:00:00Z`).getTime();
+  return Math.round(ms / 86400000);
 }
 
-function key8_fromLosingRow(r: Record<string, string>) {
-    return [norm(r["LOSING TEAM Yr Personal ESS"]), norm(r["PY"]), norm(r["PM"]), norm(r["PME"]), norm(r["MonCombiner"]), norm(r["YearCOM"]), norm(r["Day Number"]), norm(r["Daily Essence"])].join("|");
-}
+function buildPatternIndex(games: NflGameRow[], targetIso: string): PatternIndex {
+  const index: PatternIndex = { de: new Map(), day: new Map(), combo: new Map() };
+  const add = (map: Map<string, PatternCounter>, key: string, won: boolean) => {
+    const value = map.get(key) || { wins: 0, losses: 0 };
+    won ? value.wins++ : value.losses++;
+    map.set(key, value);
+  };
 
-function key5_fromCard(p: CardPattern) {
-    return [norm(p.py), norm(p.pme), norm(p.dayNum), norm(p.dailyEss), norm(p.yearCOM)].join("|");
-}
-
-function key5_fromWinningRow(r: Record<string, string>) {
-    return [norm(r["PY"]), norm(r["WINNING PME"]), norm(r["WINNING Day Number"]), norm(r["WINNING Daily Essence"]), norm(r["WINNING YearCOM"])].join("|");
-}
-
-function key5_fromLosingRow(r: Record<string, string>) {
-    return [norm(r["PY"]), norm(r["PME"]), norm(r["Day Number"]), norm(r["Daily Essence"]), norm(r["YearCOM"])].join("|");
-}
-
-function buildLookups(winningCSV: string, losingCSV: string) {
-    const wRows = parseCSV(winningCSV);
-    const lRows = parseCSV(losingCSV);
-    const W8 = new Map<string, number>();
-    const L8 = new Map<string, number>();
-    const W5 = new Map<string, number>();
-    const L5 = new Map<string, number>();
-
-    for (const r of wRows) {
-        const k8 = key8_fromWinningRow(r);
-        const k5 = key5_fromWinningRow(r);
-        W8.set(k8, (W8.get(k8) ?? 0) + 1);
-        W5.set(k5, (W5.get(k5) ?? 0) + 1);
+  const history = games.filter(game => completed(game) && beforeDate(game, targetIso) && game.gameday >= NUMEROLOGY_HISTORY_START);
+  for (const game of history) {
+    if (game.homeScore === game.awayScore) continue;
+    const gameDate = new Date(`${game.gameday}T12:00:00Z`);
+    for (const [abbr, score, oppScore] of [[game.homeTeam, game.homeScore!, game.awayScore!], [game.awayTeam, game.awayScore!, game.homeScore!]] as const) {
+      const team = TEAM_BY_ABBR.get(abbr);
+      if (!team) continue;
+      const patterns = calculateAllPatterns(team.name, team.birthday, gameDate);
+      const won = score > oppScore;
+      add(index.de, patterns.dailyEssenceFull, won);
+      add(index.day, patterns.dayNum, won);
+      add(index.combo, `${patterns.dailyEssenceFull}|${patterns.dayNum}`, won);
     }
-    for (const r of lRows) {
-        const k8 = key8_fromLosingRow(r);
-        const k5 = key5_fromLosingRow(r);
-        L8.set(k8, (L8.get(k8) ?? 0) + 1);
-        L5.set(k5, (L5.get(k5) ?? 0) + 1);
-    }
-    return { W8, L8, W5, L5 };
+  }
+  return index;
 }
 
-function evaluatePattern(card: CardPattern, lookups: ReturnType<typeof buildLookups>): EvalResult {
-    const k8 = key8_fromCard(card);
-    const k5 = key5_fromCard(card);
-    const wins8 = lookups.W8.get(k8) ?? 0;
-    const losses8 = lookups.L8.get(k8) ?? 0;
-    const wins5 = lookups.W5.get(k5) ?? 0;
-    const losses5 = lookups.L5.get(k5) ?? 0;
-    return {
-        exact: { wins: wins8, losses: losses8, net: wins8 - losses8 },
-        subset: { wins: wins5, losses: losses5, net: wins5 - losses5 },
-    };
+function statsFromCounter(pattern: string, counter?: PatternCounter): PatternStats {
+  const wins = counter?.wins || 0;
+  const losses = counter?.losses || 0;
+  const total = wins + losses;
+  const rawPct = total ? wins / total : 0.5;
+  const smoothed = (wins + BAYES_PRIOR_GAMES * 0.5) / (total + BAYES_PRIOR_GAMES);
+  return {
+    pattern,
+    wins,
+    losses,
+    total,
+    winPct: Math.round(rawPct * 1000) / 10,
+    smoothedWinPct: Math.round(smoothed * 1000) / 10
+  };
 }
 
-type SideScore = { label: string; eval: EvalResult };
-function pickWinnerByPatterns(a: SideScore, b: SideScore): { winnerLabel: string, reason: string } {
-    if (a.eval.exact.net !== b.eval.exact.net) {
-        const winner = a.eval.exact.net > b.eval.exact.net ? a : b;
-        return { winnerLabel: winner.label, reason: `a stronger combined Exact-8 pattern score (${winner.eval.exact.net} vs ${winner === a ? b.eval.exact.net : a.eval.exact.net})` };
-    }
-    if (a.eval.exact.wins !== b.eval.exact.wins) {
-        const winner = a.eval.exact.wins > b.eval.exact.wins ? a : b;
-        return { winnerLabel: winner.label, reason: `more wins on a tied Exact-8 pattern` };
-    }
-    if (a.eval.subset.net !== b.eval.subset.net) {
-        const winner = a.eval.subset.net > b.eval.subset.net ? a : b;
-        return { winnerLabel: winner.label, reason: `a stronger combined Subset-5 pattern score (${winner.eval.subset.net} vs ${winner === a ? b.eval.subset.net : a.eval.subset.net})` };
-    }
-    if (a.eval.subset.wins !== b.eval.subset.wins) {
-        const winner = a.eval.subset.wins > b.eval.subset.wins ? a : b;
-        return { winnerLabel: winner.label, reason: `more wins on a tied Subset-5 pattern` };
-    }
-    return { winnerLabel: a.label, reason: "insufficient historical data to separate them, defaulting to the home team" }; // Default case
+function smoothedRate(stats: PatternStats | undefined): number {
+  if (!stats) return 0.5;
+  return (stats.smoothedWinPct ?? stats.winPct ?? 50) / 100;
 }
-// ---------- End: User-provided pattern matching logic ----------
 
-let lookups: ReturnType<typeof buildLookups> | null = null;
-const getLookups = () => {
-    if (!lookups) {
-        lookups = buildLookups(winningPatternsCSV, losingPatternsCSV);
-    }
-    return lookups;
-};
+function buildBreakdown(role: Role, person: Person | Team | undefined, gameDate: Date, patternIndex: PatternIndex, includedInScore: boolean, source: string): Breakdown | undefined {
+  if (!person?.name || !person.birthday) return undefined;
+  const patterns = calculateAllPatterns(person.name, person.birthday, gameDate);
+  return {
+    role,
+    name: person.name,
+    patterns,
+    deStats: statsFromCounter(patterns.dailyEssenceFull, patternIndex.de.get(patterns.dailyEssenceFull)),
+    includedInScore,
+    source
+  };
+}
 
-// Helper to map our internal pattern type to the user's evaluation pattern type
-const toCardPattern = (patterns: NumerologyPatterns): CardPattern => ({
-    yrESS: patterns.yrPersonalEss,
-    py: patterns.py,
-    pm: patterns.pm,
-    pme: patterns.pme,
-    monCombiner: patterns.monCombiner,
-    yearCOM: patterns.yearCom,
-    dayNum: patterns.dayNum,
-    dailyEss: patterns.dailyEssenceFull,
-});
+function getCoachPerson(team: Team, scheduledName?: string): Person {
+  if (!scheduledName || normalizeName(scheduledName) === normalizeName(team.coach.name)) return team.coach;
+  const registryMatch = TEAM_REGISTRY.map(t => t.coach).find(coach => normalizeName(coach.name) === normalizeName(scheduledName));
+  return registryMatch ? { ...registryMatch, source: 'schedule + coach DOB registry' } : { name: scheduledName, source: 'schedule; DOB unavailable' };
+}
 
-export const parseTeamData = (): Team[] => {
-    const rows = TEAM_BIRTHDAY_DATA.trim().split('\n');
-    rows.shift(); // Remove header
+function personWithFallback(live: Person | undefined, fallback: Person, scheduleName?: string): Person {
+  if (live?.name) return { ...live, source: 'ESPN live roster/depth chart' };
+  if (scheduleName) {
+    if (normalizeName(scheduleName) === normalizeName(fallback.name)) return { ...fallback, source: 'NFLverse game row + fallback DOB registry' };
+    return { name: scheduleName, source: 'NFLverse game row; DOB unavailable' };
+  }
+  return { ...fallback, source: '2026 fallback registry' };
+}
 
-    return rows.map(row => {
-        const values = row.split(',');
-        return {
-            name: values[0],
-            birthday: parseDate(values[1]),
-            coach: { name: values[2], birthday: parseDate(values[3]) },
-            qb: { name: values[4], birthday: parseDate(values[5]) },
-            owner: { name: values[6], birthday: parseDate(values[7]) },
-            blindsideTackle: { name: values[8], birthday: parseDate(values[9]) }
-        };
-    });
-};
+function isLiveDate(gameDate: Date): boolean {
+  const now = new Date();
+  const diffDays = (gameDate.getTime() - now.getTime()) / 86400000;
+  return diffDays >= -3 && diffDays <= 120;
+}
 
-export const predictWinner = (teamA: Team, teamB: Team, gameDateInput: Date | string, isTeamAHome: boolean = true): PredictionResult => {
-    const gameDate = typeof gameDateInput === 'string'
-        ? (gameDateInput.includes('T') ? new Date(gameDateInput) : new Date(`${gameDateInput}T00:00:00Z`))
-        : gameDateInput;
-    const historicalLookups = getLookups();
-    
-    const teamABreakdown: Breakdown[] = [];
-    const teamBBreakdown: Breakdown[] = [];
+function getInjuryImpact(injuries: PersonnelSnapshot['injuries']): number {
+  return clamp((injuries || []).reduce((sum, injury) => sum + injury.impact, 0), 0, 18);
+}
 
-    const rolesToCalculate: Role[] = ['Team', 'Coach', 'Owner', 'Qb', 'Blindside Tackle'];
-    
-    // Calculate patterns for all roles for UI breakdown
-    for(const role of rolesToCalculate) {
-        const entityA = role === 'Team' ? teamA : teamA[role.charAt(0).toLowerCase() + role.slice(1) as keyof Omit<Team, 'name' | 'birthday'>];
-        const entityB = role === 'Team' ? teamB : teamB[role.charAt(0).toLowerCase() + role.slice(1) as keyof Omit<Team, 'name' | 'birthday'>];
-        
-        if (entityA && 'name' in entityA) {
-            const patterns = calculateAllPatterns(entityA.name, entityA.birthday, gameDate);
-            const evalResult = evaluatePattern(toCardPattern(patterns), historicalLookups);
-            const deStats = getDEPatternStats(patterns.dailyEssenceFull);
-            teamABreakdown.push({ role, name: entityA.name, patterns, evalResult, deStats });
-        }
-        if (entityB && 'name' in entityB) {
-            const patterns = calculateAllPatterns(entityB.name, entityB.birthday, gameDate);
-            const evalResult = evaluatePattern(toCardPattern(patterns), historicalLookups);
-            const deStats = getDEPatternStats(patterns.dailyEssenceFull);
-            teamBBreakdown.push({ role, name: entityB.name, patterns, evalResult, deStats });
-        }
-    }
+function buildPersonnelSnapshot(team: Team, coach: Person, qb: Person, live: LiveTeamContext | undefined): PersonnelSnapshot {
+  const sourceStatus: PersonnelSnapshot['sourceStatus'] = live?.depthLoaded && live?.rosterLoaded ? 'live' : live?.rosterLoaded || live?.depthLoaded ? 'partial' : 'fallback';
+  return {
+    team: team.name,
+    teamAbbr: team.abbr,
+    coach,
+    startingQb: qb,
+    backupQb: live?.backupQb,
+    blindsideTackle: live?.blindsideTackle,
+    kicker: live?.kicker,
+    keyOffense: live?.keyOffense || [],
+    keyDefense: live?.keyDefense || [],
+    injuries: live?.injuries || [],
+    sourceStatus
+  };
+}
 
-    const teamA_Team = teamABreakdown.find(b => b.role === 'Team')!;
-    const teamA_Coach = teamABreakdown.find(b => b.role === 'Coach')!;
-    const teamA_QB = teamABreakdown.find(b => b.role === 'Qb');
-    const teamA_Owner = teamABreakdown.find(b => b.role === 'Owner');
+function computeHistoricalSeries(games: NflGameRow[], targetIso: string, home: Team, away: Team) {
+  const sameVenue = games
+    .filter(game => completed(game) && beforeDate(game, targetIso) && game.location !== 'Neutral' && game.homeTeam === home.abbr && game.awayTeam === away.abbr)
+    .sort((a, b) => b.gameday.localeCompare(a.gameday));
 
-    const teamB_Team = teamBBreakdown.find(b => b.role === 'Team')!;
-    const teamB_Coach = teamBBreakdown.find(b => b.role === 'Coach')!;
-    const teamB_QB = teamBBreakdown.find(b => b.role === 'Qb');
-    const teamB_Owner = teamBBreakdown.find(b => b.role === 'Owner');
+  let homeWins = 0;
+  let awayWins = 0;
+  let ties = 0;
+  let weightedHome = 2;
+  let weightedAway = 2;
+  const targetMs = new Date(`${targetIso}T12:00:00Z`).getTime();
+  let lastAwayWinDate: string | undefined;
 
-    // Extract core game patterns (Daily Essence and Day Number)
-    const teamA_DE = teamA_Team.patterns.dailyEssenceFull;
-    const teamA_Day = teamA_Team.patterns.dayNum;
-    const teamB_DE = teamB_Team.patterns.dailyEssenceFull;
-    const teamB_Day = teamB_Team.patterns.dayNum;
-
-    // Retrieve historical statistics for both teams' patterns from 1,365 game database
-    const teamA_DEStats = getDEPatternStats(teamA_DE);
-    const teamB_DEStats = getDEPatternStats(teamB_DE);
-    const teamA_DayStats = getDayPatternStats(teamA_Day);
-    const teamB_DayStats = getDayPatternStats(teamB_Day);
-    const teamA_ComboWins = getComboWins(teamA_DE, teamA_Day);
-    const teamB_ComboWins = getComboWins(teamB_DE, teamB_Day);
-
-    // Coach specific Daily Essence statistics
-    const teamA_CoachDE = teamA_Coach.patterns.dailyEssenceFull;
-    const teamB_CoachDE = teamB_Coach.patterns.dailyEssenceFull;
-    const teamA_CoachDEStats = getDEPatternStats(teamA_CoachDE);
-    const teamB_CoachDEStats = getDEPatternStats(teamB_CoachDE);
-
-    // QB specific Daily Essence statistics
-    const teamA_QbDE = teamA_QB?.patterns.dailyEssenceFull || '';
-    const teamB_QbDE = teamB_QB?.patterns.dailyEssenceFull || '';
-    const teamA_QbDEStats = teamA_QbDE ? getDEPatternStats(teamA_QbDE) : undefined;
-    const teamB_QbDEStats = teamB_QbDE ? getDEPatternStats(teamB_QbDE) : undefined;
-
-    // Owner specific Daily Essence statistics (Top of the Organizational Pyramid)
-    const teamA_OwnerDE = teamA_Owner?.patterns.dailyEssenceFull || '';
-    const teamB_OwnerDE = teamB_Owner?.patterns.dailyEssenceFull || '';
-    const teamA_OwnerDEStats = teamA_OwnerDE ? getDEPatternStats(teamA_OwnerDE) : undefined;
-    const teamB_OwnerDEStats = teamB_OwnerDE ? getDEPatternStats(teamB_OwnerDE) : undefined;
-
-    // Detect Chaos / Script / Upset Day Dynamics (Vibration 4, 13/4, 7, 16/7, 22/4)
-    const gameCalDay = gameDate.getUTCDate();
-    const gameCalMonth = gameDate.getUTCMonth() + 1;
-    const gameCalYear = gameDate.getUTCFullYear();
-    const universalDayNum = reduceToSingleDigit(gameCalDay + gameCalMonth + gameCalYear);
-    const isChaosVibration = [4, 7].includes(universalDayNum) || 
-                             ['4', '13/4', '7', '16/7', '22/4'].includes(teamA_Day) || 
-                             ['4', '13/4', '7', '16/7', '22/4'].includes(teamB_Day);
-
-    const isChaosDay = isChaosVibration;
-    const chaosType = universalDayNum === 4 || ['4', '13/4', '22/4'].includes(teamA_Day)
-        ? 'Vibration 4 (Uranus / Chaos / Script Inversion)'
-        : 'Vibration 7 (Neptune / Illusion / Karmic Reversal)';
-    const chaosWarning = isChaosDay
-        ? `This game falls under a high-volatility ${chaosType} cycle. In sports numerology and scripted narrative theory, 4 and 7 vibrations frequently trigger inverted outcomes, bizarre penalties, unexpected fumbles, and heavy-favorite upsets.`
-        : undefined;
-
-    // Aggregate Pattern Numbers Total Wins and Losses across the historical dataset
-    const teamA_TotalPatternWins = teamA_DEStats.wins + teamA_CoachDEStats.wins + (teamA_QbDEStats?.wins || 0) + (teamA_OwnerDEStats?.wins || 0) + teamA_DayStats.wins + teamA_ComboWins;
-    const teamA_TotalPatternLosses = teamA_DEStats.losses + teamA_CoachDEStats.losses + (teamA_QbDEStats?.losses || 0) + (teamA_OwnerDEStats?.losses || 0) + teamA_DayStats.losses;
-    const teamA_TotalPatternPct = (teamA_TotalPatternWins + teamA_TotalPatternLosses) > 0 
-        ? Math.round((teamA_TotalPatternWins / (teamA_TotalPatternWins + teamA_TotalPatternLosses)) * 1000) / 10 
-        : 50.0;
-
-    const teamB_TotalPatternWins = teamB_DEStats.wins + teamB_CoachDEStats.wins + (teamB_QbDEStats?.wins || 0) + (teamB_OwnerDEStats?.wins || 0) + teamB_DayStats.wins + teamB_ComboWins;
-    const teamB_TotalPatternLosses = teamB_DEStats.losses + teamB_CoachDEStats.losses + (teamB_QbDEStats?.losses || 0) + (teamB_OwnerDEStats?.losses || 0) + teamB_DayStats.losses;
-    const teamB_TotalPatternPct = (teamB_TotalPatternWins + teamB_TotalPatternLosses) > 0 
-        ? Math.round((teamB_TotalPatternWins / (teamB_TotalPatternWins + teamB_TotalPatternLosses)) * 1000) / 10 
-        : 50.0;
-
-    // Precedent historical games
-    const precedentGames = findPrecedents(teamA_DE, teamA_Day, teamB_DE, teamB_Day, teamA.name, teamB.name);
-
-    // Combine Team + Coach + QB + Owner evaluations
-    const teamAExactNet = (teamA_Team.evalResult?.exact.net || 0) + 
-                          (teamA_Coach.evalResult?.exact.net || 0) + 
-                          ((teamA_QB?.evalResult?.exact.net || 0) * 0.5) +
-                          ((teamA_Owner?.evalResult?.exact.net || 0) * 0.4);
-    const teamASubsetNet = (teamA_Team.evalResult?.subset.net || 0) + 
-                           (teamA_Coach.evalResult?.subset.net || 0) + 
-                           ((teamA_QB?.evalResult?.subset.net || 0) * 0.5) +
-                           ((teamA_Owner?.evalResult?.subset.net || 0) * 0.4);
-
-    const teamBExactNet = (teamB_Team.evalResult?.exact.net || 0) + 
-                          (teamB_Coach.evalResult?.exact.net || 0) + 
-                          ((teamB_QB?.evalResult?.exact.net || 0) * 0.5) +
-                          ((teamB_Owner?.evalResult?.exact.net || 0) * 0.4);
-    const teamBSubsetNet = (teamB_Team.evalResult?.subset.net || 0) + 
-                           (teamB_Coach.evalResult?.subset.net || 0) + 
-                           ((teamB_QB?.evalResult?.subset.net || 0) * 0.5) +
-                           ((teamB_Owner?.evalResult?.subset.net || 0) * 0.4);
-
-    // Compute multi-factor decision scores
-    let teamAScore = 0;
-    let teamBScore = 0;
-
-    // Home Field Grounding Advantage (Team A is Home)
-    if (isTeamAHome) {
-        teamAScore += 8; // Traditional stadium vibrational grounding
-    }
-
-    // Factor 1: Team Daily Essence Historical Win Rate & Total Record
-    const deDiff = teamA_DEStats.winPct - teamB_DEStats.winPct;
-    if (deDiff > 1) {
-        teamAScore += 25 + (deDiff * 0.8);
-    } else if (deDiff < -1) {
-        teamBScore += 25 + (Math.abs(deDiff) * 0.8);
+  for (const game of sameVenue) {
+    const ageYears = Math.max(0, (targetMs - new Date(`${game.gameday}T12:00:00Z`).getTime()) / 31557600000);
+    const weight = Math.pow(0.5, ageYears / 5);
+    if (game.homeScore! > game.awayScore!) {
+      homeWins++;
+      weightedHome += weight;
+    } else if (game.awayScore! > game.homeScore!) {
+      awayWins++;
+      weightedAway += weight;
+      if (!lastAwayWinDate) lastAwayWinDate = game.gameday;
     } else {
-        if (teamA_DEStats.wins > teamB_DEStats.wins) teamAScore += 10;
-        else if (teamB_DEStats.wins > teamA_DEStats.wins) teamBScore += 10;
+      ties++;
+      weightedHome += weight * 0.5;
+      weightedAway += weight * 0.5;
     }
+  }
 
-    // Factor 2: Head Coach Daily Essence Dominance
-    const coachDEDiff = teamA_CoachDEStats.winPct - teamB_CoachDEStats.winPct;
-    if (coachDEDiff > 1) {
-        teamAScore += 25 + (coachDEDiff * 0.8);
-    } else if (coachDEDiff < -1) {
-        teamBScore += 25 + (Math.abs(coachDEDiff) * 0.8);
-    } else {
-        if (teamA_CoachDEStats.wins > teamB_CoachDEStats.wins) teamAScore += 8;
-        else if (teamB_CoachDEStats.wins > teamA_CoachDEStats.wins) teamBScore += 8;
+  const weightedPct = weightedHome / (weightedHome + weightedAway);
+  const reliability = clamp(sameVenue.length / 8, 0, 1);
+  const adjustment = clamp((weightedPct - 0.5) * 0.30 * reliability, -0.12, 0.12);
+  const yearsSinceRoadWin = lastAwayWinDate ? Math.floor((targetMs - new Date(`${lastAwayWinDate}T12:00:00Z`).getTime()) / 31557600000) : undefined;
+  const record = `${home.name} ${homeWins}-${awayWins}${ties ? `-${ties}` : ''} at home vs ${away.name} in available NFLverse history`;
+
+  return {
+    adjustment,
+    sameVenue,
+    info: {
+      venueStreak: sameVenue.length ? record : 'No same-venue meetings in available history',
+      allTimeRecord: record,
+      streakYears: yearsSinceRoadWin,
+      lastRoadWinDate: lastAwayWinDate,
+      meetings: sameVenue.length,
+      homeWins,
+      awayWins,
+      ties,
+      recencyWeightedHomePct: Math.round(weightedPct * 1000) / 10,
+      narrativeNotes: sameVenue.length
+        ? `The venue series is automatically recency-weighted with a five-year half-life and Bayesian shrinkage. Old or tiny samples cannot dominate current-team strength.`
+        : `No direct venue history was available, so no head-to-head venue adjustment was applied.`
     }
+  };
+}
 
-    // Factor 3: Starting QB Daily Essence Alignment
-    if (teamA_QbDEStats && teamB_QbDEStats) {
-        const qbDEDiff = teamA_QbDEStats.winPct - teamB_QbDEStats.winPct;
-        if (qbDEDiff > 1) {
-            teamAScore += 20 + (qbDEDiff * 0.7);
-        } else if (qbDEDiff < -1) {
-            teamBScore += 20 + (Math.abs(qbDEDiff) * 0.7);
-        } else {
-            if (teamA_QbDEStats.wins > teamB_QbDEStats.wins) teamAScore += 8;
-            else if (teamB_QbDEStats.wins > teamA_QbDEStats.wins) teamBScore += 8;
-        }
-    }
+function toHistoricalGame(game: NflGameRow, patternIndex: PatternIndex): HistoricalGame | undefined {
+  if (!completed(game)) return undefined;
+  const home = TEAM_BY_ABBR.get(game.homeTeam);
+  const away = TEAM_BY_ABBR.get(game.awayTeam);
+  if (!home || !away) return undefined;
+  const date = new Date(`${game.gameday}T12:00:00Z`);
+  const hp = calculateAllPatterns(home.name, home.birthday, date);
+  const ap = calculateAllPatterns(away.name, away.birthday, date);
+  const tie = game.homeScore === game.awayScore;
+  const homeWon = game.homeScore! > game.awayScore!;
+  const winner = tie ? home : homeWon ? home : away;
+  const loser = tie ? away : homeWon ? away : home;
+  const wp = tie ? hp : homeWon ? hp : ap;
+  const lp = tie ? ap : homeWon ? ap : hp;
+  void patternIndex;
+  return {
+    date: game.gameday,
+    season: game.season,
+    week: game.week,
+    homeTeam: home.name,
+    homeScore: game.homeScore!,
+    awayTeam: away.name,
+    awayScore: game.awayScore!,
+    winnerTeam: tie ? 'Tie' : winner.name,
+    loserTeam: tie ? 'Tie' : loser.name,
+    winnerHomeAway: tie ? 'Tie' : homeWon ? 'Home' : 'Away',
+    homeDE: hp.dailyEssenceFull,
+    homeDay: hp.dayNum,
+    awayDE: ap.dailyEssenceFull,
+    awayDay: ap.dayNum,
+    winnerDE: wp.dailyEssenceFull,
+    winnerDay: wp.dayNum,
+    loserDE: lp.dailyEssenceFull,
+    loserDay: lp.dayNum,
+    location: game.location,
+    stadium: game.stadium
+  };
+}
 
-    // Factor 3b: Franchise Owner Daily Essence Alignment (Organizational Power)
-    if (teamA_OwnerDEStats && teamB_OwnerDEStats) {
-        const ownerDEDiff = teamA_OwnerDEStats.winPct - teamB_OwnerDEStats.winPct;
-        if (ownerDEDiff > 1) {
-            teamAScore += 12 + (ownerDEDiff * 0.5);
-        } else if (ownerDEDiff < -1) {
-            teamBScore += 12 + (Math.abs(ownerDEDiff) * 0.5);
-        }
-    }
+function factorAdvantageFromHomeEdge(edge: number, isWinnerHome: boolean): DecisionFactor['advantage'] {
+  if (Math.abs(edge) < 0.002) return 'neutral';
+  const favorsHome = edge > 0;
+  return favorsHome === isWinnerHome ? 'winner' : 'loser';
+}
 
-    // Factor 4: Game Day Number Alignment
-    const dayDiff = teamA_DayStats.winPct - teamB_DayStats.winPct;
-    if (dayDiff > 2) {
-        teamAScore += 15 + (dayDiff * 0.4);
-    } else if (dayDiff < -2) {
-        teamBScore += 15 + (Math.abs(dayDiff) * 0.4);
-    } else {
-        if (teamA_DayStats.wins > teamB_DayStats.wins) teamAScore += 8;
-        else if (teamB_DayStats.wins > teamA_DayStats.wins) teamBScore += 8;
-    }
+function addDecisionFactor(
+  factors: DecisionFactor[],
+  title: string,
+  description: string,
+  homeEdge: number,
+  isWinnerHome: boolean,
+  category: DecisionFactor['category'],
+  includedInScore = true
+) {
+  factors.push({
+    title,
+    description,
+    advantage: factorAdvantageFromHomeEdge(homeEdge, isWinnerHome),
+    edgeScore: Math.round(Math.abs(homeEdge) * 1000) / 10,
+    category,
+    includedInScore
+  });
+}
 
-    // Factor 5: DE | Day Winning Combination Frequency
-    const comboDiff = teamA_ComboWins - teamB_ComboWins;
-    if (comboDiff > 0) {
-        teamAScore += 15 + (comboDiff * 2);
-    } else if (comboDiff < 0) {
-        teamBScore += 15 + (Math.abs(comboDiff) * 2);
-    }
+export interface PredictionOptions {
+  neutralSite?: boolean;
+}
 
-    // Factor 6: Personnel Exact-8 & Subset-5 Pattern Net Scores
-    const exactDiff = teamAExactNet - teamBExactNet;
-    const subsetDiff = teamASubsetNet - teamBSubsetNet;
-    if (exactDiff > 0 || (exactDiff === 0 && subsetDiff > 0)) {
-        const netEdge = (exactDiff * 12) + (subsetDiff * 4);
-        teamAScore += Math.max(netEdge, 10);
-    } else if (exactDiff < 0 || (exactDiff === 0 && subsetDiff < 0)) {
-        const netEdge = (Math.abs(exactDiff) * 12) + (Math.abs(subsetDiff) * 4);
-        teamBScore += Math.max(netEdge, 10);
-    }
+export async function predictWinner(
+  homeTeam: Team,
+  awayTeam: Team,
+  gameDate: Date,
+  _isTeamAHome = true,
+  options: PredictionOptions = {}
+): Promise<PredictionResult> {
+  const games = await loadGames();
+  const targetIso = gameDate.toISOString().slice(0, 10);
+  const scheduled = exactScheduledGame(games, targetIso, homeTeam.abbr, awayTeam.abbr);
+  const neutral = scheduled?.location === 'Neutral' || Boolean(options.neutralSite);
+  const history = games.filter(game => completed(game) && beforeDate(game, targetIso));
+  if (history.length < 500) throw new Error('Not enough pregame NFL history is available for a reliable calculation.');
 
-    // Factor 7: Precedent Historical Games Trend (Modest, balanced weighting)
-    let precedentTeamAWins = 0;
-    let precedentTeamBWins = 0;
-    for (const g of precedentGames) {
-        if (g.winnerTeam === teamA.name) precedentTeamAWins++;
-        else if (g.winnerTeam === teamB.name) precedentTeamBWins++;
-        else if (g.winnerDE === teamA_DE) precedentTeamAWins += 0.5;
-        else if (g.winnerDE === teamB_DE) precedentTeamBWins += 0.5;
-    }
-    if (precedentTeamAWins > precedentTeamBWins) {
-        teamAScore += Math.min(8, (precedentTeamAWins - precedentTeamBWins) * 3);
-    } else if (precedentTeamBWins > precedentTeamAWins) {
-        teamBScore += Math.min(8, (precedentTeamBWins - precedentTeamAWins) * 3);
-    }
+  let homeLive: LiveTeamContext | undefined;
+  let awayLive: LiveTeamContext | undefined;
+  const warnings: string[] = [];
+  if (isLiveDate(gameDate)) {
+    const [homeLiveResult, awayLiveResult] = await Promise.allSettled([
+      loadLiveTeamContext(homeTeam.abbr),
+      loadLiveTeamContext(awayTeam.abbr)
+    ]);
+    if (homeLiveResult.status === 'fulfilled') homeLive = homeLiveResult.value;
+    else warnings.push(`Live ${homeTeam.name} depth-chart/injury data could not be loaded; verified schedule/fallback personnel were used.`);
+    if (awayLiveResult.status === 'fulfilled') awayLive = awayLiveResult.value;
+    else warnings.push(`Live ${awayTeam.name} depth-chart/injury data could not be loaded; verified schedule/fallback personnel were used.`);
+  }
 
-    // Factor 8: Head-to-Head Venue Mastery & Multi-Decade Series Streak
-    let seriesInfo: { venueStreak?: string; allTimeRecord?: string; streakYears?: number; lastRoadWinDate?: string; narrativeNotes?: string } | undefined = undefined;
-    if (isTeamAHome && teamA.name.includes('Bills') && teamB.name.includes('Lions')) {
-        seriesInfo = {
-            venueStreak: 'Bills 4-0-1 vs Lions in Buffalo since Dec 22, 1991',
-            allTimeRecord: 'Bills 4-1-1 all-time home record vs Lions',
-            streakYears: 35,
-            lastRoadWinDate: 'December 22, 1991 (17-14 OT)',
-            narrativeNotes: 'Detroit has not won in Buffalo in nearly 35 years (since Dec 22, 1991). Buffalo won in 1997 (22-13), 2002 (24-17), 2010 (14-12), and 2018 (14-13), with their only other home meeting being a 21-21 tie in 1972.'
-        };
-        teamAScore += 14; // Stadium multi-decade psychological & energetic venue mastery
-    } else if (!isTeamAHome && teamB.name.includes('Bills') && teamA.name.includes('Lions')) {
-        seriesInfo = {
-            venueStreak: 'Bills 4-0-1 vs Lions in Buffalo since Dec 22, 1991',
-            allTimeRecord: 'Bills 4-1-1 all-time home record vs Lions',
-            streakYears: 35,
-            lastRoadWinDate: 'December 22, 1991 (17-14 OT)',
-            narrativeNotes: 'Detroit has not won in Buffalo in nearly 35 years (since Dec 22, 1991). Buffalo won in 1997 (22-13), 2002 (24-17), 2010 (14-12), and 2018 (14-13).'
-        };
-        teamBScore += 14;
-    }
+  const homeCoach = getCoachPerson(homeTeam, scheduled?.homeCoach);
+  const awayCoach = getCoachPerson(awayTeam, scheduled?.awayCoach);
+  const homeQb = personWithFallback(homeLive?.startingQb, homeTeam.qb, scheduled?.homeQbName);
+  const awayQb = personWithFallback(awayLive?.startingQb, awayTeam.qb, scheduled?.awayQbName);
+  const homePersonnel = buildPersonnelSnapshot(homeTeam, homeCoach, homeQb, homeLive);
+  const awayPersonnel = buildPersonnelSnapshot(awayTeam, awayCoach, awayQb, awayLive);
 
-    // Pick winner based on calculated total score
-    const isTeamAWinner = teamAScore >= teamBScore;
-    const winner = isTeamAWinner ? teamA : teamB;
-    const loser = isTeamAWinner ? teamB : teamA;
-    const winnerBreakdown = isTeamAWinner ? teamABreakdown : teamBBreakdown;
-    const loserBreakdown = isTeamAWinner ? teamBBreakdown : teamABreakdown;
+  const patternIndex = buildPatternIndex(games, targetIso);
+  const homeTeamPatterns = calculateAllPatterns(homeTeam.name, homeTeam.birthday, gameDate);
+  const awayTeamPatterns = calculateAllPatterns(awayTeam.name, awayTeam.birthday, gameDate);
+  const homeTeamDEStats = statsFromCounter(homeTeamPatterns.dailyEssenceFull, patternIndex.de.get(homeTeamPatterns.dailyEssenceFull));
+  const awayTeamDEStats = statsFromCounter(awayTeamPatterns.dailyEssenceFull, patternIndex.de.get(awayTeamPatterns.dailyEssenceFull));
+  const homeDayStats = statsFromCounter(homeTeamPatterns.dayNum, patternIndex.day.get(homeTeamPatterns.dayNum));
+  const awayDayStats = statsFromCounter(awayTeamPatterns.dayNum, patternIndex.day.get(awayTeamPatterns.dayNum));
+  const homeComboStats = statsFromCounter(`${homeTeamPatterns.dailyEssenceFull}|${homeTeamPatterns.dayNum}`, patternIndex.combo.get(`${homeTeamPatterns.dailyEssenceFull}|${homeTeamPatterns.dayNum}`));
+  const awayComboStats = statsFromCounter(`${awayTeamPatterns.dailyEssenceFull}|${awayTeamPatterns.dayNum}`, patternIndex.combo.get(`${awayTeamPatterns.dailyEssenceFull}|${awayTeamPatterns.dayNum}`));
 
-    const winnerDE = isTeamAWinner ? teamA_DE : teamB_DE;
-    const loserDE = isTeamAWinner ? teamB_DE : teamA_DE;
-    const winnerDay = isTeamAWinner ? teamA_Day : teamB_Day;
-    const loserDay = isTeamAWinner ? teamB_Day : teamA_Day;
+  const homeBreakdown = [
+    buildBreakdown('Team', homeTeam, gameDate, patternIndex, true, 'canonical franchise data'),
+    buildBreakdown('Coach', homeCoach, gameDate, patternIndex, Boolean(homeCoach.birthday), homeCoach.source || 'coach registry'),
+    buildBreakdown('Qb', homeQb, gameDate, patternIndex, Boolean(homeQb.birthday), homeQb.source || 'QB data'),
+    buildBreakdown('Backup Qb', homeLive?.backupQb, gameDate, patternIndex, false, 'ESPN live depth chart'),
+    buildBreakdown('Blindside Tackle', homeLive?.blindsideTackle, gameDate, patternIndex, false, 'ESPN live depth chart'),
+    buildBreakdown('Kicker', homeLive?.kicker, gameDate, patternIndex, false, 'ESPN live depth chart')
+  ].filter(Boolean) as Breakdown[];
 
-    const winnerDEStats = isTeamAWinner ? teamA_DEStats : teamB_DEStats;
-    const loserDEStats = isTeamAWinner ? teamB_DEStats : teamA_DEStats;
-    const winnerDayStats = isTeamAWinner ? teamA_DayStats : teamB_DayStats;
-    const loserDayStats = isTeamAWinner ? teamB_DayStats : teamA_DayStats;
+  const awayBreakdown = [
+    buildBreakdown('Team', awayTeam, gameDate, patternIndex, true, 'canonical franchise data'),
+    buildBreakdown('Coach', awayCoach, gameDate, patternIndex, Boolean(awayCoach.birthday), awayCoach.source || 'coach registry'),
+    buildBreakdown('Qb', awayQb, gameDate, patternIndex, Boolean(awayQb.birthday), awayQb.source || 'QB data'),
+    buildBreakdown('Backup Qb', awayLive?.backupQb, gameDate, patternIndex, false, 'ESPN live depth chart'),
+    buildBreakdown('Blindside Tackle', awayLive?.blindsideTackle, gameDate, patternIndex, false, 'ESPN live depth chart'),
+    buildBreakdown('Kicker', awayLive?.kicker, gameDate, patternIndex, false, 'ESPN live depth chart')
+  ].filter(Boolean) as Breakdown[];
 
-    const winnerCoachDE = isTeamAWinner ? teamA_CoachDE : teamB_CoachDE;
-    const loserCoachDE = isTeamAWinner ? teamB_CoachDE : teamA_CoachDE;
-    const winnerCoachDEStats = isTeamAWinner ? teamA_CoachDEStats : teamB_CoachDEStats;
-    const loserCoachDEStats = isTeamAWinner ? teamB_CoachDEStats : teamA_CoachDEStats;
+  const elo = buildEloSnapshot(games, targetIso, homeTeam.abbr, awayTeam.abbr, neutral);
+  let homeLogit = logit(elo.baseHomeProbability);
 
-    const winnerQbDE = isTeamAWinner ? teamA_QbDE : teamB_QbDE;
-    const loserQbDE = isTeamAWinner ? teamB_QbDE : teamA_QbDE;
-    const winnerQbDEStats = isTeamAWinner ? teamA_QbDEStats : teamB_QbDEStats;
-    const loserQbDEStats = isTeamAWinner ? teamB_QbDEStats : teamA_QbDEStats;
+  const recentHome = getTeamForm(games, homeTeam.abbr, targetIso, 8);
+  const recentAway = getTeamForm(games, awayTeam.abbr, targetIso, 8);
+  const currentSeason = Number(targetIso.slice(0, 4));
+  const seasonHome = getTeamForm(games, homeTeam.abbr, targetIso, 30, currentSeason);
+  const seasonAway = getTeamForm(games, awayTeam.abbr, targetIso, 30, currentSeason);
+  const homeVenue = getTeamForm(games, homeTeam.abbr, targetIso, 24, undefined, 'home');
+  const awayVenue = getTeamForm(games, awayTeam.abbr, targetIso, 24, undefined, 'away');
 
-    const winnerComboWins = isTeamAWinner ? teamA_ComboWins : teamB_ComboWins;
-    const loserComboWins = isTeamAWinner ? teamB_ComboWins : teamA_ComboWins;
+  const recentEdge = clamp(((recentHome.winPct - recentAway.winPct) * 0.22) + ((recentHome.avgPointDiff - recentAway.avgPointDiff) / 100), -0.24, 0.24);
+  const seasonEdge = seasonHome.games + seasonAway.games >= 4
+    ? clamp(((seasonHome.winPct - seasonAway.winPct) * 0.14) + ((seasonHome.avgPointDiff - seasonAway.avgPointDiff) / 140), -0.16, 0.16)
+    : 0;
+  const footballEdge = recentEdge + seasonEdge;
+  homeLogit += footballEdge;
 
-    const winnerTotalPatternWins = isTeamAWinner ? teamA_TotalPatternWins : teamB_TotalPatternWins;
-    const winnerTotalPatternLosses = isTeamAWinner ? teamA_TotalPatternLosses : teamB_TotalPatternLosses;
-    const winnerTotalPatternPct = isTeamAWinner ? teamA_TotalPatternPct : teamB_TotalPatternPct;
+  const venueEdge = neutral ? 0 : clamp(((homeVenue.winPct - 0.55) - (awayVenue.winPct - 0.45)) * 0.24, -0.12, 0.12);
+  homeLogit += venueEdge;
 
-    const loserTotalPatternWins = isTeamAWinner ? teamB_TotalPatternWins : teamA_TotalPatternWins;
-    const loserTotalPatternLosses = isTeamAWinner ? teamB_TotalPatternLosses : teamA_TotalPatternLosses;
-    const loserTotalPatternPct = isTeamAWinner ? teamB_TotalPatternPct : teamA_TotalPatternPct;
+  const series = computeHistoricalSeries(games, targetIso, homeTeam, awayTeam);
+  const h2hEdge = neutral ? 0 : series.adjustment;
+  homeLogit += h2hEdge;
 
-    const winnerOwnerDE = isTeamAWinner ? teamA_OwnerDE : teamB_OwnerDE;
-    const loserOwnerDE = isTeamAWinner ? teamB_OwnerDE : teamA_OwnerDE;
-    const winnerOwnerDEStats = isTeamAWinner ? teamA_OwnerDEStats : teamB_OwnerDEStats;
-    const loserOwnerDEStats = isTeamAWinner ? teamB_OwnerDEStats : teamA_OwnerDEStats;
+  const homeRest = scheduled?.homeRest ?? getRestDays(games, homeTeam.abbr, targetIso);
+  const awayRest = scheduled?.awayRest ?? getRestDays(games, awayTeam.abbr, targetIso);
+  const restEdge = homeRest != null && awayRest != null ? clamp((homeRest - awayRest) * 0.015, -0.105, 0.105) : 0;
+  homeLogit += restEdge;
 
-    const isWinnerHome = isTeamAWinner ? isTeamAHome : !isTeamAHome;
+  const homeInjuryImpact = isLiveDate(gameDate) ? getInjuryImpact(homePersonnel.injuries) : 0;
+  const awayInjuryImpact = isLiveDate(gameDate) ? getInjuryImpact(awayPersonnel.injuries) : 0;
+  const personnelEdge = clamp((awayInjuryImpact - homeInjuryImpact) * 0.025, -0.35, 0.35);
+  homeLogit += personnelEdge;
 
-    // Decision factors list with detailed total wins and losses
-    const decisionFactors: DecisionFactor[] = [];
+  const homeCoachBreakdown = homeBreakdown.find(b => b.role === 'Coach');
+  const awayCoachBreakdown = awayBreakdown.find(b => b.role === 'Coach');
+  const homeQbBreakdown = homeBreakdown.find(b => b.role === 'Qb');
+  const awayQbBreakdown = awayBreakdown.find(b => b.role === 'Qb');
 
-    // Home Field Grounding
-    decisionFactors.push({
-        title: 'Home Field Vibrational Grounding',
-        description: isWinnerHome
-            ? `${winner.name} holds home field stadium vibrational grounding, providing an energetic advantage against traveling opposition.`
-            : `${winner.name} successfully overcame away-team travel displacement through commanding macro numerology alignment.`,
-        winnerScore: isWinnerHome ? 1 : 0,
-        loserScore: isWinnerHome ? 0 : 1,
-        advantage: isWinnerHome ? 'winner' : 'loser',
-        edgeScore: 8
-    });
+  const teamDEEdge = (smoothedRate(homeTeamDEStats) - smoothedRate(awayTeamDEStats)) * 0.65;
+  const dayEdge = (smoothedRate(homeDayStats) - smoothedRate(awayDayStats)) * 0.22;
+  const comboEdge = (smoothedRate(homeComboStats) - smoothedRate(awayComboStats)) * 0.18;
+  const coachEdge = (smoothedRate(homeCoachBreakdown?.deStats) - smoothedRate(awayCoachBreakdown?.deStats)) * 0.28;
+  const qbEdge = (smoothedRate(homeQbBreakdown?.deStats) - smoothedRate(awayQbBreakdown?.deStats)) * 0.36;
+  const numerologyEdge = clamp(teamDEEdge + dayEdge + comboEdge + coachEdge + qbEdge, -0.22, 0.22);
+  homeLogit += numerologyEdge;
 
-    decisionFactors.push({
-        title: 'Team Daily Essence (DE) Total Record',
-        description: `${winner.name} carries DE ${winnerDE} (${winnerDEStats.wins}W - ${winnerDEStats.losses}L, ${winnerDEStats.winPct}% across all games) vs ${loser.name}'s DE ${loserDE} (${loserDEStats.wins}W - ${loserDEStats.losses}L, ${loserDEStats.winPct}%).`,
-        winnerScore: winnerDEStats.winPct,
-        loserScore: loserDEStats.winPct,
-        advantage: winnerDEStats.winPct >= loserDEStats.winPct ? 'winner' : 'loser',
-        edgeScore: Math.abs(Math.round(winnerDEStats.winPct - loserDEStats.winPct))
-    });
+  const finalHomeProbability = logistic(homeLogit);
+  const isHomeWinner = finalHomeProbability >= 0.5;
+  const winner = isHomeWinner ? homeTeam : awayTeam;
+  const loser = isHomeWinner ? awayTeam : homeTeam;
+  const winnerBreakdown = isHomeWinner ? homeBreakdown : awayBreakdown;
+  const loserBreakdown = isHomeWinner ? awayBreakdown : homeBreakdown;
+  const winnerPatterns = isHomeWinner ? homeTeamPatterns : awayTeamPatterns;
+  const loserPatterns = isHomeWinner ? awayTeamPatterns : homeTeamPatterns;
+  const winnerDEStats = isHomeWinner ? homeTeamDEStats : awayTeamDEStats;
+  const loserDEStats = isHomeWinner ? awayTeamDEStats : homeTeamDEStats;
+  const winnerDayStats = isHomeWinner ? homeDayStats : awayDayStats;
+  const loserDayStats = isHomeWinner ? awayDayStats : homeDayStats;
+  const winnerComboStats = isHomeWinner ? homeComboStats : awayComboStats;
+  const loserComboStats = isHomeWinner ? awayComboStats : homeComboStats;
+  const winnerCoach = winnerBreakdown.find(b => b.role === 'Coach');
+  const loserCoach = loserBreakdown.find(b => b.role === 'Coach');
+  const winnerQb = winnerBreakdown.find(b => b.role === 'Qb');
+  const loserQb = loserBreakdown.find(b => b.role === 'Qb');
 
-    decisionFactors.push({
-        title: 'Head Coach Daily Essence Dominance',
-        description: `${winner.name}'s Coach DE is ${winnerCoachDE} (${winnerCoachDEStats.wins}W - ${winnerCoachDEStats.losses}L, ${winnerCoachDEStats.winPct}%) compared to ${loser.name}'s Coach DE ${loserCoachDE} (${loserCoachDEStats.wins}W - ${loserCoachDEStats.losses}L, ${loserCoachDEStats.winPct}%).`,
-        winnerScore: winnerCoachDEStats.winPct,
-        loserScore: loserCoachDEStats.winPct,
-        advantage: winnerCoachDEStats.winPct >= loserCoachDEStats.winPct ? 'winner' : 'loser',
-        edgeScore: Math.abs(Math.round(winnerCoachDEStats.winPct - loserCoachDEStats.winPct))
-    });
+  const decisionFactors: DecisionFactor[] = [];
+  addDecisionFactor(decisionFactors, 'Pregame Elo Team Strength', `${homeTeam.name}: ${Math.round(elo.home)} Elo vs ${awayTeam.name}: ${Math.round(elo.away)} Elo. Only completed games before ${targetIso} were used.`, logit(elo.baseHomeProbability), isHomeWinner, 'football');
+  addDecisionFactor(decisionFactors, 'Recent & Current-Season Form', `${homeTeam.name}: ${recentHome.wins}-${recentHome.losses}-${recentHome.ties}, ${recentHome.avgPointDiff >= 0 ? '+' : ''}${recentHome.avgPointDiff.toFixed(1)} recent point differential/game; ${awayTeam.name}: ${recentAway.wins}-${recentAway.losses}-${recentAway.ties}, ${recentAway.avgPointDiff >= 0 ? '+' : ''}${recentAway.avgPointDiff.toFixed(1)}. Current-season records are separately shrunk and only used when enough games exist.`, footballEdge, isHomeWinner, 'football');
+  addDecisionFactor(decisionFactors, 'Home / Away Performance', neutral ? 'Neutral site: no home/road venue refinement applied.' : `${homeTeam.name} recent home win rate ${(homeVenue.winPct * 100).toFixed(1)}% across ${homeVenue.games} games; ${awayTeam.name} recent road win rate ${(awayVenue.winPct * 100).toFixed(1)}% across ${awayVenue.games} games. The adjustment is capped and shrunk.`, venueEdge, isHomeWinner, 'venue');
+  addDecisionFactor(decisionFactors, 'Head-to-Head at This Home Venue', series.info.narrativeNotes || '', h2hEdge, isHomeWinner, 'venue');
+  addDecisionFactor(decisionFactors, 'Rest Differential', homeRest != null && awayRest != null ? `${homeTeam.name}: ${homeRest} days rest; ${awayTeam.name}: ${awayRest} days rest.` : 'Rest data was incomplete, so no rest adjustment was applied.', restEdge, isHomeWinner, 'football');
+  addDecisionFactor(decisionFactors, 'Live Injury / Availability Impact', isLiveDate(gameDate) ? `${homeTeam.name} weighted injury impact ${homeInjuryImpact.toFixed(1)} vs ${awayTeam.name} ${awayInjuryImpact.toFixed(1)}. QB and offensive tackle absences carry more weight than low-leverage positions; the total adjustment is capped.` : 'Historical prediction date: current injuries are deliberately not backfilled to avoid time leakage.', personnelEdge, isHomeWinner, 'personnel');
+  addDecisionFactor(decisionFactors, 'Verified Numerology Layer', `Team DE, game-day number, DE/day combination, coach DE and starting-QB DE use Bayesian-smoothed rates derived only from verified games before ${targetIso}. Owner, backup QB, tackle, kicker and exact/subset archives are displayed only when available and do not affect the score until holdout validation proves value.`, numerologyEdge, isHomeWinner, 'numerology');
 
-    if (winnerQbDEStats && loserQbDEStats) {
-        decisionFactors.push({
-            title: 'Starting QB Daily Essence Alignment',
-            description: `${winner.name}'s QB DE is ${winnerQbDE} (${winnerQbDEStats.wins}W - ${winnerQbDEStats.losses}L, ${winnerQbDEStats.winPct}%) vs ${loser.name}'s QB DE ${loserQbDE} (${loserQbDEStats.wins}W - ${loserQbDEStats.losses}L, ${loserQbDEStats.winPct}%).`,
-            winnerScore: winnerQbDEStats.winPct,
-            loserScore: loserQbDEStats.winPct,
-            advantage: winnerQbDEStats.winPct >= loserQbDEStats.winPct ? 'winner' : 'loser',
-            edgeScore: Math.abs(Math.round(winnerQbDEStats.winPct - loserQbDEStats.winPct))
-        });
-    }
+  const universalDay = reduceToSingleDigit(gameDate.getUTCDate() + (gameDate.getUTCMonth() + 1) + gameDate.getUTCFullYear());
+  const isChaosDay = [4, 7].includes(universalDay);
+  if (isChaosDay) warnings.push('A legacy 4/7 volatility marker is shown for research only. It is not included in the prediction score because it has not demonstrated independent holdout value.');
 
-    if (winnerOwnerDEStats && loserOwnerDEStats) {
-        decisionFactors.push({
-            title: 'Franchise Owner Daily Essence Alignment',
-            description: `${winner.name}'s Owner DE is ${winnerOwnerDE} (${winnerOwnerDEStats.wins}W - ${winnerOwnerDEStats.losses}L, ${winnerOwnerDEStats.winPct}%) vs ${loser.name}'s Owner DE ${loserOwnerDE} (${loserOwnerDEStats.wins}W - ${loserOwnerDEStats.losses}L, ${loserOwnerDEStats.winPct}%).`,
-            winnerScore: winnerOwnerDEStats.winPct,
-            loserScore: loserOwnerDEStats.winPct,
-            advantage: winnerOwnerDEStats.winPct >= loserOwnerDEStats.winPct ? 'winner' : 'loser',
-            edgeScore: Math.abs(Math.round(winnerOwnerDEStats.winPct - loserOwnerDEStats.winPct))
-        });
-    }
+  const precedentGames = series.sameVenue.slice(0, 10).map(game => toHistoricalGame(game, patternIndex)).filter(Boolean) as HistoricalGame[];
+  const probability = isHomeWinner ? finalHomeProbability : 1 - finalHomeProbability;
+  const modelScores: ModelScores = {
+    baseHomeProbability: Math.round(elo.baseHomeProbability * 1000) / 10,
+    finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10,
+    eloHome: Math.round(elo.home),
+    eloAway: Math.round(elo.away),
+    footballLogitAdjustment: footballEdge,
+    venueLogitAdjustment: venueEdge,
+    personnelLogitAdjustment: personnelEdge,
+    numerologyLogitAdjustment: numerologyEdge,
+    restLogitAdjustment: restEdge,
+    h2hLogitAdjustment: h2hEdge
+  };
 
-    decisionFactors.push({
-        title: 'Game Day Number League-Wide Record',
-        description: `${winner.name} aligns with Day Number ${winnerDay} (${winnerDayStats.wins}W - ${winnerDayStats.losses}L, ${winnerDayStats.winPct}% in NFL history) vs ${loser.name}'s Day Number ${loserDay} (${loserDayStats.wins}W - ${loserDayStats.losses}L, ${loserDayStats.winPct}%).`,
-        winnerScore: winnerDayStats.wins,
-        loserScore: loserDayStats.wins,
-        advantage: winnerDayStats.wins >= loserDayStats.wins ? 'winner' : 'loser',
-        edgeScore: Math.abs(winnerDayStats.wins - loserDayStats.wins)
-    });
+  const livePersonnelLoaded = Boolean(homeLive?.depthLoaded && awayLive?.depthLoaded);
+  const injuryDataLoaded = Boolean(homeLive?.injuriesLoaded && awayLive?.injuriesLoaded);
+  const freshness: DataFreshness = {
+    historicalSource: 'nflverse/nfldata games.csv',
+    livePersonnelSource: 'ESPN public NFL roster/depth-chart/injury endpoints',
+    historicalGamesUsed: history.length,
+    cutoffDate: targetIso,
+    leakageGuard: true,
+    livePersonnelLoaded,
+    injuryDataLoaded,
+    scheduleMatched: Boolean(scheduled),
+    neutralSite: neutral,
+    notes: [
+      'All historical team-strength, recent-form, venue, head-to-head and numerology rates exclude the selected game date and all later games.',
+      'Owner numerology and the old exact/subset archive are excluded from scoring pending independent validation.',
+      isLiveDate(gameDate) ? 'Live personnel is used only for current/future prediction windows.' : 'Current live personnel/injury data is not applied to older historical dates.'
+    ]
+  };
 
-    decisionFactors.push({
-        title: 'DE | Day Combination Winning Frequency',
-        description: `The combination pattern [${winnerDE} | ${winnerDay}] has registered ${winnerComboWins} wins in our verified database, compared to ${loserComboWins} wins for [${loserDE} | ${loserDay}].`,
-        winnerScore: winnerComboWins,
-        loserScore: loserComboWins,
-        advantage: winnerComboWins >= loserComboWins ? 'winner' : 'loser',
-        edgeScore: Math.abs(winnerComboWins - loserComboWins)
-    });
+  const reasoningParts = [
+    `${winner.name} projects at ${(probability * 100).toFixed(1)}% in ${MODEL_VERSION}.`,
+    `The football baseline starts from leakage-safe Elo (${Math.round(elo.home)} ${homeTeam.name} vs ${Math.round(elo.away)} ${awayTeam.name})`,
+    `then applies capped recent-form, venue/H2H, rest and availability adjustments`,
+    `with the verified numerology layer limited to ${Math.abs(numerologyEdge).toFixed(3)} log-odds so it cannot overwhelm current-team evidence.`
+  ];
 
-    const winnerExactNet = isTeamAWinner ? teamAExactNet : teamBExactNet;
-    const loserExactNet = isTeamAWinner ? teamBExactNet : teamAExactNet;
-    const winnerSubsetNet = isTeamAWinner ? teamASubsetNet : teamBSubsetNet;
-    const loserSubsetNet = isTeamAWinner ? teamBSubsetNet : teamASubsetNet;
-
-    decisionFactors.push({
-        title: 'Personnel Exact-8 & Subset-5 Pattern Net Edge',
-        description: `${winner.name}'s Team, Coach & QB collective pattern net score is +${winnerExactNet} exact / +${winnerSubsetNet} subset, vs ${loser.name}'s +${loserExactNet} exact / +${loserSubsetNet} subset.`,
-        winnerScore: winnerExactNet,
-        loserScore: loserExactNet,
-        advantage: winnerExactNet >= loserExactNet ? 'winner' : 'loser',
-        edgeScore: Math.abs(winnerExactNet - loserExactNet)
-    });
-
-    if (precedentGames.length > 0) {
-        const winnerPrecWins = isTeamAWinner ? precedentTeamAWins : precedentTeamBWins;
-        const loserPrecWins = isTeamAWinner ? precedentTeamBWins : precedentTeamAWins;
-        decisionFactors.push({
-            title: 'Historical Precedents & Pattern Matchups',
-            description: `Identified ${precedentGames.length} relevant historical games in the database matching these DE/Day patterns and franchises.`,
-            winnerScore: winnerPrecWins,
-            loserScore: loserPrecWins,
-            advantage: winnerPrecWins >= loserPrecWins ? 'winner' : 'loser',
-            edgeScore: Math.abs(winnerPrecWins - loserPrecWins)
-        });
-    }
-
-    if (seriesInfo) {
-        const isWinnerAdvantaged = winner.name.includes('Bills');
-        decisionFactors.push({
-            title: 'Venue Dominance & 35-Year Series Streak',
-            description: seriesInfo.narrativeNotes || seriesInfo.venueStreak || '',
-            winnerScore: isWinnerAdvantaged ? 4 : 0,
-            loserScore: isWinnerAdvantaged ? 0 : 4,
-            advantage: isWinnerAdvantaged ? 'winner' : 'loser',
-            edgeScore: 14
-        });
-    }
-
-    // Calibrated realistic confidence based on score margin
-    const margin = Math.abs(teamAScore - teamBScore);
-    const edgeFactor = Math.min(margin / 90, 1);
-    const confidence = Math.round(52 + (edgeFactor * 26));
-
-    // Dynamic, natural reasoning
-    const reasons: string[] = [];
-    if (winnerCoachDEStats.winPct > loserCoachDEStats.winPct + 1) {
-        reasons.push(`superior Head Coach Daily Essence record (${winnerCoachDEStats.wins}W - ${winnerCoachDEStats.losses}L, ${winnerCoachDEStats.winPct}% for DE ${winnerCoachDE})`);
-    }
-    if (winnerQbDEStats && loserQbDEStats && winnerQbDEStats.winPct > loserQbDEStats.winPct + 1) {
-        reasons.push(`higher Starting QB Daily Essence efficiency (${winnerQbDEStats.winPct}% for DE ${winnerQbDE})`);
-    }
-    if (winnerDEStats.winPct > loserDEStats.winPct + 1) {
-        reasons.push(`higher Team Daily Essence historical win rate (${winnerDEStats.winPct}% for DE ${winnerDE})`);
-    }
-    if (winnerComboWins > loserComboWins) {
-        reasons.push(`a higher-frequency winning combo profile (${winnerComboWins} historical wins for ${winnerDE}|${winnerDay})`);
-    }
-    if (winnerExactNet > loserExactNet) {
-        reasons.push(`a stronger personnel exact pattern score (+${winnerExactNet} vs +${loserExactNet})`);
-    }
-
-    const reasoningSummary = reasons.length > 0 
-        ? reasons.join(', and ')
-        : `favorable total pattern numbers win rate across all documented NFL games and personnel numerology metrics`;
-
-    const finalReasoning = `${winner.name} is favored over ${loser.name} based on ${reasoningSummary}.`;
-
-    const getDisplayNumbers = (entity: Team | Person, date: Date): DisplayNumbers => {
-        const patterns = calculateAllPatterns(entity.name, entity.birthday, date);
-        const gameYear = date.getUTCFullYear();
-        const parseLastNum = (s: string) => parseInt(s.split('/').pop()!, 10);
-        
-        return {
-            yearEssence: reduceToSingleDigit(gameYear),
-            personalYear: parseLastNum(patterns.py),
-            personalMonth: parseLastNum(patterns.pm),
-            personalMonthEssence: parseLastNum(patterns.pme),
-            dailyEssence: parseLastNum(patterns.dailyEssenceFull)
-        };
-    };
-
-    return {
-        winner,
-        loser,
-        confidence,
-        reasoning: finalReasoning,
-        winnerStats: getDisplayNumbers(winner, gameDate),
-        loserStats: getDisplayNumbers(loser, gameDate),
-        winnerBreakdown,
-        loserBreakdown,
-        winnerDE,
-        loserDE,
-        winnerDay,
-        loserDay,
-        winnerDEStats,
-        loserDEStats,
-        winnerCoachDE,
-        loserCoachDE,
-        winnerCoachDEStats,
-        loserCoachDEStats,
-        winnerQbDE,
-        loserQbDE,
-        winnerQbDEStats,
-        loserQbDEStats,
-        winnerDayStats,
-        loserDayStats,
-        winnerComboWins,
-        loserComboWins,
-        winnerTotalPatternWins,
-        winnerTotalPatternLosses,
-        winnerTotalPatternPct,
-        loserTotalPatternWins,
-        loserTotalPatternLosses,
-        loserTotalPatternPct,
-        winnerOwnerDE,
-        loserOwnerDE,
-        winnerOwnerDEStats,
-        loserOwnerDEStats,
-        isChaosDay,
-        chaosType,
-        chaosWarning,
-        isWinnerHome,
-        decisionFactors,
-        precedentGames
-    };
-};
+  return {
+    winner,
+    loser,
+    confidence: Math.round(probability * 1000) / 10,
+    reasoning: reasoningParts.join(' '),
+    winnerStats: toDisplayNumbers(winnerPatterns),
+    loserStats: toDisplayNumbers(loserPatterns),
+    winnerBreakdown,
+    loserBreakdown,
+    winnerDE: winnerPatterns.dailyEssenceFull,
+    loserDE: loserPatterns.dailyEssenceFull,
+    winnerDay: winnerPatterns.dayNum,
+    loserDay: loserPatterns.dayNum,
+    winnerDEStats,
+    loserDEStats,
+    winnerCoachDE: winnerCoach?.patterns.dailyEssenceFull,
+    loserCoachDE: loserCoach?.patterns.dailyEssenceFull,
+    winnerCoachDEStats: winnerCoach?.deStats,
+    loserCoachDEStats: loserCoach?.deStats,
+    winnerQbDE: winnerQb?.patterns.dailyEssenceFull,
+    loserQbDE: loserQb?.patterns.dailyEssenceFull,
+    winnerQbDEStats: winnerQb?.deStats,
+    loserQbDEStats: loserQb?.deStats,
+    winnerDayStats,
+    loserDayStats,
+    winnerComboWins: winnerComboStats.wins,
+    loserComboWins: loserComboStats.wins,
+    winnerTotalPatternWins: winnerDEStats.wins,
+    winnerTotalPatternLosses: winnerDEStats.losses,
+    winnerTotalPatternPct: winnerDEStats.smoothedWinPct,
+    loserTotalPatternWins: loserDEStats.wins,
+    loserTotalPatternLosses: loserDEStats.losses,
+    loserTotalPatternPct: loserDEStats.smoothedWinPct,
+    isChaosDay,
+    chaosType: isChaosDay ? `Experimental universal-day ${universalDay} marker` : undefined,
+    chaosWarning: isChaosDay ? 'Research-only volatility flag. Not included in the final score until an untouched holdout test shows incremental predictive value.' : undefined,
+    isWinnerHome: isHomeWinner,
+    historicalSeries: series.info,
+    decisionFactors,
+    precedentGames,
+    modelScores,
+    dataFreshness: freshness,
+    homePersonnel,
+    awayPersonnel,
+    warnings,
+    modelVersion: MODEL_VERSION
+  };
+}

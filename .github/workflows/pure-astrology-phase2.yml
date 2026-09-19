@@ -1,0 +1,35 @@
+name: PURE Astrology Phase 2
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/pure-astrology-phase2.mjs'
+      - 'scripts/phase2-preload.mjs'
+      - '.github/workflows/pure-astrology-phase2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  phase2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked application dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Astronomy Engine for isolated research run
+        run: bun add --no-save astronomy-engine@2.1.19
+
+      - name: Run PURE v3.2 Phase 2 coach/QB ablations
+        run: bun --preload ./scripts/phase2-preload.mjs scripts/pure-astrology-phase2.mjs

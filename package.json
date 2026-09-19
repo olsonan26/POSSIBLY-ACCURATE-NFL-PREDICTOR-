@@ -7,7 +7,9 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "preview": "vite preview"
+    "backtest": "bun scripts/backtest.ts",
+    "forward-test": "bun scripts/forward-test-2026.ts",
+    "verify": "bun run typecheck && bun run build && bun run backtest && bun run forward-test"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
