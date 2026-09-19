@@ -162,7 +162,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
           <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
             <span className="block text-[10px] uppercase tracking-wider text-gray-500">Numerology research</span>
             <span className="block mt-1 text-sm font-mono font-bold text-gray-300">{scores.numerologyLogitAdjustment >= 0 ? '+' : ''}{scores.numerologyLogitAdjustment.toFixed(3)}</span>
-            <span className="block mt-1 text-[10px] text-gray-600">Not scored in v2.1</span>
+            <span className="block mt-1 text-[10px] text-gray-600">Not scored in v2.2</span>
           </div>
         </div>
       )}
@@ -229,7 +229,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
       {activeTab === 'numerology' && (
         <div>
           <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/15 p-4 mb-4 text-xs text-gray-300 leading-relaxed">
-            Numerology is calculated prospectively from verified pregame history using Bayesian smoothing, but v2.1 does not allow any numerology variable to affect the production pick. The locked 2025 validation test showed the tested numerology adjustment reduced accuracy by 1.11 percentage points. These cards remain visible so the numerology hypotheses can be measured on future untouched games before any factor is promoted into production scoring. Owner scoring and the legacy exact/subset archives remain excluded.
+            Numerology is calculated prospectively from verified pregame history using Bayesian smoothing, but v2.2 does not allow any numerology variable to affect the production pick. The locked 2025 validation test showed the tested numerology adjustment reduced accuracy by 1.11 percentage points. These cards remain visible so the numerology hypotheses can be measured on future untouched games before any factor is promoted into production scoring. Owner scoring and the legacy exact/subset archives remain excluded.
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
