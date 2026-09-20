@@ -6,6 +6,7 @@ on:
     branches: [research/week1-safe-improvements]
     paths:
       - 'scripts/market-blend-research.ts'
+      - 'scripts/empty-venue-research.ts'
       - '.github/workflows/market-blend-research.yml'
 
 permissions:
@@ -22,3 +23,4 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun scripts/market-blend-research.ts
+      - run: bun scripts/empty-venue-research.ts
