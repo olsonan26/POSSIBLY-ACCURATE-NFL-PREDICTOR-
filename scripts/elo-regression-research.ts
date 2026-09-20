@@ -18,7 +18,7 @@ function eloBases(games:G[],factor:number){
  const completed=games.filter(g=>Number.isFinite(g.homeScore)&&Number.isFinite(g.awayScore)).sort((a,b)=>a.gameday.localeCompare(b.gameday)||a.gameId.localeCompare(b.gameId));
  for(let i=0;i<completed.length;){const date=completed[i].gameday;const day:G[]=[];while(i<completed.length&&completed[i].gameday===date)day.push(completed[i++]);const season=day[0]?.season??priorSeason;if(priorSeason&&season!==priorSeason){for(const [t,v] of ratings)ratings.set(t,1500+(v-1500)*factor);}priorSeason=season;
    for(const g of day)out.set(g.gameId,expected(rating(g.homeTeam),rating(g.awayTeam),g.location==='Neutral'));
-   for(const g of day){const hr=rating(g.homeTeam),ar=rating(g.awayTeam),p=expected(hr,ar,g.location==='Neutral'),hs=g.homeScore!,as=g.awayScore!,actual=hs===as?.5:hs>as?1:0,margin=Math.abs(hs-as),mov=clamp(Math.log(margin+1)/Math.log(8),.75,1.65),delta=K*mov*(actual-p);ratings.set(g.homeTeam,hr+delta);ratings.set(g.awayTeam,ar-delta);}
+   for(const g of day){const hr=rating(g.homeTeam),ar=rating(g.awayTeam),p=expected(hr,ar,g.location==='Neutral'),hs=g.homeScore!,as=g.awayScore!,actual=hs===as?0.5:hs>as?1:0,margin=Math.abs(hs-as),mov=clamp(Math.log(margin+1)/Math.log(8),.75,1.65),delta=K*mov*(actual-p);ratings.set(g.homeTeam,hr+delta);ratings.set(g.awayTeam,ar-delta);}
  }
  return out;
 }
