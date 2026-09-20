@@ -44,9 +44,9 @@ export interface NumerologyPatterns {
   yearCom: string;
   dayNum: string;
   /**
-   * Canonical Lettrology Daily Environment = reduced(PM + calendar day).
-   * Optional for compatibility with the legacy raw calculator; the validated
-   * research wrapper fills this before exposing daily signatures.
+   * Provisional Lettrology Daily Environment = reduced(PM + calendar day).
+   * Optional for compatibility with the legacy raw calculator; the research
+   * wrapper fills this before exposing candidate daily signatures.
    */
   dailyEnvironmentFull?: string;
   dailyEssenceFull: string;
