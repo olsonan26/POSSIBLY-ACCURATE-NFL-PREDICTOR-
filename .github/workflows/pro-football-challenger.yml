@@ -7,6 +7,7 @@ on:
       - research/pro-football-challenger
     paths:
       - 'scripts/pro-football-challenger-2025.mjs'
+      - 'scripts/market-challenger-2025.mjs'
       - 'services/**'
       - 'data/**'
       - 'package.json'
@@ -25,30 +26,37 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
-      - name: Run 2025 Weeks 16-18 frozen challenger
+      - name: Run 2025 Weeks 16-18 advanced-stat challenger
         run: bun run football-challenger
-      - name: Print machine-readable report
+      - name: Run 2025 Weeks 16-18 market-assisted challenger
+        run: bun scripts/market-challenger-2025.mjs
+      - name: Print machine-readable reports
         if: always()
         run: |
-          if [ -f research/pro-football-challenger-2025-w16-18.json ]; then
-            cat research/pro-football-challenger-2025-w16-18.json
-          fi
-      - name: Persist research report to branch
+          for f in research/pro-football-challenger-2025-w16-18.json research/market-challenger-2025-w16-18.json; do
+            if [ -f "$f" ]; then
+              echo "===== $f ====="
+              cat "$f"
+            fi
+          done
+      - name: Persist research reports to branch
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research/pro-football-challenger-2025-w16-18.json
+          git add research/pro-football-challenger-2025-w16-18.json research/market-challenger-2025-w16-18.json
           if git diff --cached --quiet; then
             echo "No report changes to commit."
           else
-            git commit -m "research: record 2025 weeks 16-18 challenger result"
+            git commit -m "research: record 2025 weeks 16-18 challenger results"
             git push
           fi
-      - name: Upload report
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pro-football-challenger-2025-w16-18
-          path: research/pro-football-challenger-2025-w16-18.json
+          path: |
+            research/pro-football-challenger-2025-w16-18.json
+            research/market-challenger-2025-w16-18.json
           if-no-files-found: ignore
