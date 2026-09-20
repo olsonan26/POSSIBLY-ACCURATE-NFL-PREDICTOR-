@@ -48,9 +48,12 @@ const CalculationBreakdownCard: React.FC<CalculationBreakdownCardProps> = ({ bre
       </div>
 
       <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-950/15 p-3">
-        <p className="text-[10px] uppercase tracking-wider font-bold text-amber-300">Daily Lettrology Signature</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-amber-300">Provisional Daily Lettrology Signature</p>
+          <span className="rounded-full border border-amber-500/30 px-2 py-0.5 text-[9px] uppercase tracking-wider text-amber-200">Formula confirmation pending</span>
+        </div>
         <p className="mt-1 text-lg font-mono font-black text-amber-200">{fullSignature}</p>
-        <p className="mt-1 text-[11px] text-gray-500">Daily ESS over Daily Environment</p>
+        <p className="mt-1 text-[11px] text-gray-500">Candidate definition: Daily ESS over Daily Environment. Research only; never used in the production winner.</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs">
