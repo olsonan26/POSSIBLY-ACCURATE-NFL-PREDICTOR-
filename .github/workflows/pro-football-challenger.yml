@@ -8,6 +8,7 @@ on:
     paths:
       - 'scripts/pro-football-challenger-2025.mjs'
       - 'scripts/market-challenger-2025.mjs'
+      - 'scripts/selective-market-correction-2025.mjs'
       - 'services/**'
       - 'data/**'
       - 'package.json'
@@ -16,7 +17,7 @@ on:
 jobs:
   heldout-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -30,10 +31,12 @@ jobs:
         run: bun run football-challenger
       - name: Run 2025 Weeks 16-18 market-assisted challenger
         run: bun scripts/market-challenger-2025.mjs
+      - name: Run selective market correction gate
+        run: bun run selective-market-correction
       - name: Print machine-readable reports
         if: always()
         run: |
-          for f in research/pro-football-challenger-2025-w16-18.json research/market-challenger-2025-w16-18.json; do
+          for f in research/*2025-w16-18.json; do
             if [ -f "$f" ]; then
               echo "===== $f ====="
               cat "$f"
@@ -44,11 +47,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research/pro-football-challenger-2025-w16-18.json research/market-challenger-2025-w16-18.json
+          git add research/*2025-w16-18.json
           if git diff --cached --quiet; then
             echo "No report changes to commit."
           else
-            git commit -m "research: record 2025 weeks 16-18 challenger results"
+            git commit -m "research: record held-out challenger results"
             git push
           fi
       - name: Upload reports
@@ -56,7 +59,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pro-football-challenger-2025-w16-18
-          path: |
-            research/pro-football-challenger-2025-w16-18.json
-            research/market-challenger-2025-w16-18.json
+          path: research/*2025-w16-18.json
           if-no-files-found: ignore
