@@ -1,0 +1,24 @@
+name: Market Blend Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/week1-safe-improvements]
+    paths:
+      - 'scripts/market-blend-research.ts'
+      - '.github/workflows/market-blend-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun scripts/market-blend-research.ts
