@@ -43,6 +43,12 @@ export interface NumerologyPatterns {
   monCombiner: string;
   yearCom: string;
   dayNum: string;
+  /**
+   * Provisional Lettrology Daily Environment = reduced(PM + calendar day).
+   * Optional for compatibility with the legacy raw calculator; the research
+   * wrapper fills this before exposing candidate daily signatures.
+   */
+  dailyEnvironmentFull?: string;
   dailyEssenceFull: string;
 }
 

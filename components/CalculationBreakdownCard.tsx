@@ -7,6 +7,8 @@ interface CalculationBreakdownCardProps {
 
 const CalculationBreakdownCard: React.FC<CalculationBreakdownCardProps> = ({ breakdown }) => {
   const { role, name, patterns, deStats, includedInScore, source } = breakdown;
+  const dailyEnvironment = patterns.dailyEnvironmentFull || patterns.dayNum;
+  const fullSignature = `${patterns.dailyEssenceFull} over ${dailyEnvironment}`;
   const finalPatternString = [
     patterns.yrPersonalEss.split('/').pop(),
     patterns.py.split('/').pop() || '0',
@@ -14,7 +16,7 @@ const CalculationBreakdownCard: React.FC<CalculationBreakdownCardProps> = ({ bre
     patterns.pme.split('/').pop(),
     patterns.monCombiner.split('/').pop(),
     patterns.yearCom.split('/').pop(),
-    patterns.dayNum.split('/').pop(),
+    dailyEnvironment.split('/').pop(),
     patterns.dailyEssenceFull.split('/').pop()
   ].join(' • ');
 
@@ -45,14 +47,24 @@ const CalculationBreakdownCard: React.FC<CalculationBreakdownCardProps> = ({ bre
         )}
       </div>
 
+      <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-950/15 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-amber-300">Provisional Daily Lettrology Signature</p>
+          <span className="rounded-full border border-amber-500/30 px-2 py-0.5 text-[9px] uppercase tracking-wider text-amber-200">Formula confirmation pending</span>
+        </div>
+        <p className="mt-1 text-lg font-mono font-black text-amber-200">{fullSignature}</p>
+        <p className="mt-1 text-[11px] text-gray-500">Candidate definition: Daily ESS over Daily Environment. Research only; never used in the production winner.</p>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs">
         {[
           ['Yr Personal ESS', patterns.yrPersonalEss],
           ['Personal Year', patterns.py],
           ['Personal Month', patterns.pm],
-          ['Month Essence', patterns.pme],
+          ['Month Essence (PME)', patterns.pme],
+          ['Daily Environment', dailyEnvironment],
           ['Daily Essence', patterns.dailyEssenceFull],
-          ['Day Number', patterns.dayNum],
+          ['Calendar Day', patterns.dayNum],
           ['Mon Combiner', patterns.monCombiner],
           ['Year COM', patterns.yearCom]
         ].map(([label, value]) => (
@@ -64,7 +76,7 @@ const CalculationBreakdownCard: React.FC<CalculationBreakdownCardProps> = ({ bre
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-700">
-        <p className="text-xs text-gray-500 font-semibold">Final Pattern (Tail Digits)</p>
+        <p className="text-xs text-gray-500 font-semibold">Pattern Trail (Tail Digits)</p>
         <p className="text-sm font-mono text-amber-400 tracking-wider">{finalPatternString}</p>
       </div>
     </div>
