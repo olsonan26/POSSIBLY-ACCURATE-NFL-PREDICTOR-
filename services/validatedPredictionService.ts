@@ -7,6 +7,10 @@ import {
   PredictionOptions
 } from './numerologyService';
 import {
+  applyProvisionalDailyFormula,
+  buildLettrologyResearchFactor
+} from './lettrologyResearchService';
+import {
   getValidatedFootballContext,
   ValidatedFootballContext
 } from './validatedFootballContext';
@@ -44,7 +48,9 @@ function normalizeDecisionFactors(
     'Head-to-Head at This Home Venue': s.h2hLogitAdjustment,
     'Rest Differential': s.restLogitAdjustment,
     'Live Injury / Availability Impact': s.personnelLogitAdjustment,
-    'Verified Numerology Layer': s.numerologyLogitAdjustment
+    // The legacy numerology score used a different daily definition. It remains
+    // visible only as historical research context and is forced neutral here.
+    'Verified Numerology Layer': 0
   };
 
   return result.decisionFactors.map(factor => {
@@ -63,13 +69,14 @@ function normalizeDecisionFactors(
     } else if (factor.title === 'Rest Differential') {
       description = `${factor.description} Research-only: 2025 validation showed no incremental accuracy from this adjustment, so it does not affect the production pick.`;
     } else if (factor.title === 'Verified Numerology Layer') {
-      description = `${factor.description} Research-only: the locked validation tests have not demonstrated stable incremental winner accuracy. PURE/numerology research remains visible but cannot change the production pick.`;
+      description = 'Legacy numerology experiment retained for audit history only. Its old Daily-Essence/calendar-Day combination is superseded for current research by the provisional Daily ESS over Daily Environment definition. This legacy factor is neutralized and has zero production weight.';
     }
 
     return {
       ...factor,
       includedInScore: !researchOnly,
       advantage: advantageForHomeEdge(homeEdge, winnerIsHome),
+      edgeScore: factor.title === 'Verified Numerology Layer' ? 0 : factor.edgeScore,
       description
     };
   });
@@ -131,9 +138,9 @@ function swapWinnerLoser(result: PredictionResult): PredictionResult {
  * slightly. v2.2 therefore records an accuracy/calibration tradeoff rather than
  * claiming universal improvement across every validation metric.
  *
- * Rest, numerology and PURE Astrology remain measured research features but
- * are deliberately excluded from the production winner until later untouched
- * prospective samples demonstrate stable incremental value.
+ * Rest, Lettrology/numerology, Monte Carlo and PURE Astrology remain measured
+ * research features but are deliberately excluded from the production winner
+ * until later untouched prospective samples demonstrate stable incremental value.
  */
 export async function predictWinner(
   homeTeam: Team,
@@ -142,8 +149,11 @@ export async function predictWinner(
   isTeamAHome = true,
   options: PredictionOptions = {}
 ): Promise<PredictionResult> {
-  const research = await runResearchModel(homeTeam, awayTeam, gameDate, isTeamAHome, options);
-  if (!research.modelScores) return { ...research, modelVersion: MODEL_VERSION };
+  const rawResearch = await runResearchModel(homeTeam, awayTeam, gameDate, isTeamAHome, options);
+  if (!rawResearch.modelScores) {
+    const provisional = applyProvisionalDailyFormula(rawResearch, gameDate);
+    return { ...provisional, modelVersion: MODEL_VERSION };
+  }
 
   const targetIso = gameDate.toISOString().slice(0, 10);
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -155,7 +165,7 @@ export async function predictWinner(
     Boolean(options.neutralSite)
   );
 
-  const s = research.modelScores;
+  const s = rawResearch.modelScores;
   const personnelAdjustment = retrospective ? 0 : s.personnelLogitAdjustment;
   const baseLogit = logit(s.baseHomeProbability / 100);
   const productionAdjustment =
@@ -166,20 +176,40 @@ export async function predictWinner(
 
   const finalHomeProbability = logistic(baseLogit + productionAdjustment);
   const winnerIsHome = finalHomeProbability >= 0.5;
-  const rawWinnerIsHome = Boolean(research.isWinnerHome);
+  const rawWinnerIsHome = Boolean(rawResearch.isWinnerHome);
   const selectedProbability = winnerIsHome ? finalHomeProbability : 1 - finalHomeProbability;
   const validatedScores = {
     ...s,
     footballLogitAdjustment: validatedContext.footballLogitAdjustment,
     venueLogitAdjustment: validatedContext.venueLogitAdjustment,
     personnelLogitAdjustment: personnelAdjustment,
+    // The legacy research score is zeroed so the UI cannot imply it contributed
+    // to v2.2. The new Lettrology/Monte Carlo layer is a separate research card.
+    numerologyLogitAdjustment: 0,
     finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10
   };
 
-  const alignedBase = winnerIsHome === rawWinnerIsHome ? { ...research } : swapWinnerLoser(research);
-  const aligned: PredictionResult = { ...alignedBase, modelScores: validatedScores };
+  const alignedRawBase = winnerIsHome === rawWinnerIsHome ? { ...rawResearch } : swapWinnerLoser(rawResearch);
+  const aligned = applyProvisionalDailyFormula(
+    { ...alignedRawBase, modelScores: validatedScores },
+    gameDate
+  );
 
   let decisionFactors = normalizeDecisionFactors(aligned, winnerIsHome, validatedContext, homeTeam.name, awayTeam.name);
+  const researchWarnings: string[] = [];
+  try {
+    const lettrologyFactor = await buildLettrologyResearchFactor(
+      homeTeam,
+      awayTeam,
+      gameDate,
+      winnerIsHome
+    );
+    decisionFactors.push(lettrologyFactor);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    researchWarnings.push(`Provisional Lettrology matchup/Monte Carlo research could not be loaded: ${message}. Production scoring was unaffected.`);
+  }
+
   if (retrospective) {
     decisionFactors = decisionFactors.map(factor => factor.title === 'Live Injury / Availability Impact'
       ? {
@@ -194,8 +224,10 @@ export async function predictWinner(
 
   const warnings = [
     ...(aligned.warnings || []),
+    ...researchWarnings,
     'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
-    'Rest, numerology and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.',
+    'The new Lettrology formula is provisional pending source-sheet confirmation: Daily Environment = PM + calendar day; Daily ESS = PME + Daily Environment; the displayed signature is Daily ESS over Daily Environment.',
+    'Rest, Lettrology/numerology, Monte Carlo and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.',
     ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data were forced to zero and cannot affect this past-game production pick.'] : [])
   ];
 
@@ -205,8 +237,8 @@ export async function predictWinner(
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
     reasoning: retrospective
-      ? `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. This retrospective score uses leakage-safe Elo, target-season form and home/road context, and generic venue/H2H history. Current live personnel/injury data are explicitly excluded from past-game scoring. Rest, numerology and PURE Astrology remain research-only.`
-      : `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. Rest, numerology and PURE Astrology are still calculated for research but are not allowed to change the pick.`,
+      ? `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. This retrospective score uses leakage-safe Elo, target-season form and home/road context, and generic venue/H2H history. Current live personnel/injury data are explicitly excluded from past-game scoring. The provisional Lettrology matchup and Monte Carlo analysis are displayed for research only and have zero production weight.`
+      : `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. The provisional Lettrology matchup and Monte Carlo analysis are calculated separately for research and are not allowed to change the pick.`,
     winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
     loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
     decisionFactors,
@@ -220,7 +252,9 @@ export async function predictWinner(
       notes: [
         ...aligned.dataFreshness.notes,
         'v2.2 validation gate: prior-season recent form/home-road carryover is zero. It was selected on 2024; 2025 winner accuracy improved, with a small Brier/log-loss tradeoff.',
-        'Rest, numerology and PURE Astrology remain research-only after failing stable incremental validation.',
+        'Provisional Lettrology research uses Daily ESS over Daily Environment and is not a production feature until its formula and incremental holdout value are confirmed.',
+        'Monte Carlo is used only to propagate uncertainty around actual pre-cutoff matchup counts; simulation count is never treated as historical sample size.',
+        'Rest, Lettrology/numerology and PURE Astrology remain research-only after failing or awaiting stable incremental validation.',
         ...(retrospective ? ['Retrospective leakage guard: present-day live personnel/injury context is excluded from past-game scoring and display.'] : [])
       ]
     } : aligned.dataFreshness,
