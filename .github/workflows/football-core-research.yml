@@ -1,0 +1,26 @@
+name: Football Core Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/week1-safe-improvements]
+    paths:
+      - 'scripts/venue-scale-research.ts'
+      - 'scripts/elo-regression-research.ts'
+      - '.github/workflows/football-core-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun scripts/venue-scale-research.ts
+      - run: bun scripts/elo-regression-research.ts
