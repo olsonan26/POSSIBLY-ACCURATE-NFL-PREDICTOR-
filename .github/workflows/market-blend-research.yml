@@ -8,6 +8,7 @@ on:
       - 'scripts/market-blend-research.ts'
       - 'scripts/empty-venue-research.ts'
       - 'scripts/qb-continuity-research.ts'
+      - 'scripts/week1-miss-diagnostics.ts'
       - 'scripts/phase2-pregame-qb-preload.mjs'
       - '.github/workflows/market-blend-research.yml'
 
@@ -27,3 +28,4 @@ jobs:
       - run: bun scripts/market-blend-research.ts
       - run: bun scripts/empty-venue-research.ts
       - run: bun --preload ./scripts/phase2-pregame-qb-preload.mjs scripts/qb-continuity-research.ts
+      - run: bun scripts/week1-miss-diagnostics.ts
