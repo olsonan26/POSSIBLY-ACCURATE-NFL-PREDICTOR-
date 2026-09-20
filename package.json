@@ -10,6 +10,7 @@
     "backtest": "bun scripts/backtest.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
     "football-challenger": "bun scripts/pro-football-challenger-2025.mjs",
+    "selective-market-correction": "bun scripts/selective-market-correction-2025.mjs",
     "verify": "bun run typecheck && bun run build && bun run backtest && bun run forward-test"
   },
   "dependencies": {
