@@ -146,6 +146,8 @@ export async function predictWinner(
   if (!research.modelScores) return { ...research, modelVersion: MODEL_VERSION };
 
   const targetIso = gameDate.toISOString().slice(0, 10);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const retrospective = targetIso < todayIso;
   const validatedContext = await getValidatedFootballContext(
     homeTeam.abbr,
     awayTeam.abbr,
@@ -154,11 +156,12 @@ export async function predictWinner(
   );
 
   const s = research.modelScores;
+  const personnelAdjustment = retrospective ? 0 : s.personnelLogitAdjustment;
   const baseLogit = logit(s.baseHomeProbability / 100);
   const productionAdjustment =
     validatedContext.footballLogitAdjustment +
     validatedContext.venueLogitAdjustment +
-    s.personnelLogitAdjustment +
+    personnelAdjustment +
     s.h2hLogitAdjustment;
 
   const finalHomeProbability = logistic(baseLogit + productionAdjustment);
@@ -169,16 +172,31 @@ export async function predictWinner(
     ...s,
     footballLogitAdjustment: validatedContext.footballLogitAdjustment,
     venueLogitAdjustment: validatedContext.venueLogitAdjustment,
+    personnelLogitAdjustment: personnelAdjustment,
     finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10
   };
 
   const alignedBase = winnerIsHome === rawWinnerIsHome ? { ...research } : swapWinnerLoser(research);
   const aligned: PredictionResult = { ...alignedBase, modelScores: validatedScores };
 
+  let decisionFactors = normalizeDecisionFactors(aligned, winnerIsHome, validatedContext, homeTeam.name, awayTeam.name);
+  if (retrospective) {
+    decisionFactors = decisionFactors.map(factor => factor.title === 'Live Injury / Availability Impact'
+      ? {
+          ...factor,
+          includedInScore: false,
+          advantage: 'neutral',
+          edgeScore: 0,
+          description: 'Retrospective calculation: current live depth-chart and injury data are excluded from scoring because they are not a trustworthy point-in-time record of what was known before this completed game.'
+        }
+      : factor);
+  }
+
   const warnings = [
     ...(aligned.warnings || []),
     'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
-    'Rest, numerology and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.'
+    'Rest, numerology and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.',
+    ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data were forced to zero and cannot affect this past-game production pick.'] : [])
   ];
 
   return {
@@ -186,17 +204,24 @@ export async function predictWinner(
     confidence: Math.round(selectedProbability * 1000) / 10,
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
-    reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. Rest, numerology and PURE Astrology are still calculated for research but are not allowed to change the pick.`,
+    reasoning: retrospective
+      ? `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. This retrospective score uses leakage-safe Elo, target-season form and home/road context, and generic venue/H2H history. Current live personnel/injury data are explicitly excluded from past-game scoring. Rest, numerology and PURE Astrology remain research-only.`
+      : `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. Rest, numerology and PURE Astrology are still calculated for research but are not allowed to change the pick.`,
     winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
     loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
-    decisionFactors: normalizeDecisionFactors(aligned, winnerIsHome, validatedContext, homeTeam.name, awayTeam.name),
+    decisionFactors,
+    homePersonnel: retrospective ? undefined : aligned.homePersonnel,
+    awayPersonnel: retrospective ? undefined : aligned.awayPersonnel,
     modelScores: validatedScores,
     dataFreshness: aligned.dataFreshness ? {
       ...aligned.dataFreshness,
+      livePersonnelLoaded: retrospective ? false : aligned.dataFreshness.livePersonnelLoaded,
+      injuryDataLoaded: retrospective ? false : aligned.dataFreshness.injuryDataLoaded,
       notes: [
         ...aligned.dataFreshness.notes,
         'v2.2 validation gate: prior-season recent form/home-road carryover is zero. It was selected on 2024; 2025 winner accuracy improved, with a small Brier/log-loss tradeoff.',
-        'Rest, numerology and PURE Astrology remain research-only after failing stable incremental validation.'
+        'Rest, numerology and PURE Astrology remain research-only after failing stable incremental validation.',
+        ...(retrospective ? ['Retrospective leakage guard: present-day live personnel/injury context is excluded from past-game scoring and display.'] : [])
       ]
     } : aligned.dataFreshness,
     warnings
