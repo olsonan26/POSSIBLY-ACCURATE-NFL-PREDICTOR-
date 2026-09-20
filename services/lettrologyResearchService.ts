@@ -58,16 +58,20 @@ function tail(value: string | undefined): number {
 }
 
 /**
- * Canonical daily relationship supplied by the user:
+ * PROVISIONAL daily relationship supplied by the user on 2026-09-20:
  *   PM = PY + calendar month
  *   Daily Environment = PM + calendar day
  *   PME = Year ESS + PM
  *   Daily ESS = PME + Daily Environment
  *
- * `calculateAllPatterns` already gives us PM and PME. This function repairs only
- * the daily layer so production football logic remains untouched.
+ * This definition is intentionally quarantined inside the research layer until
+ * the source calculation is independently confirmed. Production football
+ * scoring never consumes any value produced here.
  */
-export function correctDailyLettrology(patterns: NumerologyPatterns, gameDate: Date): NumerologyPatterns {
+export function calculateProvisionalDailyLettrology(
+  patterns: NumerologyPatterns,
+  gameDate: Date
+): NumerologyPatterns {
   const pm = tail(patterns.pm);
   const pme = tail(patterns.pme);
   const dailyEnvironmentRaw = pm + gameDate.getUTCDate();
@@ -81,11 +85,12 @@ export function correctDailyLettrology(patterns: NumerologyPatterns, gameDate: D
   };
 }
 
-function correctedBreakdown(breakdown: Breakdown, gameDate: Date): Breakdown {
+function provisionalBreakdown(breakdown: Breakdown, gameDate: Date): Breakdown {
   return {
     ...breakdown,
-    patterns: correctDailyLettrology(breakdown.patterns, gameDate),
-    // Historical rates produced by the legacy calendar-Day pairing are not reused.
+    patterns: calculateProvisionalDailyLettrology(breakdown.patterns, gameDate),
+    // Legacy rates were calculated under a different daily definition and are
+    // deliberately not reused as evidence for the provisional formula.
     deStats: undefined
   };
 }
@@ -98,9 +103,9 @@ function roleBreakdown(items: Breakdown[], role: Breakdown['role']): Breakdown |
   return items.find(item => item.role === role);
 }
 
-export function applyCanonicalDailyFormula(result: PredictionResult, gameDate: Date): PredictionResult {
-  const winnerBreakdown = result.winnerBreakdown.map(item => correctedBreakdown(item, gameDate));
-  const loserBreakdown = result.loserBreakdown.map(item => correctedBreakdown(item, gameDate));
+export function applyProvisionalDailyFormula(result: PredictionResult, gameDate: Date): PredictionResult {
+  const winnerBreakdown = result.winnerBreakdown.map(item => provisionalBreakdown(item, gameDate));
+  const loserBreakdown = result.loserBreakdown.map(item => provisionalBreakdown(item, gameDate));
   const winnerTeam = teamBreakdown(winnerBreakdown);
   const loserTeam = teamBreakdown(loserBreakdown);
   const winnerCoach = roleBreakdown(winnerBreakdown, 'Coach');
@@ -125,8 +130,8 @@ export function applyCanonicalDailyFormula(result: PredictionResult, gameDate: D
       : result.loserStats,
     winnerDE: winnerPatterns?.dailyEssenceFull || result.winnerDE,
     loserDE: loserPatterns?.dailyEssenceFull || result.loserDE,
-    // Legacy field names are preserved for compatibility. They now carry the
-    // canonical Daily Environment, not the raw calendar Day Number.
+    // Legacy field names are preserved for compatibility. In the validated
+    // research view they carry the provisional Daily Environment value.
     winnerDay: winnerPatterns?.dailyEnvironmentFull || result.winnerDay,
     loserDay: loserPatterns?.dailyEnvironmentFull || result.loserDay,
     winnerDEStats: undefined,
@@ -195,7 +200,10 @@ function calculateAge(target: Date, birthday: Date): number {
   return Math.max(1, age);
 }
 
-function calculateTeamDailySignature(team: Team, gameDate: Date): { de: string; environment: string; signature: string } {
+function calculateTeamDailySignature(
+  team: Team,
+  gameDate: Date
+): { de: string; environment: string; signature: string } {
   const gameMonth = gameDate.getUTCMonth() + 1;
   const gameDay = gameDate.getUTCDate();
   const gameYear = gameDate.getUTCFullYear();
@@ -339,8 +347,6 @@ function buildResearchIndex(games: GameRow[], targetIso: string): ResearchIndex 
     const homeWon = game.homeScore! > game.awayScore!;
     const winnerPattern = homeWon ? homePattern : awayPattern;
     const loserPattern = homeWon ? awayPattern : homePattern;
-    const winnerTeam = homeWon ? home : away;
-    const loserTeam = homeWon ? away : home;
 
     index.gamesUsed++;
     addCounter(index.signature, homePattern.signature, homeWon);
@@ -356,9 +362,6 @@ function buildResearchIndex(games: GameRow[], targetIso: string): ResearchIndex 
     addCounter(index.teamAgainst, teamKey(away.abbr, homePattern.signature), !homeWon);
     addCounter(index.teamMatchup, teamMatchupKey(home.abbr, homePattern.signature, awayPattern.signature), homeWon);
     addCounter(index.teamMatchup, teamMatchupKey(away.abbr, awayPattern.signature, homePattern.signature), !homeWon);
-
-    void winnerTeam;
-    void loserTeam;
   }
   return index;
 }
@@ -460,7 +463,11 @@ export async function buildLettrologyResearchFactor(
   const homeDirectWins = index.directed.get(directedKey(homePattern.signature, awayPattern.signature)) || 0;
   const awayDirectWins = index.directed.get(directedKey(awayPattern.signature, homePattern.signature)) || 0;
   const meetings = homeDirectWins + awayDirectWins;
-  const mc = monteCarloPair(homeDirectWins, awayDirectWins, `${targetIso}|${homeTeam.abbr}|${awayTeam.abbr}|${homePattern.signature}|${awayPattern.signature}`);
+  const mc = monteCarloPair(
+    homeDirectWins,
+    awayDirectWins,
+    `${targetIso}|${homeTeam.abbr}|${awayTeam.abbr}|${homePattern.signature}|${awayPattern.signature}`
+  );
 
   const homeMarginal = index.signature.get(homePattern.signature);
   const awayMarginal = index.signature.get(awayPattern.signature);
@@ -468,22 +475,30 @@ export async function buildLettrologyResearchFactor(
   const awayWith = index.teamWith.get(teamKey(awayTeam.abbr, awayPattern.signature));
   const homeAgainst = index.teamAgainst.get(teamKey(homeTeam.abbr, awayPattern.signature));
   const awayAgainst = index.teamAgainst.get(teamKey(awayTeam.abbr, homePattern.signature));
-  const homeSpecific = index.teamMatchup.get(teamMatchupKey(homeTeam.abbr, homePattern.signature, awayPattern.signature));
-  const awaySpecific = index.teamMatchup.get(teamMatchupKey(awayTeam.abbr, awayPattern.signature, homePattern.signature));
+  const homeSpecific = index.teamMatchup.get(
+    teamMatchupKey(homeTeam.abbr, homePattern.signature, awayPattern.signature)
+  );
+  const awaySpecific = index.teamMatchup.get(
+    teamMatchupKey(awayTeam.abbr, awayPattern.signature, homePattern.signature)
+  );
 
-  const directEdgeIsHome = meetings > 0 && mc.mean > 0.5;
-  const directEdgeIsAway = meetings > 0 && mc.mean < 0.5;
-  const advantage: DecisionFactor['advantage'] = meetings === 0
-    ? 'neutral'
-    : (directEdgeIsHome === productionWinnerIsHome ? 'winner' : directEdgeIsAway === productionWinnerIsHome ? 'loser' : 'neutral');
+  const factorSupportsHome = meetings > 0 && mc.mean > 0.5005;
+  const factorSupportsAway = meetings > 0 && mc.mean < 0.4995;
+  let advantage: DecisionFactor['advantage'] = 'neutral';
+  if (factorSupportsHome || factorSupportsAway) {
+    const supportsProductionWinner =
+      (factorSupportsHome && productionWinnerIsHome) ||
+      (factorSupportsAway && !productionWinnerIsHome);
+    advantage = supportsProductionWinner ? 'winner' : 'loser';
+  }
 
   const directText = meetings
     ? `${homeTeam.name} signature leads ${homeDirectWins}-${awayDirectWins} in exact pre-cutoff meetings.`
     : 'No exact full-signature meetings exist before this cutoff; the pair posterior remains prior-centered and must not be treated as evidence.';
 
   return {
-    title: 'Lettrology Matchup + Monte Carlo',
-    description: `${homeTeam.name}: ${homePattern.signature}; ${awayTeam.name}: ${awayPattern.signature}. ${directText} Beta(8,8) uncertainty propagation over ${MONTE_CARLO_ITERATIONS.toLocaleString()} simulations gives a ${(mc.mean * 100).toFixed(1)}% posterior mean for the home signature, ${(mc.edgeProbability * 100).toFixed(1)}% probability that its latent matchup rate is above 50%, and an 80% interval of ${(mc.low80 * 100).toFixed(1)}-${(mc.high80 * 100).toFixed(1)}%. Global signature records: ${homeTeam.name} pattern ${record(homeMarginal)}; ${awayTeam.name} pattern ${record(awayMarginal)}. Team-conditioned: ${homeTeam.name} WITH its signature ${record(homeWith)}, AGAINST ${awayPattern.signature} ${record(homeAgainst)}, exact team×signature matchup ${record(homeSpecific)}; ${awayTeam.name} WITH its signature ${record(awayWith)}, AGAINST ${homePattern.signature} ${record(awayAgainst)}, exact team×signature matchup ${record(awaySpecific)}. ${index.gamesUsed} prior regular-season games were eligible. Monte Carlo is downstream uncertainty propagation only; it creates no new evidence and has zero production weight.`,
+    title: 'Provisional Lettrology Matchup + Monte Carlo',
+    description: `FORMULA STATUS: provisional pending source-sheet confirmation. Candidate definition is Daily ESS over Daily Environment, where Daily Environment = reduced(PM + calendar day) and Daily ESS = reduced(PME + Daily Environment). ${homeTeam.name}: ${homePattern.signature}; ${awayTeam.name}: ${awayPattern.signature}. ${directText} Beta(8,8) uncertainty propagation over ${MONTE_CARLO_ITERATIONS.toLocaleString()} simulations gives a ${(mc.mean * 100).toFixed(1)}% posterior mean for the home signature, ${(mc.edgeProbability * 100).toFixed(1)}% probability that its latent matchup rate is above 50%, and an 80% interval of ${(mc.low80 * 100).toFixed(1)}-${(mc.high80 * 100).toFixed(1)}%. Global signature records: ${homeTeam.name} pattern ${record(homeMarginal)}; ${awayTeam.name} pattern ${record(awayMarginal)}. Team-conditioned: ${homeTeam.name} WITH its signature ${record(homeWith)}, AGAINST ${awayPattern.signature} ${record(homeAgainst)}, exact team×signature matchup ${record(homeSpecific)}; ${awayTeam.name} WITH its signature ${record(awayWith)}, AGAINST ${homePattern.signature} ${record(awayAgainst)}, exact team×signature matchup ${record(awaySpecific)}. ${index.gamesUsed} prior regular-season games were eligible. Monte Carlo is downstream uncertainty propagation only: the ${MONTE_CARLO_ITERATIONS.toLocaleString()} simulations do not increase the historical sample size, and this factor has zero production weight.`,
     advantage,
     edgeScore: meetings ? Math.round(Math.abs(mc.mean - 0.5) * 1000) / 10 : 0,
     category: 'numerology',
