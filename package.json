@@ -12,6 +12,7 @@
     "football-challenger": "bun scripts/pro-football-challenger-2025.mjs",
     "selective-market-correction": "bun scripts/selective-market-correction-2025.mjs",
     "baseline-error-meta-model": "bun scripts/baseline-error-meta-model-2025.mjs",
+    "baseline-error-walkforward": "bun scripts/baseline-error-walkforward.mjs",
     "verify": "bun run typecheck && bun run build && bun run backtest && bun run forward-test"
   },
   "dependencies": {
