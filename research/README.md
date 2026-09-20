@@ -13,6 +13,12 @@ Production remains `v2.2-validated-current-season`. None of the experiments in t
   - market strength beta: 2022–2023
   - correction gate: 2024
   - untouched correction test: 2025 Weeks 16–18
+- Baseline-error meta-model is also chronological and leakage-safe:
+  - fit coefficients: 2022
+  - choose regularization/calibration: 2023
+  - refit on 2022–2023
+  - choose vulnerability threshold: 2024
+  - untouched vulnerability test: 2025 Weeks 16–18
 
 ## Results: 2025 Weeks 16–18, 48 games
 
@@ -39,13 +45,58 @@ On untouched 2025 Weeks 16–18, however, the frozen gate triggered only once: T
 
 This is useful evidence against promoting a market-veto rule from this design. The production model stays unchanged.
 
+## Baseline-error vulnerability meta-model
+
+Instead of trying to predict a different winner, this experiment predicts whether the locked v2.2 pick is likely to be wrong. It is advisory only and is not allowed to flip the production winner.
+
+Pregame features:
+
+- v2.2 confidence
+- closing-spread support/disagreement and spread magnitude
+- overall/pass/rush EPA matchup support
+- success-rate and explosive-play support
+- turnover-margin support
+- sack-rate support
+- special-teams EPA/play support
+
+The model uses an 8-game exponentially decayed prior-game window and requires at least four prior games for each team. The selected L2 penalty was 0.3, calibration scale 0.75, and the vulnerability threshold was frozen at 0.425 before examining the held-out 2025 outcomes.
+
+### 2024 threshold-tuning season
+
+- 208 eligible games
+- v2.2 errors: 63/208 = 30.29%
+- flagged vulnerable: 53 games
+- actual v2.2 errors inside flagged set: 33/53 = 62.26%
+- recall of all v2.2 errors: 52.38%
+- error-concentration lift: 2.06x
+- unflagged error rate: 19.35%
+- AUC: 0.7419
+
+### Untouched 2025 Weeks 16–18
+
+- 48 games
+- v2.2 errors: 20/48 = 41.67%
+- flagged vulnerable: 8/48 = 16.67%
+- actual errors inside flagged set: 4/8 = 50.00%
+- recall of all v2.2 errors: 4/20 = 20.00%
+- error-concentration lift: 1.20x
+- unflagged error rate: 16/40 = 40.00%
+- AUC: 0.6696
+- error-probability Brier: 0.2304
+- error-probability log loss: 0.6509
+
+Flagged games were LA @ SEA, GB @ CHI, CIN @ MIA, LAC @ DAL, HOU @ LAC, NYG @ LV, TB @ MIA, and SEA @ SF. Four were genuine v2.2 misses (GB @ CHI, CIN @ MIA, HOU @ LAC, NYG @ LV) and four were false alarms.
+
+The frozen test technically meets the predeclared research gate, but only at the boundary: 1.20x lift and 20% recall. That is a weak positive signal, not evidence for a production override. The result supports a larger walk-forward validation of the vulnerability concept while keeping v2.2 winner logic untouched.
+
 ## Interpretation
 
-The important result is not that EPA or betting markets are useless. It is that these naive additions do not demonstrate stable incremental value over the existing v2.2 model under a leakage-safe chronological test. A future challenger should target identifiable v2.2 error regimes rather than globally adding more signal.
+The professional-stat and market experiments do not justify globally changing v2.2. The vulnerability experiment is more promising because it asks a narrower question: *when should we distrust our own prediction?* On the held-out sample it concentrated misses modestly, but not strongly enough to change production behavior.
 
-Potential next research directions, still isolated from production:
+Next research steps, still isolated from production:
 
-1. Baseline-error meta-model: predict whether v2.2 is likely wrong using only pregame disagreement and uncertainty features.
-2. Regime-specific EPA: test pass EPA, pressure/sack rate, and turnover indicators only in low-confidence v2.2 games rather than as universal weights.
-3. QB-change / starter-value layer with verified historical starter identity and pregame availability timestamps.
-4. Larger walk-forward tests before any feature is eligible for promotion.
+1. Run the frozen vulnerability architecture across substantially larger rolling/walk-forward season blocks and report lift, recall, precision, AUC, Brier, and calibration by season.
+2. Test whether vulnerability signal persists when market variables are removed, so we can separate football-stat signal from market signal.
+3. Test regime-specific models for low-confidence games, market disagreement, QB changes, and large injury/personnel disruptions without choosing regimes from held-out outcomes.
+4. Add verified historical QB/starter availability only when timestamp provenance is available.
+5. Do not allow any vulnerability model to alter a production winner unless repeated untouched tests show stable incremental value.
