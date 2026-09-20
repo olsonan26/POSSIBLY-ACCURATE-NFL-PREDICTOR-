@@ -1,0 +1,42 @@
+name: Pro Football Challenger
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/pro-football-challenger
+    paths:
+      - 'scripts/pro-football-challenger-2025.mjs'
+      - 'services/**'
+      - 'data/**'
+      - 'package.json'
+      - '.github/workflows/pro-football-challenger.yml'
+
+jobs:
+  heldout-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - name: Run 2025 Weeks 16-18 frozen challenger
+        run: bun run football-challenger
+      - name: Print machine-readable report
+        if: always()
+        run: |
+          if [ -f research/pro-football-challenger-2025-w16-18.json ]; then
+            cat research/pro-football-challenger-2025-w16-18.json
+          fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pro-football-challenger-2025-w16-18
+          path: research/pro-football-challenger-2025-w16-18.json
+          if-no-files-found: ignore
