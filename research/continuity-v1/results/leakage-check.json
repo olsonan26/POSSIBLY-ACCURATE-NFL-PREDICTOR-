@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "game_id": "2025_01_DAL_PHI",
+      "unchanged": true,
+      "result": {
+        "winner": "PHI",
+        "p_home": 78.8,
+        "base": 78.8,
+        "form": 0,
+        "venue": -0.024000000000000007,
+        "h2h": 0.022544741881177364
+      }
+    },
+    {
+      "game_id": "2025_05_MIN_CLE",
+      "unchanged": true,
+      "result": {
+        "winner": "MIN",
+        "p_home": 25.7,
+        "base": 33.9,
+        "form": -0.39498255306775226,
+        "venue": 0,
+        "h2h": 0
+      }
+    },
+    {
+      "game_id": "2025_18_BAL_PIT",
+      "unchanged": true,
+      "result": {
+        "winner": "BAL",
+        "p_home": 48.1,
+        "base": 51.3,
+        "form": -0.0951700684782879,
+        "venue": -0.0582857142857143,
+        "h2h": 0.026368774107260705
+      }
+    }
+  ]
+}

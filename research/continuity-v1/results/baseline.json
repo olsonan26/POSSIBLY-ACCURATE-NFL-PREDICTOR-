@@ -1,0 +1,1592 @@
+{
+  "baseline_commit": "9fe9c75",
+  "game_source_sha256": "664cfc6cf1fbd48dde473355a1ad132ec872a2169d1bfbb405d37ca52768c7d9",
+  "probability_convention": "Production displayed p_home (0.1 percentage point rounding); winner is production winner, never rederived from rounded final probability.",
+  "seasons": {
+    "2020": {
+      "role": "development/selection baseline",
+      "excluded_ties": [
+        "2020_03_CIN_PHI"
+      ],
+      "overall": {
+        "games": 255,
+        "correct": 173,
+        "incorrect": 82,
+        "accuracy": 0.6784313725490196,
+        "correct_incorrect": "173:82",
+        "ratio": 2.1097560975609757,
+        "brier": 0.2150921450980392,
+        "log_loss": 0.6224606274583905,
+        "home_picks": 159,
+        "home_pick_accuracy": 0.6415094339622641,
+        "away_picks": 96,
+        "away_pick_accuracy": 0.7395833333333334,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 40,
+            "accuracy": 0.675,
+            "mean_confidence": 0.522
+          },
+          {
+            "band": "55\u201360",
+            "games": 56,
+            "accuracy": 0.5535714285714286,
+            "mean_confidence": 0.5756964285714284
+          },
+          {
+            "band": "60\u201365",
+            "games": 39,
+            "accuracy": 0.5897435897435898,
+            "mean_confidence": 0.6221025641025641
+          },
+          {
+            "band": "65\u201370",
+            "games": 28,
+            "accuracy": 0.75,
+            "mean_confidence": 0.6748571428571429
+          },
+          {
+            "band": "70\u2013100",
+            "games": 92,
+            "accuracy": 0.7717391304347826,
+            "mean_confidence": 0.7780217391304352
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 11,
+        "incorrect": 5,
+        "accuracy": 0.6875,
+        "correct_incorrect": "11:5",
+        "ratio": 2.2,
+        "brier": 0.215213375,
+        "log_loss": 0.618033571642352,
+        "home_picks": 11,
+        "home_pick_accuracy": 0.6363636363636364,
+        "away_picks": 5,
+        "away_pick_accuracy": 0.8,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 5,
+            "accuracy": 0.8,
+            "mean_confidence": 0.5246000000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 4,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5817500000000001
+          },
+          {
+            "band": "60\u201365",
+            "games": 2,
+            "accuracy": 0.5,
+            "mean_confidence": 0.621
+          },
+          {
+            "band": "65\u201370",
+            "games": 0,
+            "accuracy": null,
+            "mean_confidence": null
+          },
+          {
+            "band": "70\u2013100",
+            "games": 5,
+            "accuracy": 0.8,
+            "mean_confidence": 0.7424000000000001
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 62,
+        "correct": 46,
+        "incorrect": 16,
+        "accuracy": 0.7419354838709677,
+        "correct_incorrect": "46:16",
+        "ratio": 2.875,
+        "brier": 0.2064180483870967,
+        "log_loss": 0.6008878192933196,
+        "home_picks": 39,
+        "home_pick_accuracy": 0.6923076923076923,
+        "away_picks": 23,
+        "away_pick_accuracy": 0.8260869565217391,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 15,
+            "accuracy": 0.7333333333333333,
+            "mean_confidence": 0.5194666666666666
+          },
+          {
+            "band": "55\u201360",
+            "games": 11,
+            "accuracy": 0.8181818181818182,
+            "mean_confidence": 0.5826363636363637
+          },
+          {
+            "band": "60\u201365",
+            "games": 11,
+            "accuracy": 0.6363636363636364,
+            "mean_confidence": 0.6222727272727272
+          },
+          {
+            "band": "65\u201370",
+            "games": 4,
+            "accuracy": 0.75,
+            "mean_confidence": 0.67075
+          },
+          {
+            "band": "70\u2013100",
+            "games": 21,
+            "accuracy": 0.7619047619047619,
+            "mean_confidence": 0.7491428571428572
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 56,
+        "correct": 35,
+        "incorrect": 21,
+        "accuracy": 0.625,
+        "correct_incorrect": "35:21",
+        "ratio": 1.6666666666666667,
+        "brier": 0.22860358928571425,
+        "log_loss": 0.6524915040998047,
+        "home_picks": 36,
+        "home_pick_accuracy": 0.6111111111111112,
+        "away_picks": 20,
+        "away_pick_accuracy": 0.65,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_confidence": 0.5248571428571428
+          },
+          {
+            "band": "55\u201360",
+            "games": 14,
+            "accuracy": 0.35714285714285715,
+            "mean_confidence": 0.5789285714285715
+          },
+          {
+            "band": "60\u201365",
+            "games": 8,
+            "accuracy": 0.625,
+            "mean_confidence": 0.6141249999999999
+          },
+          {
+            "band": "65\u201370",
+            "games": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.6764999999999999
+          },
+          {
+            "band": "70\u2013100",
+            "games": 21,
+            "accuracy": 0.7619047619047619,
+            "mean_confidence": 0.7739999999999999
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 137,
+        "correct": 92,
+        "incorrect": 45,
+        "accuracy": 0.6715328467153284,
+        "correct_incorrect": "92:45",
+        "ratio": 2.0444444444444443,
+        "brier": 0.21349472262773717,
+        "log_loss": 0.6199481093147052,
+        "home_picks": 84,
+        "home_pick_accuracy": 0.6309523809523809,
+        "away_picks": 53,
+        "away_pick_accuracy": 0.7358490566037735,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 18,
+            "accuracy": 0.6111111111111112,
+            "mean_confidence": 0.523
+          },
+          {
+            "band": "55\u201360",
+            "games": 31,
+            "accuracy": 0.5483870967741935,
+            "mean_confidence": 0.5717741935483872
+          },
+          {
+            "band": "60\u201365",
+            "games": 20,
+            "accuracy": 0.55,
+            "mean_confidence": 0.6251999999999999
+          },
+          {
+            "band": "65\u201370",
+            "games": 18,
+            "accuracy": 0.7777777777777778,
+            "mean_confidence": 0.6752222222222223
+          },
+          {
+            "band": "70\u2013100",
+            "games": 50,
+            "accuracy": 0.78,
+            "mean_confidence": 0.79184
+          }
+        ]
+      }
+    },
+    "2021": {
+      "role": "development/selection baseline",
+      "excluded_ties": [
+        "2021_10_DET_PIT"
+      ],
+      "overall": {
+        "games": 271,
+        "correct": 162,
+        "incorrect": 109,
+        "accuracy": 0.5977859778597786,
+        "correct_incorrect": "162:109",
+        "ratio": 1.4862385321100917,
+        "brier": 0.23112581918819197,
+        "log_loss": 0.6545968091804223,
+        "home_picks": 171,
+        "home_pick_accuracy": 0.5906432748538012,
+        "away_picks": 100,
+        "away_pick_accuracy": 0.61,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 47,
+            "accuracy": 0.48936170212765956,
+            "mean_confidence": 0.5208936170212766
+          },
+          {
+            "band": "55\u201360",
+            "games": 51,
+            "accuracy": 0.47058823529411764,
+            "mean_confidence": 0.575235294117647
+          },
+          {
+            "band": "60\u201365",
+            "games": 38,
+            "accuracy": 0.5526315789473685,
+            "mean_confidence": 0.6220526315789474
+          },
+          {
+            "band": "65\u201370",
+            "games": 44,
+            "accuracy": 0.6136363636363636,
+            "mean_confidence": 0.6694545454545456
+          },
+          {
+            "band": "70\u2013100",
+            "games": 91,
+            "accuracy": 0.7362637362637363,
+            "mean_confidence": 0.7861318681318685
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 7,
+        "incorrect": 9,
+        "accuracy": 0.4375,
+        "correct_incorrect": "7:9",
+        "ratio": 0.7777777777777778,
+        "brier": 0.25048375,
+        "log_loss": 0.6910260341660818,
+        "home_picks": 13,
+        "home_pick_accuracy": 0.46153846153846156,
+        "away_picks": 3,
+        "away_pick_accuracy": 0.3333333333333333,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 6,
+            "accuracy": 0.3333333333333333,
+            "mean_confidence": 0.5335
+          },
+          {
+            "band": "55\u201360",
+            "games": 2,
+            "accuracy": 0,
+            "mean_confidence": 0.589
+          },
+          {
+            "band": "60\u201365",
+            "games": 3,
+            "accuracy": 0.3333333333333333,
+            "mean_confidence": 0.6256666666666666
+          },
+          {
+            "band": "65\u201370",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.6623333333333333
+          },
+          {
+            "band": "70\u2013100",
+            "games": 2,
+            "accuracy": 1,
+            "mean_confidence": 0.7354999999999999
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 64,
+        "correct": 35,
+        "incorrect": 29,
+        "accuracy": 0.546875,
+        "correct_incorrect": "35:29",
+        "ratio": 1.206896551724138,
+        "brier": 0.2504059375,
+        "log_loss": 0.6965417255998637,
+        "home_picks": 48,
+        "home_pick_accuracy": 0.5208333333333334,
+        "away_picks": 16,
+        "away_pick_accuracy": 0.625,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 12,
+            "accuracy": 0.5833333333333334,
+            "mean_confidence": 0.5244166666666668
+          },
+          {
+            "band": "55\u201360",
+            "games": 17,
+            "accuracy": 0.4117647058823529,
+            "mean_confidence": 0.5736470588235294
+          },
+          {
+            "band": "60\u201365",
+            "games": 8,
+            "accuracy": 0.5,
+            "mean_confidence": 0.618625
+          },
+          {
+            "band": "65\u201370",
+            "games": 11,
+            "accuracy": 0.45454545454545453,
+            "mean_confidence": 0.6692727272727272
+          },
+          {
+            "band": "70\u2013100",
+            "games": 16,
+            "accuracy": 0.75,
+            "mean_confidence": 0.7600000000000001
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 58,
+        "correct": 39,
+        "incorrect": 19,
+        "accuracy": 0.6724137931034483,
+        "correct_incorrect": "39:19",
+        "ratio": 2.0526315789473686,
+        "brier": 0.19731532758620685,
+        "log_loss": 0.5764992548289832,
+        "home_picks": 35,
+        "home_pick_accuracy": 0.6285714285714286,
+        "away_picks": 23,
+        "away_pick_accuracy": 0.7391304347826086,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 14,
+            "accuracy": 0.5714285714285714,
+            "mean_confidence": 0.5194285714285715
+          },
+          {
+            "band": "55\u201360",
+            "games": 8,
+            "accuracy": 0.375,
+            "mean_confidence": 0.584125
+          },
+          {
+            "band": "60\u201365",
+            "games": 7,
+            "accuracy": 0.7142857142857143,
+            "mean_confidence": 0.6159999999999999
+          },
+          {
+            "band": "65\u201370",
+            "games": 9,
+            "accuracy": 0.5555555555555556,
+            "mean_confidence": 0.6629999999999999
+          },
+          {
+            "band": "70\u2013100",
+            "games": 20,
+            "accuracy": 0.9,
+            "mean_confidence": 0.7844499999999999
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 149,
+        "correct": 88,
+        "incorrect": 61,
+        "accuracy": 0.5906040268456376,
+        "correct_incorrect": "88:61",
+        "ratio": 1.4426229508196722,
+        "brier": 0.23600555704697987,
+        "log_loss": 0.6669805910699473,
+        "home_picks": 88,
+        "home_pick_accuracy": 0.6136363636363636,
+        "away_picks": 61,
+        "away_pick_accuracy": 0.5573770491803278,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 21,
+            "accuracy": 0.38095238095238093,
+            "mean_confidence": 0.5198571428571428
+          },
+          {
+            "band": "55\u201360",
+            "games": 26,
+            "accuracy": 0.5384615384615384,
+            "mean_confidence": 0.5735384615384617
+          },
+          {
+            "band": "60\u201365",
+            "games": 23,
+            "accuracy": 0.5217391304347826,
+            "mean_confidence": 0.6250869565217392
+          },
+          {
+            "band": "65\u201370",
+            "games": 24,
+            "accuracy": 0.7083333333333334,
+            "mean_confidence": 0.6719583333333333
+          },
+          {
+            "band": "70\u2013100",
+            "games": 55,
+            "accuracy": 0.6727272727272727,
+            "mean_confidence": 0.7943454545454542
+          }
+        ]
+      }
+    },
+    "2022": {
+      "role": "development/selection baseline",
+      "excluded_ties": [
+        "2022_01_IND_HOU",
+        "2022_13_WAS_NYG"
+      ],
+      "overall": {
+        "games": 269,
+        "correct": 166,
+        "incorrect": 103,
+        "accuracy": 0.6171003717472119,
+        "correct_incorrect": "166:103",
+        "ratio": 1.6116504854368932,
+        "brier": 0.23193131598513006,
+        "log_loss": 0.655304643314367,
+        "home_picks": 178,
+        "home_pick_accuracy": 0.6348314606741573,
+        "away_picks": 91,
+        "away_pick_accuracy": 0.5824175824175825,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 54,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5272592592592593
+          },
+          {
+            "band": "55\u201360",
+            "games": 48,
+            "accuracy": 0.6458333333333334,
+            "mean_confidence": 0.5724375
+          },
+          {
+            "band": "60\u201365",
+            "games": 46,
+            "accuracy": 0.5869565217391305,
+            "mean_confidence": 0.6214565217391305
+          },
+          {
+            "band": "65\u201370",
+            "games": 39,
+            "accuracy": 0.6153846153846154,
+            "mean_confidence": 0.6746923076923077
+          },
+          {
+            "band": "70\u2013100",
+            "games": 82,
+            "accuracy": 0.6951219512195121,
+            "mean_confidence": 0.7685731707317071
+          }
+        ]
+      },
+      "week_1": {
+        "games": 15,
+        "correct": 9,
+        "incorrect": 6,
+        "accuracy": 0.6,
+        "correct_incorrect": "9:6",
+        "ratio": 1.5,
+        "brier": 0.24066480000000004,
+        "log_loss": 0.6770121253308626,
+        "home_picks": 8,
+        "home_pick_accuracy": 0.5,
+        "away_picks": 7,
+        "away_pick_accuracy": 0.7142857142857143,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 6,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5305000000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 5,
+            "accuracy": 0.6,
+            "mean_confidence": 0.5715999999999999
+          },
+          {
+            "band": "60\u201365",
+            "games": 1,
+            "accuracy": 1,
+            "mean_confidence": 0.608
+          },
+          {
+            "band": "65\u201370",
+            "games": 2,
+            "accuracy": 1,
+            "mean_confidence": 0.6665000000000001
+          },
+          {
+            "band": "70\u2013100",
+            "games": 1,
+            "accuracy": 0,
+            "mean_confidence": 0.7440000000000001
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 63,
+        "correct": 33,
+        "incorrect": 30,
+        "accuracy": 0.5238095238095238,
+        "correct_incorrect": "33:30",
+        "ratio": 1.1,
+        "brier": 0.2621477936507936,
+        "log_loss": 0.7205900088145304,
+        "home_picks": 41,
+        "home_pick_accuracy": 0.5365853658536586,
+        "away_picks": 22,
+        "away_pick_accuracy": 0.5,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 23,
+            "accuracy": 0.5217391304347826,
+            "mean_confidence": 0.5266086956521739
+          },
+          {
+            "band": "55\u201360",
+            "games": 14,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5757142857142856
+          },
+          {
+            "band": "60\u201365",
+            "games": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.6241666666666666
+          },
+          {
+            "band": "65\u201370",
+            "games": 8,
+            "accuracy": 0.5,
+            "mean_confidence": 0.669375
+          },
+          {
+            "band": "70\u2013100",
+            "games": 12,
+            "accuracy": 0.5,
+            "mean_confidence": 0.73575
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 59,
+        "correct": 35,
+        "incorrect": 24,
+        "accuracy": 0.5932203389830508,
+        "correct_incorrect": "35:24",
+        "ratio": 1.4583333333333333,
+        "brier": 0.2383000847457626,
+        "log_loss": 0.6680684300633059,
+        "home_picks": 43,
+        "home_pick_accuracy": 0.6046511627906976,
+        "away_picks": 16,
+        "away_pick_accuracy": 0.5625,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 9,
+            "accuracy": 0.5555555555555556,
+            "mean_confidence": 0.5237777777777778
+          },
+          {
+            "band": "55\u201360",
+            "games": 12,
+            "accuracy": 0.5833333333333334,
+            "mean_confidence": 0.572
+          },
+          {
+            "band": "60\u201365",
+            "games": 12,
+            "accuracy": 0.5,
+            "mean_confidence": 0.62175
+          },
+          {
+            "band": "65\u201370",
+            "games": 10,
+            "accuracy": 0.5,
+            "mean_confidence": 0.6830999999999999
+          },
+          {
+            "band": "70\u2013100",
+            "games": 16,
+            "accuracy": 0.75,
+            "mean_confidence": 0.7599374999999999
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 147,
+        "correct": 98,
+        "incorrect": 49,
+        "accuracy": 0.6666666666666666,
+        "correct_incorrect": "98:49",
+        "ratio": 2,
+        "brier": 0.2164252244897959,
+        "log_loss": 0.6222023205613211,
+        "home_picks": 94,
+        "home_pick_accuracy": 0.6914893617021277,
+        "away_picks": 53,
+        "away_pick_accuracy": 0.6226415094339622,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 22,
+            "accuracy": 0.45454545454545453,
+            "mean_confidence": 0.5293636363636364
+          },
+          {
+            "band": "55\u201360",
+            "games": 22,
+            "accuracy": 0.7727272727272727,
+            "mean_confidence": 0.5705909090909091
+          },
+          {
+            "band": "60\u201365",
+            "games": 28,
+            "accuracy": 0.6071428571428571,
+            "mean_confidence": 0.6207500000000001
+          },
+          {
+            "band": "65\u201370",
+            "games": 21,
+            "accuracy": 0.7142857142857143,
+            "mean_confidence": 0.6727142857142857
+          },
+          {
+            "band": "70\u2013100",
+            "games": 54,
+            "accuracy": 0.7222222222222222,
+            "mean_confidence": 0.7784259259259256
+          }
+        ]
+      }
+    },
+    "2023": {
+      "role": "development/selection baseline",
+      "excluded_ties": [],
+      "overall": {
+        "games": 272,
+        "correct": 167,
+        "incorrect": 105,
+        "accuracy": 0.6139705882352942,
+        "correct_incorrect": "167:105",
+        "ratio": 1.5904761904761904,
+        "brier": 0.23606446323529418,
+        "log_loss": 0.6664096380858787,
+        "home_picks": 180,
+        "home_pick_accuracy": 0.6277777777777778,
+        "away_picks": 92,
+        "away_pick_accuracy": 0.5869565217391305,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 59,
+            "accuracy": 0.6101694915254238,
+            "mean_confidence": 0.5245762711864407
+          },
+          {
+            "band": "55\u201360",
+            "games": 48,
+            "accuracy": 0.4166666666666667,
+            "mean_confidence": 0.5770000000000001
+          },
+          {
+            "band": "60\u201365",
+            "games": 52,
+            "accuracy": 0.6346153846153846,
+            "mean_confidence": 0.6215961538461539
+          },
+          {
+            "band": "65\u201370",
+            "games": 28,
+            "accuracy": 0.6785714285714286,
+            "mean_confidence": 0.6686785714285712
+          },
+          {
+            "band": "70\u2013100",
+            "games": 85,
+            "accuracy": 0.6941176470588235,
+            "mean_confidence": 0.774894117647059
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 8,
+        "incorrect": 8,
+        "accuracy": 0.5,
+        "correct_incorrect": "8:8",
+        "ratio": 1,
+        "brier": 0.2756498125,
+        "log_loss": 0.7550517951554596,
+        "home_picks": 10,
+        "home_pick_accuracy": 0.4,
+        "away_picks": 6,
+        "away_pick_accuracy": 0.6666666666666666,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 4,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5255000000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 6,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5788333333333334
+          },
+          {
+            "band": "60\u201365",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.6083333333333333
+          },
+          {
+            "band": "65\u201370",
+            "games": 1,
+            "accuracy": 0,
+            "mean_confidence": 0.652
+          },
+          {
+            "band": "70\u2013100",
+            "games": 2,
+            "accuracy": 0.5,
+            "mean_confidence": 0.7765
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 64,
+        "correct": 36,
+        "incorrect": 28,
+        "accuracy": 0.5625,
+        "correct_incorrect": "36:28",
+        "ratio": 1.2857142857142858,
+        "brier": 0.23964290624999998,
+        "log_loss": 0.6707666220738088,
+        "home_picks": 42,
+        "home_pick_accuracy": 0.5238095238095238,
+        "away_picks": 22,
+        "away_pick_accuracy": 0.6363636363636364,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 18,
+            "accuracy": 0.5555555555555556,
+            "mean_confidence": 0.5242777777777778
+          },
+          {
+            "band": "55\u201360",
+            "games": 16,
+            "accuracy": 0.375,
+            "mean_confidence": 0.575
+          },
+          {
+            "band": "60\u201365",
+            "games": 10,
+            "accuracy": 0.6,
+            "mean_confidence": 0.6206
+          },
+          {
+            "band": "65\u201370",
+            "games": 4,
+            "accuracy": 0.5,
+            "mean_confidence": 0.6557499999999999
+          },
+          {
+            "band": "70\u2013100",
+            "games": 16,
+            "accuracy": 0.75,
+            "mean_confidence": 0.7756250000000001
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 58,
+        "correct": 33,
+        "incorrect": 25,
+        "accuracy": 0.5689655172413793,
+        "correct_incorrect": "33:25",
+        "ratio": 1.32,
+        "brier": 0.2465132068965517,
+        "log_loss": 0.6874216824596803,
+        "home_picks": 34,
+        "home_pick_accuracy": 0.6470588235294118,
+        "away_picks": 24,
+        "away_pick_accuracy": 0.4583333333333333,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 14,
+            "accuracy": 0.5,
+            "mean_confidence": 0.5262857142857144
+          },
+          {
+            "band": "55\u201360",
+            "games": 5,
+            "accuracy": 0.2,
+            "mean_confidence": 0.5816000000000001
+          },
+          {
+            "band": "60\u201365",
+            "games": 10,
+            "accuracy": 0.7,
+            "mean_confidence": 0.6142
+          },
+          {
+            "band": "65\u201370",
+            "games": 6,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.6689999999999999
+          },
+          {
+            "band": "70\u2013100",
+            "games": 23,
+            "accuracy": 0.6086956521739131,
+            "mean_confidence": 0.7666086956521737
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 150,
+        "correct": 98,
+        "incorrect": 52,
+        "accuracy": 0.6533333333333333,
+        "correct_incorrect": "98:52",
+        "ratio": 1.8846153846153846,
+        "brier": 0.23049747999999984,
+        "log_loss": 0.6564260010931586,
+        "home_picks": 104,
+        "home_pick_accuracy": 0.6634615384615384,
+        "away_picks": 46,
+        "away_pick_accuracy": 0.6304347826086957,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 27,
+            "accuracy": 0.7037037037037037,
+            "mean_confidence": 0.5238888888888888
+          },
+          {
+            "band": "55\u201360",
+            "games": 27,
+            "accuracy": 0.48148148148148145,
+            "mean_confidence": 0.5773333333333335
+          },
+          {
+            "band": "60\u201365",
+            "games": 32,
+            "accuracy": 0.625,
+            "mean_confidence": 0.6242187500000002
+          },
+          {
+            "band": "65\u201370",
+            "games": 18,
+            "accuracy": 0.7222222222222222,
+            "mean_confidence": 0.6714444444444445
+          },
+          {
+            "band": "70\u2013100",
+            "games": 46,
+            "accuracy": 0.717391304347826,
+            "mean_confidence": 0.778782608695652
+          }
+        ]
+      }
+    },
+    "2024": {
+      "role": "development/selection baseline",
+      "excluded_ties": [],
+      "overall": {
+        "games": 272,
+        "correct": 180,
+        "incorrect": 92,
+        "accuracy": 0.6617647058823529,
+        "correct_incorrect": "180:92",
+        "ratio": 1.9565217391304348,
+        "brier": 0.21182014705882368,
+        "log_loss": 0.6122301028526489,
+        "home_picks": 175,
+        "home_pick_accuracy": 0.6514285714285715,
+        "away_picks": 97,
+        "away_pick_accuracy": 0.6804123711340206,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 49,
+            "accuracy": 0.40816326530612246,
+            "mean_confidence": 0.5212040816326532
+          },
+          {
+            "band": "55\u201360",
+            "games": 40,
+            "accuracy": 0.7,
+            "mean_confidence": 0.5744999999999999
+          },
+          {
+            "band": "60\u201365",
+            "games": 57,
+            "accuracy": 0.6491228070175439,
+            "mean_confidence": 0.6219122807017543
+          },
+          {
+            "band": "65\u201370",
+            "games": 43,
+            "accuracy": 0.7209302325581395,
+            "mean_confidence": 0.6724883720930233
+          },
+          {
+            "band": "70\u2013100",
+            "games": 83,
+            "accuracy": 0.7710843373493976,
+            "mean_confidence": 0.7840120481927711
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 13,
+        "incorrect": 3,
+        "accuracy": 0.8125,
+        "correct_incorrect": "13:3",
+        "ratio": 4.333333333333333,
+        "brier": 0.190808375,
+        "log_loss": 0.5689768947932939,
+        "home_picks": 14,
+        "home_pick_accuracy": 0.7857142857142857,
+        "away_picks": 2,
+        "away_pick_accuracy": 1,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 4,
+            "accuracy": 0.75,
+            "mean_confidence": 0.51075
+          },
+          {
+            "band": "55\u201360",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.5626666666666666
+          },
+          {
+            "band": "60\u201365",
+            "games": 4,
+            "accuracy": 1,
+            "mean_confidence": 0.619
+          },
+          {
+            "band": "65\u201370",
+            "games": 2,
+            "accuracy": 0.5,
+            "mean_confidence": 0.6925
+          },
+          {
+            "band": "70\u2013100",
+            "games": 3,
+            "accuracy": 1,
+            "mean_confidence": 0.7466666666666667
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 64,
+        "correct": 35,
+        "incorrect": 29,
+        "accuracy": 0.546875,
+        "correct_incorrect": "35:29",
+        "ratio": 1.206896551724138,
+        "brier": 0.26143421875000006,
+        "log_loss": 0.7200719692843651,
+        "home_picks": 48,
+        "home_pick_accuracy": 0.5416666666666666,
+        "away_picks": 16,
+        "away_pick_accuracy": 0.5625,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 16,
+            "accuracy": 0.5,
+            "mean_confidence": 0.51425
+          },
+          {
+            "band": "55\u201360",
+            "games": 11,
+            "accuracy": 0.6363636363636364,
+            "mean_confidence": 0.5794545454545454
+          },
+          {
+            "band": "60\u201365",
+            "games": 14,
+            "accuracy": 0.5714285714285714,
+            "mean_confidence": 0.6226428571428572
+          },
+          {
+            "band": "65\u201370",
+            "games": 8,
+            "accuracy": 0.5,
+            "mean_confidence": 0.6735
+          },
+          {
+            "band": "70\u2013100",
+            "games": 15,
+            "accuracy": 0.5333333333333333,
+            "mean_confidence": 0.7544666666666665
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 59,
+        "correct": 37,
+        "incorrect": 22,
+        "accuracy": 0.6271186440677966,
+        "correct_incorrect": "37:22",
+        "ratio": 1.6818181818181819,
+        "brier": 0.21486605084745755,
+        "log_loss": 0.6203588192758817,
+        "home_picks": 38,
+        "home_pick_accuracy": 0.6052631578947368,
+        "away_picks": 21,
+        "away_pick_accuracy": 0.6666666666666666,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 10,
+            "accuracy": 0.2,
+            "mean_confidence": 0.5261000000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 12,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.57875
+          },
+          {
+            "band": "60\u201365",
+            "games": 17,
+            "accuracy": 0.6470588235294118,
+            "mean_confidence": 0.6208235294117648
+          },
+          {
+            "band": "65\u201370",
+            "games": 7,
+            "accuracy": 0.8571428571428571,
+            "mean_confidence": 0.6737142857142857
+          },
+          {
+            "band": "70\u2013100",
+            "games": 13,
+            "accuracy": 0.7692307692307693,
+            "mean_confidence": 0.7906923076923077
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 149,
+        "correct": 108,
+        "incorrect": 41,
+        "accuracy": 0.7248322147651006,
+        "correct_incorrect": "108:41",
+        "ratio": 2.6341463414634148,
+        "brier": 0.1893033087248322,
+        "log_loss": 0.5626900107680808,
+        "home_picks": 89,
+        "home_pick_accuracy": 0.7303370786516854,
+        "away_picks": 60,
+        "away_pick_accuracy": 0.7166666666666667,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 23,
+            "accuracy": 0.43478260869565216,
+            "mean_confidence": 0.523913043478261
+          },
+          {
+            "band": "55\u201360",
+            "games": 17,
+            "accuracy": 0.7647058823529411,
+            "mean_confidence": 0.5682941176470588
+          },
+          {
+            "band": "60\u201365",
+            "games": 26,
+            "accuracy": 0.6923076923076923,
+            "mean_confidence": 0.6222307692307693
+          },
+          {
+            "band": "65\u201370",
+            "games": 28,
+            "accuracy": 0.75,
+            "mean_confidence": 0.6718928571428571
+          },
+          {
+            "band": "70\u2013100",
+            "games": 55,
+            "accuracy": 0.8363636363636363,
+            "mean_confidence": 0.7904909090909089
+          }
+        ]
+      }
+    },
+    "2025": {
+      "role": "baseline reproduction only",
+      "excluded_ties": [
+        "2025_04_GB_DAL"
+      ],
+      "overall": {
+        "games": 271,
+        "correct": 180,
+        "incorrect": 91,
+        "accuracy": 0.6642066420664207,
+        "correct_incorrect": "180:91",
+        "ratio": 1.978021978021978,
+        "brier": 0.22504814391143907,
+        "log_loss": 0.6416076639159911,
+        "home_picks": 169,
+        "home_pick_accuracy": 0.6627218934911243,
+        "away_picks": 102,
+        "away_pick_accuracy": 0.6666666666666666,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 53,
+            "accuracy": 0.6415094339622641,
+            "mean_confidence": 0.5273396226415094
+          },
+          {
+            "band": "55\u201360",
+            "games": 48,
+            "accuracy": 0.6875,
+            "mean_confidence": 0.5723541666666667
+          },
+          {
+            "band": "60\u201365",
+            "games": 38,
+            "accuracy": 0.5263157894736842,
+            "mean_confidence": 0.6230526315789476
+          },
+          {
+            "band": "65\u201370",
+            "games": 32,
+            "accuracy": 0.65625,
+            "mean_confidence": 0.67575
+          },
+          {
+            "band": "70\u2013100",
+            "games": 100,
+            "accuracy": 0.72,
+            "mean_confidence": 0.7790500000000001
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 12,
+        "incorrect": 4,
+        "accuracy": 0.75,
+        "correct_incorrect": "12:4",
+        "ratio": 3,
+        "brier": 0.20804543750000004,
+        "log_loss": 0.6041798385011216,
+        "home_picks": 11,
+        "home_pick_accuracy": 0.7272727272727273,
+        "away_picks": 5,
+        "away_pick_accuracy": 0.8,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 4,
+            "accuracy": 1,
+            "mean_confidence": 0.5222500000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 7,
+            "accuracy": 0.5714285714285714,
+            "mean_confidence": 0.5755714285714284
+          },
+          {
+            "band": "60\u201365",
+            "games": 2,
+            "accuracy": 0.5,
+            "mean_confidence": 0.6295
+          },
+          {
+            "band": "65\u201370",
+            "games": 0,
+            "accuracy": null,
+            "mean_confidence": null
+          },
+          {
+            "band": "70\u2013100",
+            "games": 3,
+            "accuracy": 1,
+            "mean_confidence": 0.734
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 63,
+        "correct": 46,
+        "incorrect": 17,
+        "accuracy": 0.7301587301587301,
+        "correct_incorrect": "46:17",
+        "ratio": 2.7058823529411766,
+        "brier": 0.20754880952380955,
+        "log_loss": 0.6018845610875383,
+        "home_picks": 40,
+        "home_pick_accuracy": 0.775,
+        "away_picks": 23,
+        "away_pick_accuracy": 0.6521739130434783,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 10,
+            "accuracy": 0.9,
+            "mean_confidence": 0.5309000000000001
+          },
+          {
+            "band": "55\u201360",
+            "games": 14,
+            "accuracy": 0.6428571428571429,
+            "mean_confidence": 0.5727857142857141
+          },
+          {
+            "band": "60\u201365",
+            "games": 11,
+            "accuracy": 0.5454545454545454,
+            "mean_confidence": 0.6215454545454545
+          },
+          {
+            "band": "65\u201370",
+            "games": 9,
+            "accuracy": 0.7777777777777778,
+            "mean_confidence": 0.6698888888888889
+          },
+          {
+            "band": "70\u2013100",
+            "games": 19,
+            "accuracy": 0.7894736842105263,
+            "mean_confidence": 0.7603684210526316
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 57,
+        "correct": 38,
+        "incorrect": 19,
+        "accuracy": 0.6666666666666666,
+        "correct_incorrect": "38:19",
+        "ratio": 2,
+        "brier": 0.24111194736842104,
+        "log_loss": 0.6800209224311632,
+        "home_picks": 35,
+        "home_pick_accuracy": 0.6571428571428571,
+        "away_picks": 22,
+        "away_pick_accuracy": 0.6818181818181818,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 14,
+            "accuracy": 0.7142857142857143,
+            "mean_confidence": 0.5191428571428572
+          },
+          {
+            "band": "55\u201360",
+            "games": 6,
+            "accuracy": 0.8333333333333334,
+            "mean_confidence": 0.563
+          },
+          {
+            "band": "60\u201365",
+            "games": 11,
+            "accuracy": 0.6363636363636364,
+            "mean_confidence": 0.6224545454545454
+          },
+          {
+            "band": "65\u201370",
+            "games": 4,
+            "accuracy": 0.5,
+            "mean_confidence": 0.67625
+          },
+          {
+            "band": "70\u2013100",
+            "games": 22,
+            "accuracy": 0.6363636363636364,
+            "mean_confidence": 0.7767727272727274
+          }
+        ]
+      },
+      "weeks_9_plus": {
+        "games": 151,
+        "correct": 96,
+        "incorrect": 55,
+        "accuracy": 0.6357615894039735,
+        "correct_incorrect": "96:55",
+        "ratio": 1.7454545454545454,
+        "brier": 0.22628537086092712,
+        "log_loss": 0.6436805098949828,
+        "home_picks": 94,
+        "home_pick_accuracy": 0.6170212765957447,
+        "away_picks": 57,
+        "away_pick_accuracy": 0.6666666666666666,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 29,
+            "accuracy": 0.5172413793103449,
+            "mean_confidence": 0.5300689655172414
+          },
+          {
+            "band": "55\u201360",
+            "games": 28,
+            "accuracy": 0.6785714285714286,
+            "mean_confidence": 0.5741428571428571
+          },
+          {
+            "band": "60\u201365",
+            "games": 16,
+            "accuracy": 0.4375,
+            "mean_confidence": 0.6245
+          },
+          {
+            "band": "65\u201370",
+            "games": 19,
+            "accuracy": 0.631578947368421,
+            "mean_confidence": 0.6784210526315789
+          },
+          {
+            "band": "70\u2013100",
+            "games": 59,
+            "accuracy": 0.7288135593220338,
+            "mean_confidence": 0.7859152542372879
+          }
+        ]
+      }
+    },
+    "2026": {
+      "role": "locked observation only",
+      "excluded_ties": [],
+      "overall": {
+        "games": 16,
+        "correct": 10,
+        "incorrect": 6,
+        "accuracy": 0.625,
+        "correct_incorrect": "10:6",
+        "ratio": 1.6666666666666667,
+        "brier": 0.2199494375,
+        "log_loss": 0.6307065985793511,
+        "home_picks": 12,
+        "home_pick_accuracy": 0.6666666666666666,
+        "away_picks": 4,
+        "away_pick_accuracy": 0.5,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 7,
+            "accuracy": 0.42857142857142855,
+            "mean_confidence": 0.5297142857142857
+          },
+          {
+            "band": "55\u201360",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.564
+          },
+          {
+            "band": "60\u201365",
+            "games": 1,
+            "accuracy": 1,
+            "mean_confidence": 0.622
+          },
+          {
+            "band": "65\u201370",
+            "games": 2,
+            "accuracy": 1,
+            "mean_confidence": 0.6925
+          },
+          {
+            "band": "70\u2013100",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.7073333333333333
+          }
+        ]
+      },
+      "week_1": {
+        "games": 16,
+        "correct": 10,
+        "incorrect": 6,
+        "accuracy": 0.625,
+        "correct_incorrect": "10:6",
+        "ratio": 1.6666666666666667,
+        "brier": 0.2199494375,
+        "log_loss": 0.6307065985793511,
+        "home_picks": 12,
+        "home_pick_accuracy": 0.6666666666666666,
+        "away_picks": 4,
+        "away_pick_accuracy": 0.5,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 7,
+            "accuracy": 0.42857142857142855,
+            "mean_confidence": 0.5297142857142857
+          },
+          {
+            "band": "55\u201360",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.564
+          },
+          {
+            "band": "60\u201365",
+            "games": 1,
+            "accuracy": 1,
+            "mean_confidence": 0.622
+          },
+          {
+            "band": "65\u201370",
+            "games": 2,
+            "accuracy": 1,
+            "mean_confidence": 0.6925
+          },
+          {
+            "band": "70\u2013100",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.7073333333333333
+          }
+        ]
+      },
+      "weeks_1_4": {
+        "games": 16,
+        "correct": 10,
+        "incorrect": 6,
+        "accuracy": 0.625,
+        "correct_incorrect": "10:6",
+        "ratio": 1.6666666666666667,
+        "brier": 0.2199494375,
+        "log_loss": 0.6307065985793511,
+        "home_picks": 12,
+        "home_pick_accuracy": 0.6666666666666666,
+        "away_picks": 4,
+        "away_pick_accuracy": 0.5,
+        "calibration": [
+          {
+            "band": "50\u201355",
+            "games": 7,
+            "accuracy": 0.42857142857142855,
+            "mean_confidence": 0.5297142857142857
+          },
+          {
+            "band": "55\u201360",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.564
+          },
+          {
+            "band": "60\u201365",
+            "games": 1,
+            "accuracy": 1,
+            "mean_confidence": 0.622
+          },
+          {
+            "band": "65\u201370",
+            "games": 2,
+            "accuracy": 1,
+            "mean_confidence": 0.6925
+          },
+          {
+            "band": "70\u2013100",
+            "games": 3,
+            "accuracy": 0.6666666666666666,
+            "mean_confidence": 0.7073333333333333
+          }
+        ]
+      },
+      "weeks_5_8": {
+        "games": 0,
+        "correct": 0,
+        "incorrect": 0,
+        "accuracy": null,
+        "ratio": null,
+        "brier": null,
+        "log_loss": null,
+        "home_pick_accuracy": null,
+        "away_pick_accuracy": null,
+        "calibration": []
+      },
+      "weeks_9_plus": {
+        "games": 0,
+        "correct": 0,
+        "incorrect": 0,
+        "accuracy": null,
+        "ratio": null,
+        "brier": null,
+        "log_loss": null,
+        "home_pick_accuracy": null,
+        "away_pick_accuracy": null,
+        "calibration": []
+      }
+    }
+  },
+  "requests": [
+    "/api/nfl-data?dataset=games",
+    "/api/nfl-data?dataset=games"
+  ],
+  "baseline_parity": true,
+  "observation_parity": true
+}
