@@ -1,0 +1,12 @@
+{
+  "status": "BLOCKED",
+  "hypothesis_rejected": false,
+  "candidate_evaluated": false,
+  "candidate_games_tested": 0,
+  "production_changes": false,
+  "eligible_team_seasons": 0,
+  "required_team_seasons_per_year": 30,
+  "reason": "Weekly roster files lack capture timestamps; no verified pregame snapshot convention acquired. Cannot reconstruct primary returning-snap-share profiles without assuming pregame membership.",
+  "next_phase_allowed": false,
+  "remediation": "Acquire timestamped opening rosters or independently establish historical pregame snapshot semantics for 2020\u20132025; join prior-season snap IDs and audit coverage before selecting any coefficient."
+}
