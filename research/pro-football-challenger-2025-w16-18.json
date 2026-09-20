@@ -1,0 +1,293 @@
+{
+  "source": "nflverse",
+  "sourceUrls": {
+    "games": "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv",
+    "pbpTemplate": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz"
+  },
+  "methodology": {
+    "features": [
+      "overall EPA matchup edge",
+      "pass EPA matchup edge",
+      "rush EPA matchup edge",
+      "success-rate matchup edge",
+      "explosive-play matchup edge",
+      "turnover margin-rate edge",
+      "sack-rate matchup edge",
+      "special-teams EPA/play edge"
+    ],
+    "rollingWindow": 8,
+    "decay": 0.85,
+    "minimumPriorGames": 4,
+    "trainSeasons": [
+      2022,
+      2023
+    ],
+    "tuningSeason": 2024,
+    "frozenTest": {
+      "season": 2025,
+      "weeks": [
+        16,
+        17,
+        18
+      ]
+    },
+    "selectedL2": 0.003,
+    "selectedCalibrationScale": 1.1,
+    "selectionMetric": "2024 Brier score, log-loss tiebreaker",
+    "productionMutation": false
+  },
+  "validation2024": {
+    "n": 208,
+    "correct": 132,
+    "accuracy": 0.6346153846153846,
+    "brier": 0.22467292154840804,
+    "logLoss": 0.6403443958661879
+  },
+  "heldout2025Weeks16to18": {
+    "baseline": {
+      "n": 48,
+      "correct": 28,
+      "accuracy": 0.5833333333333334,
+      "brier": 0.2541289791666666,
+      "logLoss": 0.7048076042621306
+    },
+    "challenger": {
+      "n": 48,
+      "correct": 23,
+      "accuracy": 0.4791666666666667,
+      "brier": 0.2938692231959937,
+      "logLoss": 0.80561776618174
+    },
+    "market": {
+      "n": 48,
+      "correct": 29,
+      "accuracy": 0.6041666666666666
+    },
+    "flips": [
+      {
+        "gameId": "2025_16_GB_CHI",
+        "matchup": "GB @ CHI",
+        "actual": "CHI",
+        "baselinePick": "GB",
+        "challengerPick": "CHI",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.467,
+        "challengerPHome": 0.5679
+      },
+      {
+        "gameId": "2025_16_PHI_WAS",
+        "matchup": "PHI @ WAS",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "challengerPick": "WAS",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.259,
+        "challengerPHome": 0.5003
+      },
+      {
+        "gameId": "2025_16_ATL_ARI",
+        "matchup": "ATL @ ARI",
+        "actual": "ATL",
+        "baselinePick": "ATL",
+        "challengerPick": "ARI",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.486,
+        "challengerPHome": 0.5872
+      },
+      {
+        "gameId": "2025_16_KC_TEN",
+        "matchup": "KC @ TEN",
+        "actual": "TEN",
+        "baselinePick": "KC",
+        "challengerPick": "TEN",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.189,
+        "challengerPHome": 0.5991
+      },
+      {
+        "gameId": "2025_16_LAC_DAL",
+        "matchup": "LAC @ DAL",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "challengerPick": "DAL",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.442,
+        "challengerPHome": 0.6145
+      },
+      {
+        "gameId": "2025_16_MIN_NYG",
+        "matchup": "MIN @ NYG",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "challengerPick": "NYG",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.294,
+        "challengerPHome": 0.6802
+      },
+      {
+        "gameId": "2025_16_TB_CAR",
+        "matchup": "TB @ CAR",
+        "actual": "CAR",
+        "baselinePick": "TB",
+        "challengerPick": "CAR",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.455,
+        "challengerPHome": 0.5991
+      },
+      {
+        "gameId": "2025_17_NE_NYJ",
+        "matchup": "NE @ NYJ",
+        "actual": "NE",
+        "baselinePick": "NE",
+        "challengerPick": "NYJ",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.244,
+        "challengerPHome": 0.5082
+      },
+      {
+        "gameId": "2025_17_NO_TEN",
+        "matchup": "NO @ TEN",
+        "actual": "NO",
+        "baselinePick": "NO",
+        "challengerPick": "TEN",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.432,
+        "challengerPHome": 0.549
+      },
+      {
+        "gameId": "2025_17_SEA_CAR",
+        "matchup": "SEA @ CAR",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "challengerPick": "CAR",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.234,
+        "challengerPHome": 0.6155
+      },
+      {
+        "gameId": "2025_18_CAR_TB",
+        "matchup": "CAR @ TB",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "challengerPick": "CAR",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.669,
+        "challengerPHome": 0.4964
+      },
+      {
+        "gameId": "2025_18_SEA_SF",
+        "matchup": "SEA @ SF",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "challengerPick": "SF",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.486,
+        "challengerPHome": 0.7187
+      },
+      {
+        "gameId": "2025_18_BAL_PIT",
+        "matchup": "BAL @ PIT",
+        "actual": "PIT",
+        "baselinePick": "BAL",
+        "challengerPick": "PIT",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.481,
+        "challengerPHome": 0.5007
+      },
+      {
+        "gameId": "2025_18_DAL_NYG",
+        "matchup": "DAL @ NYG",
+        "actual": "NYG",
+        "baselinePick": "DAL",
+        "challengerPick": "NYG",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.371,
+        "challengerPHome": 0.5207
+      },
+      {
+        "gameId": "2025_18_GB_MIN",
+        "matchup": "GB @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "challengerPick": "GB",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.531,
+        "challengerPHome": 0.2876
+      },
+      {
+        "gameId": "2025_18_KC_LV",
+        "matchup": "KC @ LV",
+        "actual": "LV",
+        "baselinePick": "KC",
+        "challengerPick": "LV",
+        "baselineCorrect": false,
+        "challengerCorrect": true,
+        "baselinePHome": 0.224,
+        "challengerPHome": 0.5315
+      },
+      {
+        "gameId": "2025_18_LAC_DEN",
+        "matchup": "LAC @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "challengerPick": "LAC",
+        "baselineCorrect": true,
+        "challengerCorrect": false,
+        "baselinePHome": 0.649,
+        "challengerPHome": 0.4248
+      }
+    ],
+    "fixedByChallenger": 6,
+    "brokenByChallenger": 11,
+    "strictPromotionPass": false
+  },
+  "coefficients": [
+    {
+      "feature": "overall EPA matchup edge",
+      "weight": 0.04169211379986466
+    },
+    {
+      "feature": "pass EPA matchup edge",
+      "weight": 0.12118131639085382
+    },
+    {
+      "feature": "rush EPA matchup edge",
+      "weight": -0.14673816204229792
+    },
+    {
+      "feature": "success-rate matchup edge",
+      "weight": 0.24334870005430853
+    },
+    {
+      "feature": "explosive-play matchup edge",
+      "weight": -0.036586102829365724
+    },
+    {
+      "feature": "turnover margin-rate edge",
+      "weight": 0.41191816663507885
+    },
+    {
+      "feature": "sack-rate matchup edge",
+      "weight": -0.05463545982280483
+    },
+    {
+      "feature": "special-teams EPA/play edge",
+      "weight": 0.20885402780383147
+    }
+  ]
+}
