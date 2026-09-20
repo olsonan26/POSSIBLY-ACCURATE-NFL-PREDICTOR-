@@ -1,0 +1,6285 @@
+{
+  "source": "nflverse games.csv + play-by-play; v2.2 production probabilities",
+  "methodology": {
+    "target": "Whether locked production v2.2 picked the game winner incorrectly",
+    "featureNames": [
+      "v2.2 confidence",
+      "market support for v2.2 pick",
+      "market disagrees with v2.2",
+      "absolute closing spread",
+      "overall EPA support for v2.2 pick",
+      "pass EPA support for v2.2 pick",
+      "rush EPA support for v2.2 pick",
+      "success-rate support for v2.2 pick",
+      "explosive-play support for v2.2 pick",
+      "turnover-margin support for v2.2 pick",
+      "sack-rate support for v2.2 pick",
+      "special-teams EPA/play support for v2.2 pick"
+    ],
+    "rollingWindow": 8,
+    "decay": 0.85,
+    "minimumPriorGames": 4,
+    "buildSeason": 2021,
+    "hyperparameterSeason": 2022,
+    "thresholdTuneSeason": 2023,
+    "frozenTest": {
+      "season": 2024,
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    },
+    "selectedL2": 0.1,
+    "selectedCalibrationScale": 1.25,
+    "frozenVulnerabilityThreshold": 0.4,
+    "thresholdSelection": "Maximize F1 on 2024 among rules flagging at least 8%/12 games and no more than 35% of games",
+    "no2025OutcomeUsedForModelOrThreshold": true,
+    "productionMutation": false,
+    "winnerOverrideAllowed": false
+  },
+  "hyperparameterValidation2023": {
+    "probability": {
+      "n": 204,
+      "brier": 0.19965668915862855,
+      "logLoss": 0.5823495969115424
+    },
+    "auc": 0.712803134597056
+  },
+  "thresholdTuning2024": {
+    "probability": {
+      "n": 208,
+      "brier": 0.23153656779133935,
+      "logLoss": 0.6592676978126336
+    },
+    "auc": 0.592346584712997,
+    "selected": {
+      "threshold": 0.4,
+      "n": 208,
+      "totalErrors": 77,
+      "baseErrorRate": 0.3701923076923077,
+      "flagged": 70,
+      "flaggedErrors": 33,
+      "falseAlarms": 37,
+      "precision": 0.4714285714285714,
+      "recall": 0.42857142857142855,
+      "f1": 0.4489795918367347,
+      "flagRate": 0.33653846153846156,
+      "lift": 1.273469387755102,
+      "unflagged": 138,
+      "unflaggedErrors": 44,
+      "unflaggedErrorRate": 0.3188405797101449
+    },
+    "tuningSignalPass": true
+  },
+  "heldout2025Weeks16to18": {
+    "probability": {
+      "n": 208,
+      "brier": 0.18602837120550134,
+      "logLoss": 0.5521062965820946
+    },
+    "auc": 0.7325670498084291,
+    "flags": {
+      "threshold": 0.4,
+      "n": 208,
+      "totalErrors": 63,
+      "baseErrorRate": 0.30288461538461536,
+      "flagged": 82,
+      "flaggedErrors": 39,
+      "falseAlarms": 43,
+      "precision": 0.47560975609756095,
+      "recall": 0.6190476190476191,
+      "f1": 0.5379310344827587,
+      "flagRate": 0.3942307692307692,
+      "lift": 1.570267131242741,
+      "unflagged": 126,
+      "unflaggedErrors": 24,
+      "unflaggedErrorRate": 0.19047619047619047
+    },
+    "heldoutSignalPass": true,
+    "gameTable": [
+      {
+        "week": 5,
+        "gameId": "2024_05_TB_ATL",
+        "matchup": "TB @ ATL",
+        "actual": "ATL",
+        "baselinePick": "TB",
+        "baselineCorrect": false,
+        "baselinePHome": 0.395,
+        "baselineConfidence": 0.605,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.5881,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_ARI_SF",
+        "matchup": "ARI @ SF",
+        "actual": "ARI",
+        "baselinePick": "SF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.844,
+        "baselineConfidence": 0.844,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.5017,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.7113,
+            "value": -0.5258
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1176,
+            "value": -0.2076
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.1096,
+            "value": -0.1221
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_BAL_CIN",
+        "matchup": "BAL @ CIN",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.415,
+        "baselineConfidence": 0.585,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.59,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2442,
+            "value": 0.052
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_BUF_HOU",
+        "matchup": "BUF @ HOU",
+        "actual": "HOU",
+        "baselinePick": "BUF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.396,
+        "baselineConfidence": 0.604,
+        "spreadLine": 1,
+        "vulnerabilityProbability": 0.5185,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_CAR_CHI",
+        "matchup": "CAR @ CHI",
+        "actual": "CHI",
+        "baselinePick": "CHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.767,
+        "baselineConfidence": 0.767,
+        "spreadLine": 4,
+        "vulnerabilityProbability": 0.4699,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1914,
+            "value": -0.3549
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.1003,
+            "value": 0.081
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_CLE_WAS",
+        "matchup": "CLE @ WAS",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.652,
+        "baselineConfidence": 0.652,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.1529,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2897,
+            "value": 0.0618
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_DAL_PIT",
+        "matchup": "DAL @ PIT",
+        "actual": "DAL",
+        "baselinePick": "PIT",
+        "baselineCorrect": false,
+        "baselinePHome": 0.592,
+        "baselineConfidence": 0.592,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.5436,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1525,
+            "value": 0.0323
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_GB_LA",
+        "matchup": "GB @ LA",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.432,
+        "baselineConfidence": 0.568,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4941,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.3093,
+            "value": 0.0661
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1287,
+            "value": -0.2891
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_IND_JAX",
+        "matchup": "IND @ JAX",
+        "actual": "JAX",
+        "baselinePick": "IND",
+        "baselineCorrect": false,
+        "baselinePHome": 0.466,
+        "baselineConfidence": 0.534,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.7583,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.4507,
+            "value": -0.5
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.3071,
+            "value": -0.2235
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_LV_DEN",
+        "matchup": "LV @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.587,
+        "baselineConfidence": 0.587,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3952,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2258,
+            "value": -0.4236
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_MIA_NE",
+        "matchup": "MIA @ NE",
+        "actual": "MIA",
+        "baselinePick": "NE",
+        "baselineCorrect": false,
+        "baselinePHome": 0.532,
+        "baselineConfidence": 0.532,
+        "spreadLine": -2,
+        "vulnerabilityProbability": 0.4244,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3705,
+            "value": -0.2857
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_NYG_SEA",
+        "matchup": "NYG @ SEA",
+        "actual": "NYG",
+        "baselinePick": "SEA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.771,
+        "baselineConfidence": 0.771,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.2877,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0833,
+            "value": 0.0174
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0665,
+            "value": -0.0434
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0402,
+            "value": 0.032
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_NYJ_MIN",
+        "matchup": "NYJ @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.69,
+        "baselineConfidence": 0.69,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.3502,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0779,
+            "value": 0.0162
+          }
+        ]
+      },
+      {
+        "week": 5,
+        "gameId": "2024_05_NO_KC",
+        "matchup": "NO @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.746,
+        "baselineConfidence": 0.746,
+        "spreadLine": 5.5,
+        "vulnerabilityProbability": 0.2185,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0218,
+            "value": -0.0302
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0217,
+            "value": -0.016
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0162,
+            "value": -0.1695
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_SF_SEA",
+        "matchup": "SF @ SEA",
+        "actual": "SF",
+        "baselinePick": "SEA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.513,
+        "baselineConfidence": 0.513,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.5145,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.4507,
+            "value": -0.5
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_ARI_GB",
+        "matchup": "ARI @ GB",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.758,
+        "baselineConfidence": 0.758,
+        "spreadLine": 5.5,
+        "vulnerabilityProbability": 0.3696,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0852,
+            "value": -0.1838
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0837,
+            "value": -0.1398
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0784,
+            "value": -0.0831
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_ATL_CAR",
+        "matchup": "ATL @ CAR",
+        "actual": "ATL",
+        "baselinePick": "ATL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.325,
+        "baselineConfidence": 0.675,
+        "spreadLine": -6,
+        "vulnerabilityProbability": 0.2288,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0046,
+            "value": -0.0492
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0004,
+            "value": 0.0113
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_CIN_NYG",
+        "matchup": "CIN @ NYG",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.481,
+        "baselineConfidence": 0.519,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.1718,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0863,
+            "value": 0.519
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.023,
+            "value": 0.6429
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_CLE_PHI",
+        "matchup": "CLE @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.685,
+        "baselineConfidence": 0.685,
+        "spreadLine": 8,
+        "vulnerabilityProbability": 0.1882,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1762,
+            "value": -0.1255
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1138,
+            "value": 0.024
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_DET_DAL",
+        "matchup": "DET @ DAL",
+        "actual": "DET",
+        "baselinePick": "DAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.535,
+        "baselineConfidence": 0.535,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.566,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.4507,
+            "value": -0.5
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_HOU_NE",
+        "matchup": "HOU @ NE",
+        "actual": "HOU",
+        "baselinePick": "HOU",
+        "baselineCorrect": true,
+        "baselinePHome": 0.381,
+        "baselineConfidence": 0.619,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.3496,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2906,
+            "value": -0.2111
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0509,
+            "value": -0.0486
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0341,
+            "value": 0.0068
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_IND_TEN",
+        "matchup": "IND @ TEN",
+        "actual": "IND",
+        "baselinePick": "TEN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.525,
+        "baselineConfidence": 0.525,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.5452,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.3199,
+            "value": -0.6115
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1857,
+            "value": -0.4273
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_JAX_CHI",
+        "matchup": "JAX @ CHI",
+        "actual": "CHI",
+        "baselinePick": "CHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.608,
+        "baselineConfidence": 0.608,
+        "spreadLine": -1.5,
+        "vulnerabilityProbability": 0.7752,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.3811,
+            "value": -0.2788
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3438,
+            "value": -0.2143
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2864,
+            "value": -0.5446
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_LAC_DEN",
+        "matchup": "LAC @ DEN",
+        "actual": "LAC",
+        "baselinePick": "DEN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.631,
+        "baselineConfidence": 0.631,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4702,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_PIT_LV",
+        "matchup": "PIT @ LV",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.412,
+        "baselineConfidence": 0.588,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.3297,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0694,
+            "value": 0.0144
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_TB_NO",
+        "matchup": "TB @ NO",
+        "actual": "TB",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.573,
+        "baselineConfidence": 0.573,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.723,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.4507,
+            "value": -0.5
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2987,
+            "value": -0.2172
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_WAS_BAL",
+        "matchup": "WAS @ BAL",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.692,
+        "baselineConfidence": 0.692,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2992,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2083,
+            "value": -0.1495
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0378,
+            "value": -0.0322
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0326,
+            "value": -0.0564
+          }
+        ]
+      },
+      {
+        "week": 6,
+        "gameId": "2024_06_BUF_NYJ",
+        "matchup": "BUF @ NYJ",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.361,
+        "baselineConfidence": 0.639,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.3793,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.2101,
+            "value": 0.1429
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1528,
+            "value": 0.0323
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_DEN_NO",
+        "matchup": "DEN @ NO",
+        "actual": "DEN",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.549,
+        "baselineConfidence": 0.549,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.6015,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.307,
+            "value": -0.2234
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_CAR_WAS",
+        "matchup": "CAR @ WAS",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.801,
+        "baselineConfidence": 0.801,
+        "spreadLine": 10,
+        "vulnerabilityProbability": 0.1506,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2583,
+            "value": 0.0551
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.1041,
+            "value": 0.0842
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.001,
+            "value": 0.0194
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_CIN_CLE",
+        "matchup": "CIN @ CLE",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.417,
+        "baselineConfidence": 0.583,
+        "spreadLine": -5.5,
+        "vulnerabilityProbability": 0.1405,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0479,
+            "value": 0.583
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0145,
+            "value": 0.7857
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_DET_MIN",
+        "matchup": "DET @ MIN",
+        "actual": "DET",
+        "baselinePick": "MIN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.558,
+        "baselineConfidence": 0.558,
+        "spreadLine": 1,
+        "vulnerabilityProbability": 0.5487,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.2101,
+            "value": 0.1429
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1476,
+            "value": -0.2675
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_HOU_GB",
+        "matchup": "HOU @ GB",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.639,
+        "baselineConfidence": 0.639,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3097,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1646,
+            "value": 0.0349
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_KC_SF",
+        "matchup": "KC @ SF",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.431,
+        "baselineConfidence": 0.569,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.43,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_LV_LA",
+        "matchup": "LV @ LA",
+        "actual": "LA",
+        "baselinePick": "LA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.626,
+        "baselineConfidence": 0.626,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.164,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0528,
+            "value": 0.0108
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0221,
+            "value": 0.626
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0158,
+            "value": 0.0122
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_MIA_IND",
+        "matchup": "MIA @ IND",
+        "actual": "IND",
+        "baselinePick": "IND",
+        "baselineCorrect": true,
+        "baselinePHome": 0.609,
+        "baselineConfidence": 0.609,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.2592,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1248,
+            "value": 0.0263
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_NE_JAX",
+        "matchup": "NE @ JAX",
+        "actual": "JAX",
+        "baselinePick": "JAX",
+        "baselineCorrect": true,
+        "baselinePHome": 0.557,
+        "baselineConfidence": 0.557,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2077,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.207,
+            "value": 0.044
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0635,
+            "value": 0.557
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_NYJ_PIT",
+        "matchup": "NYJ @ PIT",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.736,
+        "baselineConfidence": 0.736,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.528,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_PHI_NYG",
+        "matchup": "PHI @ NYG",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.386,
+        "baselineConfidence": 0.614,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4282,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1829,
+            "value": 0.0388
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_SEA_ATL",
+        "matchup": "SEA @ ATL",
+        "actual": "SEA",
+        "baselinePick": "ATL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.59,
+        "baselineConfidence": 0.59,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3344,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0437,
+            "value": 0.59
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_TEN_BUF",
+        "matchup": "TEN @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.831,
+        "baselineConfidence": 0.831,
+        "spreadLine": 9.5,
+        "vulnerabilityProbability": 0.119,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1761,
+            "value": 0.0374
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0029,
+            "value": 0.0421
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_BAL_TB",
+        "matchup": "BAL @ TB",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.487,
+        "baselineConfidence": 0.513,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.3216,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1541,
+            "value": 0.0326
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0899,
+            "value": 0.513
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          }
+        ]
+      },
+      {
+        "week": 7,
+        "gameId": "2024_07_LAC_ARI",
+        "matchup": "LAC @ ARI",
+        "actual": "ARI",
+        "baselinePick": "LAC",
+        "baselineCorrect": false,
+        "baselinePHome": 0.388,
+        "baselineConfidence": 0.612,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.6788,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2291,
+            "value": -0.1651
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2216,
+            "value": -0.4152
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_MIN_LA",
+        "matchup": "MIN @ LA",
+        "actual": "LA",
+        "baselinePick": "MIN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.379,
+        "baselineConfidence": 0.621,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4896,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.1007,
+            "value": -0.111
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_ARI_MIA",
+        "matchup": "ARI @ MIA",
+        "actual": "ARI",
+        "baselinePick": "MIA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.624,
+        "baselineConfidence": 0.624,
+        "spreadLine": 4,
+        "vulnerabilityProbability": 0.6105,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2744,
+            "value": -0.5207
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2411,
+            "value": -0.174
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1861,
+            "value": -0.4282
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_ATL_TB",
+        "matchup": "ATL @ TB",
+        "actual": "ATL",
+        "baselinePick": "TB",
+        "baselineCorrect": false,
+        "baselinePHome": 0.65,
+        "baselineConfidence": 0.65,
+        "spreadLine": -1.5,
+        "vulnerabilityProbability": 0.6106,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3438,
+            "value": -0.2143
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2174,
+            "value": 0.2143
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_BAL_CLE",
+        "matchup": "BAL @ CLE",
+        "actual": "CLE",
+        "baselinePick": "BAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.245,
+        "baselineConfidence": 0.755,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.127,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1795,
+            "value": 0.0381
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0374,
+            "value": -0.0216
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0001,
+            "value": 0.0081
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_BUF_SEA",
+        "matchup": "BUF @ SEA",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.4,
+        "baselineConfidence": 0.6,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4393,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.153,
+            "value": 0.0324
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_CAR_DEN",
+        "matchup": "CAR @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.826,
+        "baselineConfidence": 0.826,
+        "spreadLine": 13,
+        "vulnerabilityProbability": 0.1745,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1447,
+            "value": -0.2617
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1303,
+            "value": 0.0275
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0918,
+            "value": -0.1997
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_CHI_WAS",
+        "matchup": "CHI @ WAS",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.595,
+        "baselineConfidence": 0.595,
+        "spreadLine": 1.5,
+        "vulnerabilityProbability": 0.3275,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2174,
+            "value": 0.2143
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1834,
+            "value": 0.2143
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1369,
+            "value": 0.0289
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_DAL_SF",
+        "matchup": "DAL @ SF",
+        "actual": "SF",
+        "baselinePick": "SF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.639,
+        "baselineConfidence": 0.639,
+        "spreadLine": 5.5,
+        "vulnerabilityProbability": 0.4622,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.4963,
+            "value": -0.365
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0337,
+            "value": -0.04
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.02,
+            "value": -0.0258
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_GB_JAX",
+        "matchup": "GB @ JAX",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.328,
+        "baselineConfidence": 0.672,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.4838,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.188,
+            "value": -0.3481
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1286,
+            "value": -0.289
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_IND_HOU",
+        "matchup": "IND @ HOU",
+        "actual": "HOU",
+        "baselinePick": "HOU",
+        "baselineCorrect": true,
+        "baselinePHome": 0.637,
+        "baselineConfidence": 0.637,
+        "spreadLine": 5,
+        "vulnerabilityProbability": 0.2621,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0881,
+            "value": 0.0711
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0776,
+            "value": -0.1277
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0399,
+            "value": 0.7143
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_KC_LV",
+        "matchup": "KC @ LV",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.188,
+        "baselineConfidence": 0.812,
+        "spreadLine": -9,
+        "vulnerabilityProbability": 0.0922,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0015,
+            "value": 0.0245
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_NO_LAC",
+        "matchup": "NO @ LAC",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.627,
+        "baselineConfidence": 0.627,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.2904,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0716,
+            "value": 0.0149
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0708,
+            "value": -0.0735
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0416,
+            "value": -0.4318
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_NYJ_NE",
+        "matchup": "NYJ @ NE",
+        "actual": "NE",
+        "baselinePick": "NYJ",
+        "baselineCorrect": false,
+        "baselinePHome": 0.459,
+        "baselineConfidence": 0.541,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.3157,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0787,
+            "value": 0.0164
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0731,
+            "value": 0.541
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0474,
+            "value": -0.0675
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_PHI_CIN",
+        "matchup": "PHI @ CIN",
+        "actual": "PHI",
+        "baselinePick": "CIN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.5,
+        "baselineConfidence": 0.5,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.2291,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0977,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_TEN_DET",
+        "matchup": "TEN @ DET",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.833,
+        "baselineConfidence": 0.833,
+        "spreadLine": 12.5,
+        "vulnerabilityProbability": 0.1007,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1908,
+            "value": 0.0405
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0591,
+            "value": 0.0475
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0029,
+            "value": 0.0422
+          }
+        ]
+      },
+      {
+        "week": 8,
+        "gameId": "2024_08_NYG_PIT",
+        "matchup": "NYG @ PIT",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.799,
+        "baselineConfidence": 0.799,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.2238,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1359,
+            "value": 0.0287
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0142,
+            "value": -0.0027
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0051,
+            "value": -0.0542
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_HOU_NYJ",
+        "matchup": "HOU @ NYJ",
+        "actual": "NYJ",
+        "baselinePick": "HOU",
+        "baselineCorrect": false,
+        "baselinePHome": 0.39,
+        "baselineConfidence": 0.61,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.6004,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_CHI_ARI",
+        "matchup": "CHI @ ARI",
+        "actual": "ARI",
+        "baselinePick": "CHI",
+        "baselineCorrect": false,
+        "baselinePHome": 0.489,
+        "baselineConfidence": 0.511,
+        "spreadLine": 1.5,
+        "vulnerabilityProbability": 0.7296,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3438,
+            "value": -0.2143
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.228,
+            "value": -0.428
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_DAL_ATL",
+        "matchup": "DAL @ ATL",
+        "actual": "ATL",
+        "baselinePick": "ATL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.517,
+        "baselineConfidence": 0.517,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.381,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1606,
+            "value": -0.1138
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_DEN_BAL",
+        "matchup": "DEN @ BAL",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.683,
+        "baselineConfidence": 0.683,
+        "spreadLine": 9,
+        "vulnerabilityProbability": 0.1696,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2993,
+            "value": -0.2176
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1991,
+            "value": 0.0423
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0025,
+            "value": -0.028
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_DET_GB",
+        "matchup": "DET @ GB",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.471,
+        "baselineConfidence": 0.529,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.4277,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0803,
+            "value": 0.529
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_IND_MIN",
+        "matchup": "IND @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.703,
+        "baselineConfidence": 0.703,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2325,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0779,
+            "value": 0.0628
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0477,
+            "value": -0.0294
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0151,
+            "value": -0.1579
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_JAX_PHI",
+        "matchup": "JAX @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.806,
+        "baselineConfidence": 0.806,
+        "spreadLine": 7.5,
+        "vulnerabilityProbability": 0.3644,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.344,
+            "value": -0.2511
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1388,
+            "value": -0.2499
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.09,
+            "value": 0.0727
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_LA_SEA",
+        "matchup": "LA @ SEA",
+        "actual": "LA",
+        "baselinePick": "SEA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.6,
+        "baselineConfidence": 0.6,
+        "spreadLine": -1.5,
+        "vulnerabilityProbability": 0.565,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3438,
+            "value": -0.2143
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2174,
+            "value": 0.2143
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_LAC_CLE",
+        "matchup": "LAC @ CLE",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.436,
+        "baselineConfidence": 0.564,
+        "spreadLine": -2,
+        "vulnerabilityProbability": 0.4686,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1566,
+            "value": 0.2857
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0593,
+            "value": 0.564
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_LV_CIN",
+        "matchup": "LV @ CIN",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.708,
+        "baselineConfidence": 0.708,
+        "spreadLine": 8,
+        "vulnerabilityProbability": 0.1305,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1271,
+            "value": 0.0268
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0011,
+            "value": 0.0204
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_MIA_BUF",
+        "matchup": "MIA @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.849,
+        "baselineConfidence": 0.849,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.1679,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0012,
+            "value": 0.0211
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_NE_TEN",
+        "matchup": "NE @ TEN",
+        "actual": "TEN",
+        "baselinePick": "TEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.56,
+        "baselineConfidence": 0.56,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.5747,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1952,
+            "value": -0.1397
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1834,
+            "value": -0.3389
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_NO_CAR",
+        "matchup": "NO @ CAR",
+        "actual": "CAR",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.327,
+        "baselineConfidence": 0.673,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.4079,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2043,
+            "value": -0.1465
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1551,
+            "value": 0.0328
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0514,
+            "value": -0.0492
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_WAS_NYG",
+        "matchup": "WAS @ NYG",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.38,
+        "baselineConfidence": 0.62,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.2314,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0842,
+            "value": 0.0176
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0257,
+            "value": 0.62
+          }
+        ]
+      },
+      {
+        "week": 9,
+        "gameId": "2024_09_TB_KC",
+        "matchup": "TB @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.812,
+        "baselineConfidence": 0.812,
+        "spreadLine": 9,
+        "vulnerabilityProbability": 0.1845,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1473,
+            "value": -0.2669
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0938,
+            "value": -0.2045
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0294,
+            "value": -0.0217
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_CIN_BAL",
+        "matchup": "CIN @ BAL",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.734,
+        "baselineConfidence": 0.734,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.3415,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2948,
+            "value": 0.0629
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1571,
+            "value": -0.1112
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0124,
+            "value": 0.0093
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_ATL_NO",
+        "matchup": "ATL @ NO",
+        "actual": "NO",
+        "baselinePick": "ATL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.436,
+        "baselineConfidence": 0.564,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.2202,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0593,
+            "value": 0.564
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_BUF_IND",
+        "matchup": "BUF @ IND",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.311,
+        "baselineConfidence": 0.689,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.1605,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.023,
+            "value": 0.6429
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0006,
+            "value": 0.0138
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_DEN_KC",
+        "matchup": "DEN @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.835,
+        "baselineConfidence": 0.835,
+        "spreadLine": 7.5,
+        "vulnerabilityProbability": 0.1361,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.09,
+            "value": -0.061
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0039,
+            "value": -0.0418
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_DET_HOU",
+        "matchup": "DET @ HOU",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.344,
+        "baselineConfidence": 0.656,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.2785,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0538,
+            "value": 0.011
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.023,
+            "value": 0.6429
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_MIN_JAX",
+        "matchup": "MIN @ JAX",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.341,
+        "baselineConfidence": 0.659,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.4077,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.301,
+            "value": -0.2189
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1471,
+            "value": -0.2665
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1206,
+            "value": -0.2695
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_NE_CHI",
+        "matchup": "NE @ CHI",
+        "actual": "NE",
+        "baselinePick": "CHI",
+        "baselineCorrect": false,
+        "baselinePHome": 0.753,
+        "baselineConfidence": 0.753,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.3483,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1896,
+            "value": -0.3513
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0622,
+            "value": 0.05
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.059,
+            "value": -0.1204
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_NYG_CAR",
+        "matchup": "NYG @ CAR",
+        "actual": "CAR",
+        "baselinePick": "NYG",
+        "baselineCorrect": false,
+        "baselinePHome": 0.385,
+        "baselineConfidence": 0.615,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.3874,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1491,
+            "value": -0.1053
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.1327,
+            "value": 0.1075
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1245,
+            "value": 0.0263
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_NYJ_ARI",
+        "matchup": "NYJ @ ARI",
+        "actual": "ARI",
+        "baselinePick": "ARI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.63,
+        "baselineConfidence": 0.63,
+        "spreadLine": -2,
+        "vulnerabilityProbability": 0.5409,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3705,
+            "value": -0.2857
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_PHI_DAL",
+        "matchup": "PHI @ DAL",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.405,
+        "baselineConfidence": 0.595,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.3198,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0639,
+            "value": 0.0132
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0536,
+            "value": 0.043
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0476,
+            "value": -0.0444
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_PIT_WAS",
+        "matchup": "PIT @ WAS",
+        "actual": "PIT",
+        "baselinePick": "WAS",
+        "baselineCorrect": false,
+        "baselinePHome": 0.505,
+        "baselineConfidence": 0.505,
+        "spreadLine": 1.5,
+        "vulnerabilityProbability": 0.3882,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2174,
+            "value": 0.2143
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1834,
+            "value": 0.2143
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0947,
+            "value": 0.505
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_SF_TB",
+        "matchup": "SF @ TB",
+        "actual": "SF",
+        "baselinePick": "SF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.445,
+        "baselineConfidence": 0.555,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.4576,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.275,
+            "value": -0.1995
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1116,
+            "value": -0.1955
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1016,
+            "value": 0.0213
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_TEN_LAC",
+        "matchup": "TEN @ LAC",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.777,
+        "baselineConfidence": 0.777,
+        "spreadLine": 8,
+        "vulnerabilityProbability": 0.2353,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1524,
+            "value": 0.0323
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.056,
+            "value": -0.055
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0484,
+            "value": 0.0387
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "gameId": "2024_10_MIA_LA",
+        "matchup": "MIA @ LA",
+        "actual": "MIA",
+        "baselinePick": "LA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.697,
+        "baselineConfidence": 0.697,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.3936,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0502,
+            "value": 0.0402
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_WAS_PHI",
+        "matchup": "WAS @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.726,
+        "baselineConfidence": 0.726,
+        "spreadLine": 4.5,
+        "vulnerabilityProbability": 0.4787,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1472,
+            "value": -0.2667
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1164,
+            "value": -0.2595
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1153,
+            "value": -0.08
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_ATL_DEN",
+        "matchup": "ATL @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.579,
+        "baselineConfidence": 0.579,
+        "spreadLine": 2,
+        "vulnerabilityProbability": 0.5076,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1566,
+            "value": 0.2857
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1418,
+            "value": -0.2558
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_BAL_PIT",
+        "matchup": "BAL @ PIT",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.506,
+        "baselineConfidence": 0.506,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.7139,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.3149,
+            "value": -0.6015
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_CIN_LAC",
+        "matchup": "CIN @ LAC",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.614,
+        "baselineConfidence": 0.614,
+        "spreadLine": 1,
+        "vulnerabilityProbability": 0.7052,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2524,
+            "value": 0.0538
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2134,
+            "value": -0.3989
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_CLE_NO",
+        "matchup": "CLE @ NO",
+        "actual": "NO",
+        "baselinePick": "NO",
+        "baselineCorrect": true,
+        "baselinePHome": 0.602,
+        "baselineConfidence": 0.602,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.6104,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2691,
+            "value": -0.195
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_GB_CHI",
+        "matchup": "GB @ CHI",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.348,
+        "baselineConfidence": 0.652,
+        "spreadLine": -6,
+        "vulnerabilityProbability": 0.2332,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2829,
+            "value": 0.0604
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0065,
+            "value": 0.652
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_IND_NYJ",
+        "matchup": "IND @ NYJ",
+        "actual": "IND",
+        "baselinePick": "NYJ",
+        "baselineCorrect": false,
+        "baselinePHome": 0.519,
+        "baselineConfidence": 0.519,
+        "spreadLine": 4,
+        "vulnerabilityProbability": 0.2325,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0863,
+            "value": 0.519
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0497,
+            "value": 0.5714
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_JAX_DET",
+        "matchup": "JAX @ DET",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.858,
+        "baselineConfidence": 0.858,
+        "spreadLine": 14,
+        "vulnerabilityProbability": 0.1572,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1335,
+            "value": -0.0936
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0964,
+            "value": -0.1652
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0601,
+            "value": -0.1231
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_KC_BUF",
+        "matchup": "KC @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.506,
+        "baselineConfidence": 0.506,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.4953,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.3547,
+            "value": 0.0759
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_LA_NE",
+        "matchup": "LA @ NE",
+        "actual": "LA",
+        "baselinePick": "LA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.43,
+        "baselineConfidence": 0.57,
+        "spreadLine": -4,
+        "vulnerabilityProbability": 0.3849,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0663,
+            "value": 0.0137
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0557,
+            "value": 0.57
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_LV_MIA",
+        "matchup": "LV @ MIA",
+        "actual": "MIA",
+        "baselinePick": "MIA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.683,
+        "baselineConfidence": 0.683,
+        "spreadLine": 8,
+        "vulnerabilityProbability": 0.2732,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2079,
+            "value": 0.0442
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0636,
+            "value": -0.0413
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0118,
+            "value": 0.0003
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_MIN_TEN",
+        "matchup": "MIN @ TEN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.291,
+        "baselineConfidence": 0.709,
+        "spreadLine": -6,
+        "vulnerabilityProbability": 0.2961,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0519,
+            "value": -0.1031
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0262,
+            "value": -0.025
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0214,
+            "value": -0.223
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_SEA_SF",
+        "matchup": "SEA @ SF",
+        "actual": "SEA",
+        "baselinePick": "SF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.74,
+        "baselineConfidence": 0.74,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.3558,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2778,
+            "value": -0.2015
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0438,
+            "value": 0.0089
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0192,
+            "value": -0.0112
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "gameId": "2024_11_HOU_DAL",
+        "matchup": "HOU @ DAL",
+        "actual": "HOU",
+        "baselinePick": "DAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.507,
+        "baselineConfidence": 0.507,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.5841,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.6646,
+            "value": -1.0714
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1525,
+            "value": -0.1078
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_PIT_CLE",
+        "matchup": "PIT @ CLE",
+        "actual": "CLE",
+        "baselinePick": "PIT",
+        "baselineCorrect": false,
+        "baselinePHome": 0.279,
+        "baselineConfidence": 0.721,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.2588,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0207,
+            "value": -0.0277
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_ARI_SEA",
+        "matchup": "ARI @ SEA",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.571,
+        "baselineConfidence": 0.571,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.5997,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_DAL_WAS",
+        "matchup": "DAL @ WAS",
+        "actual": "DAL",
+        "baselinePick": "WAS",
+        "baselineCorrect": false,
+        "baselinePHome": 0.649,
+        "baselineConfidence": 0.649,
+        "spreadLine": 10.5,
+        "vulnerabilityProbability": 0.1568,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0385,
+            "value": 0.0077
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0083,
+            "value": 0.649
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0024,
+            "value": 0.0012
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_DEN_LV",
+        "matchup": "DEN @ LV",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.347,
+        "baselineConfidence": 0.653,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.3489,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2637,
+            "value": 0.0562
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0552,
+            "value": -0.0541
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0059,
+            "value": 0.653
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_DET_IND",
+        "matchup": "DET @ IND",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.259,
+        "baselineConfidence": 0.741,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.1758,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0338,
+            "value": 0.0067
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.001,
+            "value": 0.019
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_KC_CAR",
+        "matchup": "KC @ CAR",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.135,
+        "baselineConfidence": 0.865,
+        "spreadLine": -11,
+        "vulnerabilityProbability": 0.1138,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0616,
+            "value": -0.0398
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0381,
+            "value": 0.0303
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0275,
+            "value": -0.286
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_MIN_CHI",
+        "matchup": "MIN @ CHI",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.337,
+        "baselineConfidence": 0.663,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4335,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.126,
+            "value": -0.0879
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_NE_MIA",
+        "matchup": "NE @ MIA",
+        "actual": "MIA",
+        "baselinePick": "MIA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.716,
+        "baselineConfidence": 0.716,
+        "spreadLine": 7.5,
+        "vulnerabilityProbability": 0.2334,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0179,
+            "value": -0.0208
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0116,
+            "value": -0.1218
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.001,
+            "value": 0.0189
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_PHI_LA",
+        "matchup": "PHI @ LA",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.364,
+        "baselineConfidence": 0.636,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4377,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1343,
+            "value": -0.2409
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_SF_GB",
+        "matchup": "SF @ GB",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.568,
+        "baselineConfidence": 0.568,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2902,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2308,
+            "value": 0.0492
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0569,
+            "value": 0.568
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0111,
+            "value": -0.0045
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_TB_NYG",
+        "matchup": "TB @ NYG",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.384,
+        "baselineConfidence": 0.616,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.1593,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0281,
+            "value": 0.616
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0083,
+            "value": -0.0875
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_TEN_HOU",
+        "matchup": "TEN @ HOU",
+        "actual": "TEN",
+        "baselinePick": "HOU",
+        "baselineCorrect": false,
+        "baselinePHome": 0.798,
+        "baselineConfidence": 0.798,
+        "spreadLine": 8,
+        "vulnerabilityProbability": 0.2075,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1056,
+            "value": 0.0222
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0913,
+            "value": -0.1551
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0481,
+            "value": -0.0451
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "gameId": "2024_12_BAL_LAC",
+        "matchup": "BAL @ LAC",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.461,
+        "baselineConfidence": 0.539,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.2565,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0743,
+            "value": 0.539
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_CHI_DET",
+        "matchup": "CHI @ DET",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.875,
+        "baselineConfidence": 0.875,
+        "spreadLine": 9.5,
+        "vulnerabilityProbability": 0.1914,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1763,
+            "value": 0.0374
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0216,
+            "value": -0.0298
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0169,
+            "value": -0.0061
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_MIA_GB",
+        "matchup": "MIA @ GB",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.715,
+        "baselineConfidence": 0.715,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.3664,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2453,
+            "value": 0.0523
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_NYG_DAL",
+        "matchup": "NYG @ DAL",
+        "actual": "DAL",
+        "baselinePick": "DAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.721,
+        "baselineConfidence": 0.721,
+        "spreadLine": 4.5,
+        "vulnerabilityProbability": 0.2852,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0966,
+            "value": -0.1656
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.061,
+            "value": -0.1252
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_LV_KC",
+        "matchup": "LV @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.909,
+        "baselineConfidence": 0.909,
+        "spreadLine": 13.5,
+        "vulnerabilityProbability": 0.0895,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0579,
+            "value": -0.037
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0019,
+            "value": -0.0002
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0009,
+            "value": 0.0173
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_ARI_MIN",
+        "matchup": "ARI @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.758,
+        "baselineConfidence": 0.758,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.4371,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1335,
+            "value": -0.0936
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_HOU_JAX",
+        "matchup": "HOU @ JAX",
+        "actual": "HOU",
+        "baselinePick": "HOU",
+        "baselineCorrect": true,
+        "baselinePHome": 0.372,
+        "baselineConfidence": 0.628,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.4847,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2172,
+            "value": -0.4065
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1226,
+            "value": -0.2743
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.1225,
+            "value": -0.1382
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_IND_NE",
+        "matchup": "IND @ NE",
+        "actual": "IND",
+        "baselinePick": "IND",
+        "baselineCorrect": true,
+        "baselinePHome": 0.475,
+        "baselineConfidence": 0.525,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.5574,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2262,
+            "value": 0.0482
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1434,
+            "value": -0.259
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_LA_NO",
+        "matchup": "LA @ NO",
+        "actual": "LA",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.544,
+        "baselineConfidence": 0.544,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.696,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_LAC_ATL",
+        "matchup": "LAC @ ATL",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.449,
+        "baselineConfidence": 0.551,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.5841,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.2101,
+            "value": 0.1429
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1699,
+            "value": 0.036
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_PHI_BAL",
+        "matchup": "PHI @ BAL",
+        "actual": "PHI",
+        "baselinePick": "BAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.548,
+        "baselineConfidence": 0.548,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3131,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0689,
+            "value": 0.548
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_PIT_CIN",
+        "matchup": "PIT @ CIN",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.434,
+        "baselineConfidence": 0.566,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.7011,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1718,
+            "value": -0.3159
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_SEA_NYJ",
+        "matchup": "SEA @ NYJ",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.394,
+        "baselineConfidence": 0.606,
+        "spreadLine": 1,
+        "vulnerabilityProbability": 0.5962,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_SF_BUF",
+        "matchup": "SF @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.758,
+        "baselineConfidence": 0.758,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.1969,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0152,
+            "value": 0.0027
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0016,
+            "value": 0.0269
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_TB_CAR",
+        "matchup": "TB @ CAR",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.27,
+        "baselineConfidence": 0.73,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.2527,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1462,
+            "value": -0.103
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0374,
+            "value": -0.3885
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0328,
+            "value": 0.026
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_TEN_WAS",
+        "matchup": "TEN @ WAS",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.692,
+        "baselineConfidence": 0.692,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.2042,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0329,
+            "value": 0.0065
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0001,
+            "value": 0.0076
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "gameId": "2024_13_CLE_DEN",
+        "matchup": "CLE @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.767,
+        "baselineConfidence": 0.767,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.1726,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0155,
+            "value": -0.1627
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0128,
+            "value": -0.0084
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.001,
+            "value": 0.0187
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_GB_DET",
+        "matchup": "GB @ DET",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.677,
+        "baselineConfidence": 0.677,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.5099,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1498,
+            "value": -0.1057
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1111,
+            "value": -0.1945
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_ATL_MIN",
+        "matchup": "ATL @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.77,
+        "baselineConfidence": 0.77,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.2951,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0464,
+            "value": 0.0371
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0438,
+            "value": -0.0397
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0402,
+            "value": -0.0748
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_BUF_LA",
+        "matchup": "BUF @ LA",
+        "actual": "LA",
+        "baselinePick": "BUF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.287,
+        "baselineConfidence": 0.713,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.2997,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0433,
+            "value": 0.0088
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_CAR_PHI",
+        "matchup": "CAR @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.909,
+        "baselineConfidence": 0.909,
+        "spreadLine": 14,
+        "vulnerabilityProbability": 0.1349,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0845,
+            "value": 0.0682
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0617,
+            "value": -0.0621
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.037,
+            "value": 0.0074
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_CHI_SF",
+        "matchup": "CHI @ SF",
+        "actual": "SF",
+        "baselinePick": "SF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.744,
+        "baselineConfidence": 0.744,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3646,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1026,
+            "value": -0.0704
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_CLE_PIT",
+        "matchup": "CLE @ PIT",
+        "actual": "PIT",
+        "baselinePick": "PIT",
+        "baselineCorrect": true,
+        "baselinePHome": 0.839,
+        "baselineConfidence": 0.839,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.2212,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0573,
+            "value": 0.0118
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0095,
+            "value": 0.0082
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0042,
+            "value": 0.0123
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_JAX_TEN",
+        "matchup": "JAX @ TEN",
+        "actual": "JAX",
+        "baselinePick": "TEN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.578,
+        "baselineConfidence": 0.578,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.5176,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.3386,
+            "value": -0.247
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_LAC_KC",
+        "matchup": "LAC @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.769,
+        "baselineConfidence": 0.769,
+        "spreadLine": 5,
+        "vulnerabilityProbability": 0.1992,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0826,
+            "value": -0.0555
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0399,
+            "value": 0.7143
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0013,
+            "value": -0.0152
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_LV_TB",
+        "matchup": "LV @ TB",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.795,
+        "baselineConfidence": 0.795,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.2227,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1407,
+            "value": -0.0989
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0813,
+            "value": 0.017
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0008,
+            "value": 0.0162
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_NO_NYG",
+        "matchup": "NO @ NYG",
+        "actual": "NO",
+        "baselinePick": "NO",
+        "baselineCorrect": true,
+        "baselinePHome": 0.411,
+        "baselineConfidence": 0.589,
+        "spreadLine": -5.5,
+        "vulnerabilityProbability": 0.3981,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2056,
+            "value": -0.1475
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1834,
+            "value": 0.0389
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0443,
+            "value": 0.589
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_NYJ_MIA",
+        "matchup": "NYJ @ MIA",
+        "actual": "MIA",
+        "baselinePick": "MIA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.752,
+        "baselineConfidence": 0.752,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2527,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1814,
+            "value": -0.1294
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0248,
+            "value": -0.2584
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0006,
+            "value": 0.0137
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_SEA_ARI",
+        "matchup": "SEA @ ARI",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.479,
+        "baselineConfidence": 0.521,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.7466,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.4042,
+            "value": -0.2961
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "gameId": "2024_14_CIN_DAL",
+        "matchup": "CIN @ DAL",
+        "actual": "CIN",
+        "baselinePick": "DAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.538,
+        "baselineConfidence": 0.538,
+        "spreadLine": -5,
+        "vulnerabilityProbability": 0.6889,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.5309,
+            "value": -0.7143
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2646,
+            "value": -0.501
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_LA_SF",
+        "matchup": "LA @ SF",
+        "actual": "LA",
+        "baselinePick": "SF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.628,
+        "baselineConfidence": 0.628,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.4412,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1317,
+            "value": -0.2357
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_BAL_NYG",
+        "matchup": "BAL @ NYG",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.187,
+        "baselineConfidence": 0.813,
+        "spreadLine": -16.5,
+        "vulnerabilityProbability": 0.0668,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0904,
+            "value": 0.0189
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0002,
+            "value": 0.0094
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_BUF_DET",
+        "matchup": "BUF @ DET",
+        "actual": "BUF",
+        "baselinePick": "DET",
+        "baselineCorrect": false,
+        "baselinePHome": 0.608,
+        "baselineConfidence": 0.608,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.4685,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1973,
+            "value": -0.3667
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_CIN_TEN",
+        "matchup": "CIN @ TEN",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.336,
+        "baselineConfidence": 0.664,
+        "spreadLine": -6,
+        "vulnerabilityProbability": 0.1937,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1414,
+            "value": 0.0299
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_DAL_CAR",
+        "matchup": "DAL @ CAR",
+        "actual": "DAL",
+        "baselinePick": "DAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.34,
+        "baselineConfidence": 0.66,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.6415,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_GB_SEA",
+        "matchup": "GB @ SEA",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.458,
+        "baselineConfidence": 0.542,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.2403,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1736,
+            "value": 0.0368
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_IND_DEN",
+        "matchup": "IND @ DEN",
+        "actual": "DEN",
+        "baselinePick": "DEN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.711,
+        "baselineConfidence": 0.711,
+        "spreadLine": 4.5,
+        "vulnerabilityProbability": 0.2416,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.023,
+            "value": 0.6429
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0136,
+            "value": -0.002
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_KC_CLE",
+        "matchup": "KC @ CLE",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.179,
+        "baselineConfidence": 0.821,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.1977,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.023,
+            "value": 0.6429
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0083,
+            "value": 0.006
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_MIA_HOU",
+        "matchup": "MIA @ HOU",
+        "actual": "HOU",
+        "baselinePick": "HOU",
+        "baselineCorrect": true,
+        "baselinePHome": 0.613,
+        "baselineConfidence": 0.613,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.5991,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.2665,
+            "value": -0.5049
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1965,
+            "value": 0.0418
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.1805,
+            "value": -0.2109
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_NE_ARI",
+        "matchup": "NE @ ARI",
+        "actual": "ARI",
+        "baselinePick": "ARI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.686,
+        "baselineConfidence": 0.686,
+        "spreadLine": 6,
+        "vulnerabilityProbability": 0.3004,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.095,
+            "value": 0.0199
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0605,
+            "value": -0.0936
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0223,
+            "value": -0.0315
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_NYJ_JAX",
+        "matchup": "NYJ @ JAX",
+        "actual": "NYJ",
+        "baselinePick": "JAX",
+        "baselineCorrect": false,
+        "baselinePHome": 0.615,
+        "baselineConfidence": 0.615,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.7066,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.4507,
+            "value": -0.5
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1885,
+            "value": 0.04
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_PIT_PHI",
+        "matchup": "PIT @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.668,
+        "baselineConfidence": 0.668,
+        "spreadLine": 5.5,
+        "vulnerabilityProbability": 0.3173,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1736,
+            "value": -0.1236
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.044,
+            "value": 0.0351
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0145,
+            "value": 0.7857
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_TB_LAC",
+        "matchup": "TB @ LAC",
+        "actual": "TB",
+        "baselinePick": "LAC",
+        "baselineCorrect": false,
+        "baselinePHome": 0.563,
+        "baselineConfidence": 0.563,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.4534,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.122,
+            "value": -0.2163
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_WAS_NO",
+        "matchup": "WAS @ NO",
+        "actual": "WAS",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.524,
+        "baselineConfidence": 0.524,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.7708,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.6646,
+            "value": -1.0714
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.3051,
+            "value": -0.2219
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_ATL_LV",
+        "matchup": "ATL @ LV",
+        "actual": "ATL",
+        "baselinePick": "ATL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.437,
+        "baselineConfidence": 0.563,
+        "spreadLine": -6.5,
+        "vulnerabilityProbability": 0.3604,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2897,
+            "value": -0.2104
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.141,
+            "value": 0.0298
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0599,
+            "value": 0.563
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "gameId": "2024_15_CHI_MIN",
+        "matchup": "CHI @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.847,
+        "baselineConfidence": 0.847,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.2606,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1054,
+            "value": 0.0221
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.066,
+            "value": -0.043
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0171,
+            "value": -0.1792
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_DEN_LAC",
+        "matchup": "DEN @ LAC",
+        "actual": "LAC",
+        "baselinePick": "DEN",
+        "baselineCorrect": false,
+        "baselinePHome": 0.479,
+        "baselineConfidence": 0.521,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.5947,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.424,
+            "value": -0.4286
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_HOU_KC",
+        "matchup": "HOU @ KC",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.808,
+        "baselineConfidence": 0.808,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.2651,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1989,
+            "value": -0.1425
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_PIT_BAL",
+        "matchup": "PIT @ BAL",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.64,
+        "baselineConfidence": 0.64,
+        "spreadLine": 7,
+        "vulnerabilityProbability": 0.2418,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2322,
+            "value": -0.1674
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0137,
+            "value": 0.64
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_ARI_CAR",
+        "matchup": "ARI @ CAR",
+        "actual": "CAR",
+        "baselinePick": "ARI",
+        "baselineCorrect": false,
+        "baselinePHome": 0.339,
+        "baselineConfidence": 0.661,
+        "spreadLine": -5.5,
+        "vulnerabilityProbability": 0.3248,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0984,
+            "value": 0.0206
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0209,
+            "value": -0.0093
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0145,
+            "value": 0.7857
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_CLE_CIN",
+        "matchup": "CLE @ CIN",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.762,
+        "baselineConfidence": 0.762,
+        "spreadLine": 10,
+        "vulnerabilityProbability": 0.1264,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1058,
+            "value": 0.0222
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0021,
+            "value": 0.0321
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0017,
+            "value": 0.0051
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_DET_CHI",
+        "matchup": "DET @ CHI",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.201,
+        "baselineConfidence": 0.799,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.2031,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1977,
+            "value": 0.042
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_JAX_LV",
+        "matchup": "JAX @ LV",
+        "actual": "LV",
+        "baselinePick": "JAX",
+        "baselineCorrect": false,
+        "baselinePHome": 0.494,
+        "baselineConfidence": 0.506,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.5258,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2081,
+            "value": 0.0443
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_LA_NYJ",
+        "matchup": "LA @ NYJ",
+        "actual": "LA",
+        "baselinePick": "LA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.355,
+        "baselineConfidence": 0.645,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.4745,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.209,
+            "value": -0.1501
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_MIN_SEA",
+        "matchup": "MIN @ SEA",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.4,
+        "baselineConfidence": 0.6,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.3277,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1299,
+            "value": 0.3571
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0838,
+            "value": 0.0175
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_NE_BUF",
+        "matchup": "NE @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.913,
+        "baselineConfidence": 0.913,
+        "spreadLine": 14,
+        "vulnerabilityProbability": 0.0821,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1624,
+            "value": 0.0344
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0018,
+            "value": 0.0288
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_NYG_ATL",
+        "matchup": "NYG @ ATL",
+        "actual": "ATL",
+        "baselinePick": "ATL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.732,
+        "baselineConfidence": 0.732,
+        "spreadLine": 9.5,
+        "vulnerabilityProbability": 0.2573,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1151,
+            "value": -0.0798
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0557,
+            "value": 0.0114
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0529,
+            "value": -0.0783
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_PHI_WAS",
+        "matchup": "PHI @ WAS",
+        "actual": "WAS",
+        "baselinePick": "PHI",
+        "baselineCorrect": false,
+        "baselinePHome": 0.303,
+        "baselineConfidence": 0.697,
+        "spreadLine": -4,
+        "vulnerabilityProbability": 0.3986,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0869,
+            "value": -0.0587
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0497,
+            "value": 0.5714
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_SF_MIA",
+        "matchup": "SF @ MIA",
+        "actual": "MIA",
+        "baselinePick": "MIA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.526,
+        "baselineConfidence": 0.526,
+        "spreadLine": -2,
+        "vulnerabilityProbability": 0.467,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3705,
+            "value": -0.2857
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_TB_DAL",
+        "matchup": "TB @ DAL",
+        "actual": "DAL",
+        "baselinePick": "TB",
+        "baselineCorrect": false,
+        "baselinePHome": 0.438,
+        "baselineConfidence": 0.562,
+        "spreadLine": -4.5,
+        "vulnerabilityProbability": 0.3445,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2406,
+            "value": -0.1737
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0652,
+            "value": 0.6429
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0605,
+            "value": 0.562
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_TEN_IND",
+        "matchup": "TEN @ IND",
+        "actual": "IND",
+        "baselinePick": "IND",
+        "baselineCorrect": true,
+        "baselinePHome": 0.69,
+        "baselineConfidence": 0.69,
+        "spreadLine": 4,
+        "vulnerabilityProbability": 0.4684,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1849,
+            "value": -0.3419
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1056,
+            "value": -0.2332
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "gameId": "2024_16_NO_GB",
+        "matchup": "NO @ GB",
+        "actual": "GB",
+        "baselinePick": "GB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.801,
+        "baselineConfidence": 0.801,
+        "spreadLine": 14,
+        "vulnerabilityProbability": 0.0658,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0253,
+            "value": 0.0049
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0049,
+            "value": -0.053
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0004,
+            "value": 0.012
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_BAL_HOU",
+        "matchup": "BAL @ HOU",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.379,
+        "baselineConfidence": 0.621,
+        "spreadLine": -5.5,
+        "vulnerabilityProbability": 0.2748,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1338,
+            "value": 0.0283
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0888,
+            "value": -0.0601
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0251,
+            "value": 0.621
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_KC_PIT",
+        "matchup": "KC @ PIT",
+        "actual": "KC",
+        "baselinePick": "KC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.359,
+        "baselineConfidence": 0.641,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.3404,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.2193,
+            "value": -0.1578
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_SEA_CHI",
+        "matchup": "SEA @ CHI",
+        "actual": "SEA",
+        "baselinePick": "SEA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.341,
+        "baselineConfidence": 0.659,
+        "spreadLine": -3.5,
+        "vulnerabilityProbability": 0.4328,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1943,
+            "value": -0.1391
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0779,
+            "value": -0.1283
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_ARI_LA",
+        "matchup": "ARI @ LA",
+        "actual": "LA",
+        "baselinePick": "LA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.733,
+        "baselineConfidence": 0.733,
+        "spreadLine": 6.5,
+        "vulnerabilityProbability": 0.2322,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0391,
+            "value": -0.0339
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.037,
+            "value": -0.0214
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.019,
+            "value": -0.1989
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_DEN_CIN",
+        "matchup": "DEN @ CIN",
+        "actual": "CIN",
+        "baselinePick": "CIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.545,
+        "baselineConfidence": 0.545,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.3826,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1842,
+            "value": 0.0391
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_LAC_NE",
+        "matchup": "LAC @ NE",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.317,
+        "baselineConfidence": 0.683,
+        "spreadLine": -6,
+        "vulnerabilityProbability": 0.3232,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0518,
+            "value": -0.0498
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0488,
+            "value": 0.0391
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0326,
+            "value": -0.0379
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_ATL_WAS",
+        "matchup": "ATL @ WAS",
+        "actual": "WAS",
+        "baselinePick": "WAS",
+        "baselineCorrect": true,
+        "baselinePHome": 0.645,
+        "baselineConfidence": 0.645,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.2382,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0314,
+            "value": -0.0243
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_CAR_TB",
+        "matchup": "CAR @ TB",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.848,
+        "baselineConfidence": 0.848,
+        "spreadLine": 9.5,
+        "vulnerabilityProbability": 0.2148,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1788,
+            "value": -0.1274
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.045,
+            "value": -0.0865
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0367,
+            "value": -0.3814
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_DAL_PHI",
+        "matchup": "DAL @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.777,
+        "baselineConfidence": 0.777,
+        "spreadLine": 7.5,
+        "vulnerabilityProbability": 0.2803,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1893,
+            "value": -0.1353
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0381,
+            "value": -0.0326
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0264,
+            "value": 0.0051
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_GB_MIN",
+        "matchup": "GB @ MIN",
+        "actual": "MIN",
+        "baselinePick": "MIN",
+        "baselineCorrect": true,
+        "baselinePHome": 0.563,
+        "baselineConfidence": 0.563,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.6146,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_IND_NYG",
+        "matchup": "IND @ NYG",
+        "actual": "NYG",
+        "baselinePick": "IND",
+        "baselineCorrect": false,
+        "baselinePHome": 0.344,
+        "baselineConfidence": 0.656,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.3255,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1378,
+            "value": -0.2479
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0663,
+            "value": 0.0137
+          },
+          {
+            "feature": "success-rate support for v2.2 pick",
+            "contribution": 0.0543,
+            "value": -0.0529
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_LV_NO",
+        "matchup": "LV @ NO",
+        "actual": "LV",
+        "baselinePick": "NO",
+        "baselineCorrect": false,
+        "baselinePHome": 0.695,
+        "baselineConfidence": 0.695,
+        "spreadLine": -2,
+        "vulnerabilityProbability": 0.5841,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3705,
+            "value": -0.2857
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1921,
+            "value": 0.2857
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_MIA_CLE",
+        "matchup": "MIA @ CLE",
+        "actual": "MIA",
+        "baselinePick": "MIA",
+        "baselineCorrect": true,
+        "baselinePHome": 0.368,
+        "baselineConfidence": 0.632,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.2335,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0185,
+            "value": 0.632
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_NYJ_BUF",
+        "matchup": "NYJ @ BUF",
+        "actual": "BUF",
+        "baselinePick": "BUF",
+        "baselineCorrect": true,
+        "baselinePHome": 0.905,
+        "baselineConfidence": 0.905,
+        "spreadLine": 10,
+        "vulnerabilityProbability": 0.1781,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2135,
+            "value": 0.0454
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0595,
+            "value": -0.0382
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0009,
+            "value": 0.0174
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_TEN_JAX",
+        "matchup": "TEN @ JAX",
+        "actual": "JAX",
+        "baselinePick": "JAX",
+        "baselineCorrect": true,
+        "baselinePHome": 0.601,
+        "baselineConfidence": 0.601,
+        "spreadLine": -1,
+        "vulnerabilityProbability": 0.6511,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3171,
+            "value": -0.1429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2428,
+            "value": 0.1429
+          }
+        ]
+      },
+      {
+        "week": 17,
+        "gameId": "2024_17_DET_SF",
+        "matchup": "DET @ SF",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.333,
+        "baselineConfidence": 0.667,
+        "spreadLine": -4,
+        "vulnerabilityProbability": 0.2953,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.231,
+            "value": 0.0492
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.0906,
+            "value": 0.5714
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0497,
+            "value": 0.5714
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_CIN_PIT",
+        "matchup": "CIN @ PIT",
+        "actual": "CIN",
+        "baselinePick": "PIT",
+        "baselineCorrect": false,
+        "baselinePHome": 0.547,
+        "baselineConfidence": 0.547,
+        "spreadLine": -2.5,
+        "vulnerabilityProbability": 0.6517,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_CLE_BAL",
+        "matchup": "CLE @ BAL",
+        "actual": "BAL",
+        "baselinePick": "BAL",
+        "baselineCorrect": true,
+        "baselinePHome": 0.9,
+        "baselineConfidence": 0.9,
+        "spreadLine": 19.5,
+        "vulnerabilityProbability": 0.043,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.184,
+            "value": 0.0391
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0241,
+            "value": -0.0117
+          },
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0025,
+            "value": 0.0013
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_BUF_NE",
+        "matchup": "BUF @ NE",
+        "actual": "NE",
+        "baselinePick": "BUF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.137,
+        "baselineConfidence": 0.863,
+        "spreadLine": -3,
+        "vulnerabilityProbability": 0.317,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.1951,
+            "value": 0.0415
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_CAR_ATL",
+        "matchup": "CAR @ ATL",
+        "actual": "CAR",
+        "baselinePick": "ATL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.774,
+        "baselineConfidence": 0.774,
+        "spreadLine": 7.5,
+        "vulnerabilityProbability": 0.3251,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.1498,
+            "value": -0.1058
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1316,
+            "value": -0.2354
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.1114,
+            "value": -0.2472
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_CHI_GB",
+        "matchup": "CHI @ GB",
+        "actual": "CHI",
+        "baselinePick": "GB",
+        "baselineCorrect": false,
+        "baselinePHome": 0.88,
+        "baselineConfidence": 0.88,
+        "spreadLine": 10,
+        "vulnerabilityProbability": 0.1583,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0791,
+            "value": 0.0165
+          },
+          {
+            "feature": "turnover-margin support for v2.2 pick",
+            "contribution": 0.0003,
+            "value": 0.0106
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_HOU_TEN",
+        "matchup": "HOU @ TEN",
+        "actual": "HOU",
+        "baselinePick": "HOU",
+        "baselineCorrect": true,
+        "baselinePHome": 0.342,
+        "baselineConfidence": 0.658,
+        "spreadLine": 2.5,
+        "vulnerabilityProbability": 0.6076,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3973,
+            "value": -0.3571
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1667,
+            "value": 0.3571
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_JAX_IND",
+        "matchup": "JAX @ IND",
+        "actual": "IND",
+        "baselinePick": "IND",
+        "baselineCorrect": true,
+        "baselinePHome": 0.654,
+        "baselineConfidence": 0.654,
+        "spreadLine": 3.5,
+        "vulnerabilityProbability": 0.3729,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.116,
+            "value": 0.5
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.0764,
+            "value": 0.5
+          },
+          {
+            "feature": "overall EPA support for v2.2 pick",
+            "contribution": 0.0254,
+            "value": -0.0389
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_KC_DEN",
+        "matchup": "KC @ DEN",
+        "actual": "DEN",
+        "baselinePick": "KC",
+        "baselineCorrect": false,
+        "baselinePHome": 0.283,
+        "baselineConfidence": 0.717,
+        "spreadLine": 10.5,
+        "vulnerabilityProbability": 0.5748,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.825,
+            "value": -1.5
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.0527,
+            "value": -0.0781
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_LAC_LV",
+        "matchup": "LAC @ LV",
+        "actual": "LAC",
+        "baselinePick": "LAC",
+        "baselineCorrect": true,
+        "baselinePHome": 0.335,
+        "baselineConfidence": 0.665,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.1542,
+        "flaggedVulnerable": false,
+        "topRiskSignals": []
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_MIA_NYJ",
+        "matchup": "MIA @ NYJ",
+        "actual": "NYJ",
+        "baselinePick": "MIA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.327,
+        "baselineConfidence": 0.673,
+        "spreadLine": 1.5,
+        "vulnerabilityProbability": 0.6453,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.3438,
+            "value": -0.2143
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.2174,
+            "value": 0.2143
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_MIN_DET",
+        "matchup": "MIN @ DET",
+        "actual": "DET",
+        "baselinePick": "DET",
+        "baselineCorrect": true,
+        "baselinePHome": 0.638,
+        "baselineConfidence": 0.638,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.3268,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.2355,
+            "value": 0.0502
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.1032,
+            "value": 0.4286
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_NO_TB",
+        "matchup": "NO @ TB",
+        "actual": "TB",
+        "baselinePick": "TB",
+        "baselineCorrect": true,
+        "baselinePHome": 0.786,
+        "baselineConfidence": 0.786,
+        "spreadLine": 14.5,
+        "vulnerabilityProbability": 0.0877,
+        "flaggedVulnerable": false,
+        "topRiskSignals": [
+          {
+            "feature": "sack-rate support for v2.2 pick",
+            "contribution": 0.0284,
+            "value": 0.0224
+          },
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.0123,
+            "value": -0.0029
+          },
+          {
+            "feature": "rush EPA support for v2.2 pick",
+            "contribution": 0.0107,
+            "value": -0.1122
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_NYG_PHI",
+        "matchup": "NYG @ PHI",
+        "actual": "PHI",
+        "baselinePick": "PHI",
+        "baselineCorrect": true,
+        "baselinePHome": 0.912,
+        "baselineConfidence": 0.912,
+        "spreadLine": 3,
+        "vulnerabilityProbability": 0.4487,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "special-teams EPA/play support for v2.2 pick",
+            "contribution": 0.142,
+            "value": -0.0999
+          },
+          {
+            "feature": "absolute closing spread",
+            "contribution": 0.1413,
+            "value": 0.4286
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1378,
+            "value": -0.2478
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_SEA_LA",
+        "matchup": "SEA @ LA",
+        "actual": "SEA",
+        "baselinePick": "LA",
+        "baselineCorrect": false,
+        "baselinePHome": 0.625,
+        "baselineConfidence": 0.625,
+        "spreadLine": -7.5,
+        "vulnerabilityProbability": 0.4354,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.6646,
+            "value": -1.0714
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "explosive-play support for v2.2 pick",
+            "contribution": 0.0496,
+            "value": 0.0101
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_SF_ARI",
+        "matchup": "SF @ ARI",
+        "actual": "ARI",
+        "baselinePick": "SF",
+        "baselineCorrect": false,
+        "baselinePHome": 0.487,
+        "baselineConfidence": 0.513,
+        "spreadLine": 4.5,
+        "vulnerabilityProbability": 0.5486,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.5042,
+            "value": -0.6429
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "v2.2 confidence",
+            "contribution": 0.0899,
+            "value": 0.513
+          }
+        ]
+      },
+      {
+        "week": 18,
+        "gameId": "2024_18_WAS_DAL",
+        "matchup": "WAS @ DAL",
+        "actual": "WAS",
+        "baselinePick": "DAL",
+        "baselineCorrect": false,
+        "baselinePHome": 0.511,
+        "baselineConfidence": 0.511,
+        "spreadLine": -7,
+        "vulnerabilityProbability": 0.6841,
+        "flaggedVulnerable": true,
+        "topRiskSignals": [
+          {
+            "feature": "market support for v2.2 pick",
+            "contribution": 0.6379,
+            "value": -1
+          },
+          {
+            "feature": "market disagrees with v2.2",
+            "contribution": 0.2801,
+            "value": 1
+          },
+          {
+            "feature": "pass EPA support for v2.2 pick",
+            "contribution": 0.1147,
+            "value": -0.2018
+          }
+        ]
+      }
+    ]
+  },
+  "coefficients": [
+    {
+      "feature": "market support for v2.2 pick",
+      "weight": -0.2630853574229728,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "absolute closing spread",
+      "weight": -0.19653934816864987,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "special-teams EPA/play support for v2.2 pick",
+      "weight": -0.17602199087669437,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "explosive-play support for v2.2 pick",
+      "weight": 0.1593687377022772,
+      "direction": "higher increases predicted v2.2 error risk"
+    },
+    {
+      "feature": "pass EPA support for v2.2 pick",
+      "weight": -0.11945810811653866,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "market disagrees with v2.2",
+      "weight": 0.11821705105410144,
+      "direction": "higher increases predicted v2.2 error risk"
+    },
+    {
+      "feature": "overall EPA support for v2.2 pick",
+      "weight": -0.07208512770658519,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "v2.2 confidence",
+      "weight": -0.06280886826027106,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "success-rate support for v2.2 pick",
+      "weight": -0.06045374125186789,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "sack-rate support for v2.2 pick",
+      "weight": 0.048327182707987464,
+      "direction": "higher increases predicted v2.2 error risk"
+    },
+    {
+      "feature": "rush EPA support for v2.2 pick",
+      "weight": -0.018304811830090986,
+      "direction": "higher decreases predicted v2.2 error risk"
+    },
+    {
+      "feature": "turnover-margin support for v2.2 pick",
+      "weight": 0.0011716255574255987,
+      "direction": "higher increases predicted v2.2 error risk"
+    }
+  ],
+  "conclusion": "The frozen meta-model concentrated v2.2 misses above the overall miss rate on the untouched sample. This warrants a larger walk-forward validation, not a production override."
+}

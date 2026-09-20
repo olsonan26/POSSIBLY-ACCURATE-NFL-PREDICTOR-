@@ -1,0 +1,72 @@
+name: Pro Football Challenger
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/pro-football-challenger
+    paths:
+      - 'scripts/pro-football-challenger-2025.mjs'
+      - 'scripts/market-challenger-2025.mjs'
+      - 'scripts/selective-market-correction-2025.mjs'
+      - 'scripts/baseline-error-meta-model-2025.mjs'
+      - 'scripts/baseline-error-walkforward.mjs'
+      - 'services/**'
+      - 'data/**'
+      - 'package.json'
+      - '.github/workflows/pro-football-challenger.yml'
+
+jobs:
+  heldout-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - name: Run 2025 Weeks 16-18 advanced-stat challenger
+        run: bun run football-challenger
+      - name: Run 2025 Weeks 16-18 market-assisted challenger
+        run: bun scripts/market-challenger-2025.mjs
+      - name: Run selective market correction gate
+        run: bun run selective-market-correction
+      - name: Run v2.2 baseline-error vulnerability meta-model
+        run: bun run baseline-error-meta-model
+      - name: Run larger chronological walk-forward vulnerability retest
+        run: bun run baseline-error-walkforward
+      - name: Print machine-readable reports
+        if: always()
+        run: |
+          for f in research/*2025-w16-18.json research/baseline-error-fold-*.json research/baseline-error-walkforward-2024-2025.json; do
+            if [ -f "$f" ]; then
+              echo "===== $f ====="
+              cat "$f"
+            fi
+          done
+      - name: Persist research reports to branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/*2025-w16-18.json research/baseline-error-fold-*.json research/baseline-error-walkforward-2024-2025.json
+          if git diff --cached --quiet; then
+            echo "No report changes to commit."
+          else
+            git commit -m "research: record walk-forward vulnerability results"
+            git push
+          fi
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pro-football-challenger-research
+          path: |
+            research/*2025-w16-18.json
+            research/baseline-error-fold-*.json
+            research/baseline-error-walkforward-2024-2025.json
+          if-no-files-found: ignore
