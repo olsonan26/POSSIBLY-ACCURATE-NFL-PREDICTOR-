@@ -116,7 +116,7 @@ export interface DecisionFactor {
   winnerScore?: number;
   loserScore?: number;
   edgeScore: number;
-  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data';
+  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data' | 'astrology';
   includedInScore?: boolean;
 }
 
@@ -164,6 +164,44 @@ export interface ModelScores {
   numerologyLogitAdjustment: number;
   restLogitAdjustment: number;
   h2hLogitAdjustment: number;
+}
+
+/**
+ * Public-safe summary returned by the private PURE Astrology engine.
+ * Proprietary calculation rules, source excerpts, OOI tables, raw chart
+ * evidence and internal reasoning are intentionally not part of this contract.
+ */
+export interface PureAstrologyResult {
+  status: 'available' | 'limited' | 'unavailable' | 'source_incomplete';
+  methodVersion: string;
+  decisionStatus: 'decisive' | 'lean' | 'unresolved';
+  winnerAbbr?: string;
+  winnerName?: string;
+  /** Scenario/pick stability only. This is NOT a calibrated win probability. */
+  pickStabilityPct?: number;
+  sourceSafe: boolean;
+  coverage: {
+    homeRoles: number;
+    awayRoles: number;
+    kickoffExact: boolean;
+    venueExact: boolean;
+    unknownTimeRoles: number;
+    omittedTimeSensitiveClaims: number;
+  };
+  rationale: string[];
+  warnings: string[];
+}
+
+export interface MatchupResolver {
+  footballWinnerAbbr: string;
+  pureWinnerAbbr?: string;
+  agreement: 'agree' | 'conflict' | 'pure-unresolved' | 'pure-unavailable';
+  /**
+   * Experimental combined call. It is populated only when PURE is source-safe
+   * and decisive; no arbitrary football/astrology percentage blend is used.
+   */
+  combinedExperimentalWinnerAbbr?: string;
+  combinedReason: string;
 }
 
 export interface PredictionResult {
@@ -225,6 +263,8 @@ export interface PredictionResult {
   dataFreshness?: DataFreshness;
   homePersonnel?: PersonnelSnapshot;
   awayPersonnel?: PersonnelSnapshot;
+  pureAstrology?: PureAstrologyResult;
+  matchupResolver?: MatchupResolver;
   warnings?: string[];
   modelVersion?: string;
 }
