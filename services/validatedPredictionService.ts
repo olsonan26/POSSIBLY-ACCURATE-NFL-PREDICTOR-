@@ -14,6 +14,10 @@ import {
   getValidatedFootballContext,
   ValidatedFootballContext
 } from './validatedFootballContext';
+import {
+  getPureAstrologyPrediction,
+  resolveFootballAndPure
+} from './pureAstrologyService';
 
 export { calculateAllPatterns, parseGamesCsv, parseTeamData };
 export type { PredictionOptions };
@@ -123,24 +127,12 @@ function swapWinnerLoser(result: PredictionResult): PredictionResult {
 }
 
 /**
- * Production predictor v2.2.
+ * Football control predictor v2.2 + independent PURE Astrology experiment.
  *
- * Locked production architecture:
- *   - pregame Elo with season regression
- *   - target-season recent/current-season form only
- *   - target-season home/road refinement only
- *   - generic recency-weighted same-venue H2H
- *   - current injury/availability context when live data is available
- *
- * The prior-season recent-form carryover was set to zero using 2024 as the
- * tuning season. On untouched 2025, that fixed rule improved winner accuracy
- * from 177/271 (65.31%) to 180/271 (66.42%), while Brier and log loss worsened
- * slightly. v2.2 therefore records an accuracy/calibration tradeoff rather than
- * claiming universal improvement across every validation metric.
- *
- * Rest, Lettrology/numerology, Monte Carlo and PURE Astrology remain measured
- * research features but are deliberately excluded from the production winner
- * until later untouched prospective samples demonstrate stable incremental value.
+ * The football control remains locked so its validated historical record is not
+ * overwritten. PURE Astrology is now requested independently from a private,
+ * source-authoritative engine and returned beside the control. The matchup
+ * resolver records agreement/conflict without inventing a 70/30-style blend.
  */
 export async function predictWinner(
   homeTeam: Team,
@@ -184,7 +176,7 @@ export async function predictWinner(
     venueLogitAdjustment: validatedContext.venueLogitAdjustment,
     personnelLogitAdjustment: personnelAdjustment,
     // The legacy research score is zeroed so the UI cannot imply it contributed
-    // to v2.2. The new Lettrology/Monte Carlo layer is a separate research card.
+    // to v2.2. Lettrology and PURE Astrology are separate experimental outputs.
     numerologyLogitAdjustment: 0,
     finalHomeProbability: Math.round(finalHomeProbability * 1000) / 10
   };
@@ -207,8 +199,40 @@ export async function predictWinner(
     decisionFactors.push(lettrologyFactor);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    researchWarnings.push(`Provisional Lettrology matchup/Monte Carlo research could not be loaded: ${message}. Production scoring was unaffected.`);
+    researchWarnings.push(`Provisional Lettrology matchup/Monte Carlo research could not be loaded: ${message}. Football control scoring was unaffected.`);
   }
+
+  const pureAstrology = await getPureAstrologyPrediction(
+    homeTeam,
+    awayTeam,
+    gameDate,
+    rawResearch.homePersonnel,
+    rawResearch.awayPersonnel,
+    {
+      neutralSite: Boolean(options.neutralSite),
+      retrospective
+    }
+  );
+  const matchupResolver = resolveFootballAndPure(aligned.winner, pureAstrology);
+
+  const pureDescription = pureAstrology.status === 'available' || pureAstrology.status === 'limited'
+    ? pureAstrology.winnerAbbr
+      ? `Independent PURE Astrology: ${pureAstrology.winnerName || pureAstrology.winnerAbbr} (${pureAstrology.decisionStatus}). ${pureAstrology.pickStabilityPct != null ? `Scenario stability ${pureAstrology.pickStabilityPct.toFixed(1)}% — this is pick stability, not calibrated win probability. ` : ''}${matchupResolver.agreement === 'agree' ? 'PURE agrees with the football control.' : matchupResolver.agreement === 'conflict' ? 'PURE conflicts with the football control.' : ''}`
+      : `Independent PURE Astrology returned ${pureAstrology.decisionStatus}; no directional winner was fabricated from incomplete or ambiguous source evidence.`
+    : `Independent PURE Astrology status: ${pureAstrology.status}. ${pureAstrology.warnings[0] || 'Private source-authoritative analysis was not available.'}`;
+
+  decisionFactors.push({
+    title: 'PURE Astrology — Independent Engine',
+    name: pureAstrology.winnerName || pureAstrology.winnerAbbr,
+    description: pureDescription,
+    explanation: matchupResolver.combinedReason,
+    advantage: pureAstrology.winnerAbbr
+      ? (pureAstrology.winnerAbbr === aligned.winner.abbr ? 'winner' : 'loser')
+      : 'neutral',
+    edgeScore: 0,
+    category: 'astrology',
+    includedInScore: false
+  });
 
   if (retrospective) {
     decisionFactors = decisionFactors.map(factor => factor.title === 'Live Injury / Availability Impact'
@@ -225,10 +249,12 @@ export async function predictWinner(
   const warnings = [
     ...(aligned.warnings || []),
     ...researchWarnings,
-    'v2.2 resets recent-form and home/road context at the start of each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
+    ...pureAstrology.warnings,
+    'v2.2 remains the frozen football control: target-season form and home/road context reset at each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
+    'PURE Astrology is now calculated independently by the private source-authoritative path and can disagree with the football control. Its scenario stability, when shown, is not a calibrated NFL win probability.',
+    'The resolver does not use an invented football/astrology percentage weight. It records agreement, conflict, unresolved, or unavailable states and preserves the football control separately.',
     'The new Lettrology formula is provisional pending source-sheet confirmation: Daily Environment = PM + calendar day; Daily ESS = PME + Daily Environment; the displayed signature is Daily ESS over Daily Environment.',
-    'Rest, Lettrology/numerology, Monte Carlo and PURE Astrology remain research-only and cannot change the production winner until prospective validation demonstrates stable incremental value.',
-    ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data were forced to zero and cannot affect this past-game production pick.'] : [])
+    ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data were forced to zero. PURE receives no present-day personnel snapshot for past games and must fail closed or use independently verified point-in-time data.'] : [])
   ];
 
   return {
@@ -237,13 +263,15 @@ export async function predictWinner(
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
     reasoning: retrospective
-      ? `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. This retrospective score uses leakage-safe Elo, target-season form and home/road context, and generic venue/H2H history. Current live personnel/injury data are explicitly excluded from past-game scoring. The provisional Lettrology matchup and Monte Carlo analysis are displayed for research only and have zero production weight.`
-      : `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under ${MODEL_VERSION}. The production score uses leakage-safe Elo, target-season form and home/road context, generic venue/H2H history, and live availability when available. Prior-season recent form is intentionally reset to zero. The provisional Lettrology matchup and Monte Carlo analysis are calculated separately for research and are not allowed to change the pick.`,
+      ? `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under the frozen ${MODEL_VERSION} football control. The separate PURE Astrology engine is ${pureAstrology.status}/${pureAstrology.decisionStatus}${pureAstrology.winnerName ? ` and selects ${pureAstrology.winnerName}` : ''}. ${matchupResolver.combinedReason}`
+      : `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under the frozen ${MODEL_VERSION} football control. The separate PURE Astrology engine is ${pureAstrology.status}/${pureAstrology.decisionStatus}${pureAstrology.winnerName ? ` and selects ${pureAstrology.winnerName}` : ''}. ${matchupResolver.combinedReason}`,
     winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
     loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
     decisionFactors,
     homePersonnel: retrospective ? undefined : aligned.homePersonnel,
     awayPersonnel: retrospective ? undefined : aligned.awayPersonnel,
+    pureAstrology,
+    matchupResolver,
     modelScores: validatedScores,
     dataFreshness: aligned.dataFreshness ? {
       ...aligned.dataFreshness,
@@ -251,11 +279,11 @@ export async function predictWinner(
       injuryDataLoaded: retrospective ? false : aligned.dataFreshness.injuryDataLoaded,
       notes: [
         ...aligned.dataFreshness.notes,
-        'v2.2 validation gate: prior-season recent form/home-road carryover is zero. It was selected on 2024; 2025 winner accuracy improved, with a small Brier/log-loss tradeoff.',
-        'Provisional Lettrology research uses Daily ESS over Daily Environment and is not a production feature until its formula and incremental holdout value are confirmed.',
-        'Monte Carlo is used only to propagate uncertainty around actual pre-cutoff matchup counts; simulation count is never treated as historical sample size.',
-        'Rest, Lettrology/numerology and PURE Astrology remain research-only after failing or awaiting stable incremental validation.',
-        ...(retrospective ? ['Retrospective leakage guard: present-day live personnel/injury context is excluded from past-game scoring and display.'] : [])
+        'v2.2 is retained as the frozen football control rather than silently changing its historical validation record.',
+        'PURE Astrology is a separate private-engine result; the public client receives only a sanitized winner/status/coverage summary, not proprietary source rules or raw calculations.',
+        'Unknown or approximate birth times are expected to fail closed for Moon, houses, angles and degree-sensitive claims in the private PURE engine.',
+        'Monte Carlo/scenario stability is tracked separately from calibrated win probability.',
+        ...(retrospective ? ['Retrospective leakage guard: present-day live personnel/injury context is excluded from both past-game football scoring and the PURE request.'] : [])
       ]
     } : aligned.dataFreshness,
     warnings
