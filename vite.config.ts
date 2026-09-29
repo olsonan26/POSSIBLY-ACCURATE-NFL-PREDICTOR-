@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./', import.meta.url)),
+      './services/validatedPredictionService': fileURLToPath(new URL('./services/uiPredictionService.ts', import.meta.url))
     },
   },
   server: {
