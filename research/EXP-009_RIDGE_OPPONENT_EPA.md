@@ -4,19 +4,19 @@
 
 Research challenger only. Production v2.2 remains frozen and unchanged.
 
+**Manager decision after untouched 2025 confirmation: REJECT FOR PROMOTION.** The locked play-level ridge opponent-adjusted EPA specification was worse than v2.2 on straight-up accuracy, Brier score, and log loss. The frozen 2026 observational sample tied winner accuracy but was also worse on probability quality. The experiment stays in the repository as a recorded failure and source of future hypotheses.
+
 ## Hypothesis
 
-Simple opponent-adjusted point differential failed in EXP-006, but that does not prove opponent adjustment itself is useless. A stronger approach is to estimate offensive and defensive quality **simultaneously at the play level** using regularized EPA.
-
-EXP-009 tests whether leakage-safe ridge-regression ratings for passing EPA and rushing EPA add repeatable predictive value beyond v2.2.
+Simple opponent-adjusted point differential failed in EXP-006, but that did not prove opponent adjustment itself was useless. EXP-009 tested a stronger approach: estimate offensive and defensive quality **simultaneously at the play level** using regularized EPA.
 
 ## Why this is different from EXP-006
 
-EXP-006 adjusted team point differential after games were complete. EXP-009 instead uses individual offensive plays and solves offense and defense effects together:
+EXP-006 adjusted team point differential after games were complete. EXP-009 instead used individual offensive plays and solved offense and defense effects together:
 
 `play EPA = intercept + offense team effect + defense team effect + error`
 
-The model is fit separately for pass plays and rush plays. Ridge regularization shrinks noisy team effects toward league average.
+The model was fit separately for pass plays and rush plays. Ridge regularization shrank noisy team effects toward league average.
 
 ## Research contract
 
@@ -31,7 +31,7 @@ The model is fit separately for pass plays and rush plays. Ridge regularization 
    - `MODERATE`: 0.25 / 0.50 / 0.75 / 1.00 from Weeks 2/3/4/5+,
    - `CONSERVATIVE`: 0 / 0.25 / 0.50 / 0.75 / 1.00 from Weeks 2/3/4/5/6+.
 7. Predeclare logit weights `0`, `0.05`, `0.10`, `0.15`, and `0.20`.
-8. This creates **60 preregistered discovery variants**: 3 ridge penalties × 4 ramp rules × 5 weights.
+8. This created **60 preregistered discovery variants**: 3 ridge penalties × 4 ramp rules × 5 weights.
 9. Select the complete specification on **2024 Brier score only**, with log loss as tie-breaker.
 10. Lock the selected penalty, ramp, and weight before revealing the 2025 confirmation result.
 11. Evaluate unchanged on untouched 2025.
@@ -41,72 +41,129 @@ The model is fit separately for pass plays and rush plays. Ridge regularization 
 
 ## Rating construction
 
-For each week and play type, EXP-009 solves one ridge model containing:
+For each week and play type, EXP-009 solved one ridge model containing:
 
 - an intercept,
 - one offensive team coefficient per team,
 - one defensive team coefficient per team.
 
-The team coefficients are ridge-penalized while the intercept is effectively unpenalized.
+The team coefficients were ridge-penalized while the intercept was effectively unpenalized.
 
 A positive offensive coefficient means stronger EPA production. A positive defensive coefficient means more EPA allowed and therefore weaker defense.
 
-The matchup edge is built from standardized offensive and defensive coefficients. For the home team, a favorable edge means:
+The matchup edge was built from standardized offensive and defensive coefficients. For the home team, a favorable edge means:
 
 - stronger home offense than away offense,
 - weaker away defense than home defense.
 
-Pass and rush edges are averaged in the locked primary specification before applying the early-season ramp and logit weight.
+Pass and rush edges were averaged in the locked primary specification before applying the early-season ramp and logit weight.
 
 ## Leakage firewall
 
-- Same-week completed games are excluded.
-- Target-game plays are impossible to enter the target-game ratings.
-- No present-day roster or injury information is inserted retrospectively.
-- No sportsbook market information is used.
-- No astrology or Lettrology information is used.
-- Week 1 receives zero same-season opponent-adjusted EPA contribution.
+- Same-week completed games were excluded.
+- Target-game plays could not enter the target-game ratings.
+- No present-day roster or injury information was inserted retrospectively.
+- No sportsbook market information was used.
+- No astrology or Lettrology information was used.
+- Week 1 received zero same-season opponent-adjusted EPA contribution.
 
-## Required evaluation
+## Verified run — 2026-09-29
 
-Primary metrics:
+### Coverage
 
-- straight-up accuracy,
-- Brier score,
-- log loss,
-- expected calibration error,
-- challenger-only vs control-only correct flips,
-- exact paired McNemar/binomial p-value.
+- 2024 discovery: **272** regular-season games
+- 2025 untouched confirmation: **271** games
+- 2026 observational sample: **48** completed games
+- eligible play-by-play rows: **33,470** in 2024, **32,941** in 2025, **5,829** in 2026
 
-Required splits:
+### 2024 discovery lock
 
-- Weeks 1–4,
-- Weeks 5–9,
-- Weeks 10–18,
-- actual home winners,
-- actual away winners,
-- one-score games,
-- blowouts,
-- neutral-site games.
+The best Brier result among the 60 preregistered variants selected:
 
-## Ablation
+- ridge penalty: **25**
+- early-season ramp: **CONSERVATIVE**
+- matchup logit weight: **0.20**
 
-After untouched 2025 is revealed, evaluate:
+The conservative ramp applies zero signal in Week 2, then 0.25 / 0.50 / 0.75 in Weeks 3/4/5, reaching full weight from Week 6 onward.
 
-- pass EPA ridge edge only,
-- rush EPA ridge edge only.
+The selected 2024 challenger scored **183/272 = 67.28%**, Brier **0.2066**, log loss **0.6016**, versus the v2.2 control at **181/272 = 66.54%**, Brier **0.2118**, log loss **0.6122**.
 
-These are diagnostic only and may not be used to rewrite EXP-009 and still call 2025 untouched.
+This discovery-period improvement did not survive untouched confirmation.
 
-## Robustness
+### Untouched 2025 confirmation
 
-After confirmation, test:
+| Model | Accuracy | Brier | Log loss | ECE |
+|---|---:|---:|---:|---:|
+| v2.2 control | **66.42%** (180/271) | **0.2250** | **0.6416** | 0.0840 |
+| EXP-009 | 66.05% (179/271) | 0.2276 | 0.6523 | **0.0707** |
 
-- alternative preregistered ridge penalties,
-- the immediate neighboring logit weight,
-- alternative preregistered early-season ramps.
+Result:
 
-Again, these are diagnostic only.
+- accuracy delta: **-0.37 percentage points**
+- Brier delta: **+0.0026** (worse)
+- log-loss delta: **+0.0107** (worse)
+- challenger-only correct flips: **4**
+- control-only correct flips: **5**
+- exact paired p-value: **1.0000**
+
+Calibration ECE improved, but the primary predictive metrics did not.
+
+### 2025 split behavior
+
+- Weeks 1–4: **73.02% → 73.02%**, Brier worse
+- Weeks 5–9: **64.79% → 64.79%**, Brier slightly better
+- Weeks 10–18: **64.23% → 63.50%**, Brier worse
+- actual home winners: **76.71% → 74.66%**
+- actual away winners: **54.40% → 56.00%**
+- one-score games: **56.94% → 56.94%**, Brier materially worse
+- blowouts: **77.08% → 76.04%**, Brier better
+- neutral site: **71.43% → 71.43%** on seven games
+
+### Component ablation — diagnostic only
+
+These were examined only after untouched 2025 had been revealed and therefore cannot rescue the experiment retroactively.
+
+- pass EPA ridge edge only: **179/271 = 66.05%**, Brier **0.2273**, log loss **0.6516**, ECE **0.0826**
+- rush EPA ridge edge only: **175/271 = 64.58%**, Brier **0.2305**, log loss **0.6596**, ECE **0.0588**
+
+The rush component appears particularly weak in this exact implementation, but that is a future hypothesis only.
+
+### Neighboring-parameter robustness — diagnostic only
+
+- lambda 100: **180/271 = 66.42%**, Brier 0.2273, log loss 0.6517
+- lambda 400: **180/271 = 66.42%**, Brier 0.2270, log loss 0.6507
+- weight 0.15: **176/271 = 64.94%**, Brier 0.2267, log loss 0.6486
+- ramp NONE: **178/271 = 65.68%**, Brier 0.2288, log loss 0.6552
+- ramp FAST: **178/271 = 65.68%**, Brier 0.2285, log loss 0.6545
+- ramp MODERATE: **179/271 = 66.05%**, Brier 0.2281, log loss 0.6536
+
+No preregistered neighboring setting produced a convincing post-confirmation rescue. These diagnostics are retained only to inform later hypotheses.
+
+### 2026 observational check
+
+With the 2024 parameters still frozen:
+
+| Model | Accuracy | Brier | Log loss | ECE |
+|---|---:|---:|---:|---:|
+| v2.2 control | **58.33%** (28/48) | **0.2331** | **0.6602** | **0.1375** |
+| EXP-009 | **58.33%** (28/48) | 0.2342 | 0.6631 | 0.1528 |
+
+The forward observation does not support promotion.
+
+## Management conclusion
+
+**REJECT FOR PROMOTION.**
+
+The idea was tested in a materially stronger form than EXP-006: play-level data, simultaneous offense/defense estimation, ridge shrinkage, and a preregistered early-season ramp. It still failed untouched 2025 confirmation and did not improve the current 2026 forward sample.
+
+What we keep from this experiment:
+
+- the evidence that generic same-season opponent-adjusted EPA is not automatically additive to v2.2;
+- the signal that pass-only was less harmful than rush-only;
+- the evidence that aggressive 2024 discovery improvements can still disappear the next season;
+- the requirement that future opponent-adjusted work must be a genuinely new hypothesis rather than post-hoc retuning of EXP-009.
+
+EXP-009 does not enter production, the survivor ensemble, or downstream Monte Carlo.
 
 ## Reproduce
 
