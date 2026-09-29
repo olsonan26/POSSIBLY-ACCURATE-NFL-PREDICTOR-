@@ -17,9 +17,8 @@ const FILTERS = [false, true] as const;
 const COMPONENTS = ['passSuccess', 'rushSuccess', 'passExplosive', 'rushExplosive'] as const;
 type Component = typeof COMPONENTS[number];
 type Game = ReturnType<typeof parseGamesCsv>[number];
-
 type Threshold = typeof THRESHOLDS[number];
-interface Config extends Threshold { garbageFilter: boolean; key: string; }
+type Config = Threshold & { garbageFilter: boolean; key: string };
 
 interface Play {
   week: number;
