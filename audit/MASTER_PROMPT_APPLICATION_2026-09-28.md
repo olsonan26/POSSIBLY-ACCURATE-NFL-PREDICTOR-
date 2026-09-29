@@ -1,72 +1,80 @@
 # Master NFL Predictor Prompt — Application Audit
 
 Date: 2026-09-28
-Branch: `research/master-prompt-governance-v3`
 
-## What was preserved
+## Preserved control
 
 - `v2.2-validated-current-season` remains the production/control model.
-- Historical predictions are not rewritten.
-- PURE Astrology and Lettrology remain research-only and have zero production weight.
+- Historical predictions were not rewritten.
+- PURE Astrology and Lettrology remain research-only with zero production weight.
 - Retrospective current-roster/injury leakage remains blocked.
-- Existing production UI and deployment architecture are unchanged in this pass.
+- Production UI behavior and production prediction weights were not changed in this pass.
 
-## What the repository already had
+## Governance/evaluation added
 
-- frozen v2.2 audit documentation
-- 2025 validation backtest
-- 2026 forward-style observation script
-- carryover ablation
-- PURE Astrology research and falsification workflows
-- live personnel leakage guard
-- neutral-site handling
-- current-season form reset
+- `research/FEATURE_REGISTRY.md`
+- `research/EXPERIMENT_LEDGER.md`
+- frozen/scored `research/forward-results/nfl-v3.2-week1-2026.json`
+- `scripts/evaluate-model.ts` with accuracy, Brier, log loss, ECE-style calibration, week/home-away/neutral/close/blowout/confidence splits
+- CI coverage for typecheck, build, baseline backtest, full evaluation, research challengers, and 2026 forward-style check
 
-## Gaps identified from the master prompt
+## Frozen v3.2 astrology forward result
 
-1. No central feature registry.
-2. No central experiment ledger including failed experiments.
-3. Main backtest reported accuracy and Brier but not log loss/ECE and the requested chronological split suite.
-4. The 2026 v3.2 astrology slate had not been frozen into the repository as a scored forward experiment.
-5. Opponent-adjusted efficiency is not yet implemented.
-6. No point-in-time historical injury database is available; therefore injury validation must remain limited rather than reconstructed from current rosters.
-7. No point-in-time market-line pipeline exists; market data must remain an external future benchmark unless built separately.
+The 15-game Week 1 v3.2 slate scored **6-9 (40.00%)**. The Sunday September 13 subset scored **4-9 (30.77%)**. This is negative prospective evidence. v3.2 remains research-only and is rejected for production promotion on this sample.
 
-## Changes in this branch
+## EXP-006 — simple opponent-adjusted point differential
 
-### Governance
-- Added `research/FEATURE_REGISTRY.md`.
-- Added `research/EXPERIMENT_LEDGER.md`.
-- Added frozen/scored `research/forward-results/nfl-v3.2-week1-2026.json`.
+Five weights were selected only on 2024; Brier selected **0.03**. On untouched 2025:
 
-### Evaluation
-- Added `scripts/evaluate-model.ts`.
-- Adds accuracy, Brier, log loss, ECE-style calibration error, confidence buckets, and chronological/behavioral splits.
-- Splits currently include Weeks 1-4, 5-9, 10-18, home picks, away picks, neutral site, one-score results, blowouts, and confidence tiers.
-- Market/favorite and historical-injury splits are deliberately omitted until trustworthy point-in-time sources exist.
+- Control v2.2: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**
+- Challenger: **179/271 = 66.05%**, Brier **0.2259**, log loss **0.6448**
 
-### CI
-- Added the full evaluation report to `bun run verify` and the Deployment Readiness workflow.
+Verdict: **REJECT FOR PROMOTION**. It looked better in discovery and failed confirmation, so it was not retuned on 2025.
 
-## v3.2 Week 1 forward result
+## EXP-007 — offense-vs-defense matchup efficiency
 
-The frozen 15-game v3.2 slate scored 6-9 (40.00%). The Sunday September 13 subset scored 4-9 (30.77%). This is negative forward evidence. v3.2 therefore remains research-only and is explicitly rejected for promotion on this sample.
+Uses prior-week nflverse team data only:
 
-This result must not be tuned away and then described as untouched validation.
+- passing EPA/dropback matchup
+- rushing yards/carry matchup
+- protection/sack-rate matchup
+- ball-security/turnover matchup
 
-## Next scientifically justified challenger
+2024 Brier selected a frozen **0.15** matchup logit weight before 2025 was revealed.
 
-The next major football challenger should be opponent-adjusted efficiency, built from point-in-time play-by-play features and evaluated chronologically against v2.2. The initial version should be intentionally simple before testing more sophisticated adjustment methods.
+Untouched 2025:
 
-Candidate sequence:
-1. pregame rolling EPA/play + success rate
-2. opponent-adjusted residual or ridge strength
-3. passing/rushing offense-vs-defense interactions
-4. OL/pass-rush interaction
-5. QB value with shrinkage
+- Control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**
+- Challenger: **184/271 = 67.90%**, Brier **0.2243**, log loss **0.6412**
+- Accuracy delta: **+1.48 percentage points**
+- Brier delta: **-0.0007**
+- Log-loss delta: **-0.0004**
 
-Each family must be tested independently before any ensemble.
+Neighboring-weight diagnostics after confirmation:
 
-## Promotion rule
+- 0.10: **67.53%**, Brier 0.2243, log loss 0.6405
+- 0.15: **67.90%**, Brier 0.2243, log loss 0.6412
+- 0.20: **67.16%**, Brier 0.2247, log loss 0.6428
 
-No model is promoted from a single accuracy gain. Require a credible combination of accuracy, Brier, log loss, calibration, season consistency, early-season behavior, home/away behavior, and robustness to neighboring parameters/ablations.
+Ablation showed that the improvement is not uniformly distributed across components. Removing ball security eliminated the winner-accuracy gain; removing protection degraded probability quality. Removing passing or rushing did not reduce winner accuracy in this one observed test, so those observations are hypothesis-generating only and cannot be used to retune 2025.
+
+Split behavior also showed concentration: Weeks 5–9 improved most and control-home picks improved, while control-away picks did not.
+
+Paired winner discordance was 9 games fixed versus 5 games broken. Exact two-sided McNemar/binomial **p = 0.4240**, so the apparent gain is not statistically established.
+
+Verdict: **KEEP FOR RESEARCH — NOT PROMOTED**. Required next evidence is broader walk-forward replication and genuine future observations once enough 2026 prior-week data exist.
+
+## Calibration finding
+
+The expanded 2025 evaluation measured ECE **0.0804** and exposed non-monotonic confidence behavior. Probability calibration is therefore a justified separate research target, but it has not been silently applied to production.
+
+## Remaining source/data gaps
+
+- no trustworthy point-in-time historical injury database has yet been integrated
+- no point-in-time historical market-line pipeline has yet been integrated
+- full opponent-adjusted EPA/success-rate play-by-play work remains a separate future challenger from EXP-006
+- OL/pass-rush, weather, QB-value shrinkage, and roster continuity remain future independent feature families
+
+## Current decision
+
+The master prompt has changed the **research process** immediately, not the production winner formula prematurely. v2.2 remains the control while challengers must earn promotion through chronological, leakage-safe evidence.
