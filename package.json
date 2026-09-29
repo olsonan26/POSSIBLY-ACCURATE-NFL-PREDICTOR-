@@ -12,10 +12,11 @@
     "research:oae": "bun scripts/opponent-adjusted-efficiency.ts",
     "research:matchup": "bun scripts/matchup-efficiency.ts",
     "research:margin": "bun scripts/expected-margin.ts",
+    "research:qb": "bun scripts/qb-value.ts",
     "research:cycle": "bun scripts/research-cycle.ts",
     "research:test": "bun scripts/research-cycle.test.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run research:test && bun run backtest && bun run evaluate && bun run research:margin && bun run forward-test"
+    "verify": "bun run typecheck && bun run build && bun run research:test && bun run backtest && bun run evaluate && bun run research:margin && bun run research:qb && bun run forward-test"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
