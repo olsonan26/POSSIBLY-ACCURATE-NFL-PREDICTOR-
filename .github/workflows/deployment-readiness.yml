@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,6 +31,9 @@ jobs:
       - name: Production build
         run: bun run build
 
+      - name: Autoresearch synthetic acceptance tests
+        run: bun run research:test
+
       - name: 2025 validation backtest
         run: bun run backtest
 
@@ -43,5 +46,18 @@ jobs:
       - name: EXP-007 offense-vs-defense matchup efficiency challenger
         run: bun run research:matchup
 
+      - name: Full failure-cluster autoresearch cycle
+        run: bun run research:cycle
+
       - name: 2026 locked forward-style check
         run: bun run forward-test
+
+      - name: Preserve autoresearch outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoresearch-cycle-output
+          path: |
+            research/runtime
+            research/reports/latest.md
+          if-no-files-found: warn
