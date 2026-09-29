@@ -37,5 +37,8 @@ jobs:
       - name: 2025 chronological evaluation with log loss, calibration, and splits
         run: bun run evaluate
 
+      - name: EXP-006 opponent-adjusted efficiency challenger
+        run: bun run research:oae
+
       - name: 2026 locked forward-style check
         run: bun run forward-test
