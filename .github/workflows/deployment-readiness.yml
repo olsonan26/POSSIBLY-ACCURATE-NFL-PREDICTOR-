@@ -40,5 +40,8 @@ jobs:
       - name: EXP-006 opponent-adjusted efficiency challenger
         run: bun run research:oae
 
+      - name: EXP-007 offense-vs-defense matchup efficiency challenger
+        run: bun run research:matchup
+
       - name: 2026 locked forward-style check
         run: bun run forward-test
