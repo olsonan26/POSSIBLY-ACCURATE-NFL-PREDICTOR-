@@ -5,6 +5,8 @@ const GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/dat
 const TEAM_STATS_URL = (season: number) =>
   `https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_${season}.csv`;
 const CANDIDATE_WEIGHTS = [0, 0.05, 0.10, 0.15, 0.20] as const;
+const ALL_COMPONENTS = ['passing', 'rushing', 'protection', 'ballSecurity'] as const;
+type Component = typeof ALL_COMPONENTS[number];
 
 type Game = ReturnType<typeof parseGamesCsv>[number];
 
@@ -35,6 +37,20 @@ interface Metrics {
   correct: number;
   brier: number;
   logLoss: number;
+}
+
+interface EvaluationRow {
+  week: number;
+  actualHome: boolean;
+  controlPHome: number;
+  challengerPHome: number;
+  controlHit: boolean;
+  challengerHit: boolean;
+}
+
+interface Evaluation {
+  metrics: Metrics;
+  rows: EvaluationRow[];
 }
 
 const logistic = (x: number) => 1 / (1 + Math.exp(-x));
@@ -141,7 +157,13 @@ function z(value: number, dist: { mean: number; sd: number }): number {
   return (value - dist.mean) / dist.sd;
 }
 
-function matchupEdge(stats: TeamWeek[], home: string, away: string, week: number): number {
+function matchupEdge(
+  stats: TeamWeek[],
+  home: string,
+  away: string,
+  week: number,
+  enabled: readonly Component[] = ALL_COMPONENTS
+): number {
   if (week <= 1) return 0;
   const teams = [...new Set(stats.filter(row => row.week < week).map(row => row.team))];
   if (teams.length < 20) return 0;
@@ -155,19 +177,30 @@ function matchupEdge(stats: TeamWeek[], home: string, away: string, week: number
   const matchup = (offenseTeam: string, defenseTeam: string): number => {
     const offense = offenseProfiles.get(offenseTeam) ?? aggregate([]);
     const allowed = defenseProfiles.get(defenseTeam) ?? aggregate([]);
-    // Equal-weight, predeclared components. Positive = better for the offense.
-    const passing = z(offense.passEpaPerDropback, offenseDist.get('passEpaPerDropback')!) +
-      z(allowed.passEpaPerDropback, defenseDist.get('passEpaPerDropback')!);
-    const rushing = z(offense.rushYpc, offenseDist.get('rushYpc')!) +
-      z(allowed.rushYpc, defenseDist.get('rushYpc')!);
-    const protection = -z(offense.sackRate, offenseDist.get('sackRate')!) -
-      z(allowed.sackRate, defenseDist.get('sackRate')!);
-    const ballSecurity = -z(offense.turnoverRate, offenseDist.get('turnoverRate')!) -
-      z(allowed.turnoverRate, defenseDist.get('turnoverRate')!);
-    return (passing + rushing + protection + ballSecurity) / 4;
+    const components: Record<Component, number> = {
+      passing:
+        z(offense.passEpaPerDropback, offenseDist.get('passEpaPerDropback')!) +
+        z(allowed.passEpaPerDropback, defenseDist.get('passEpaPerDropback')!),
+      rushing:
+        z(offense.rushYpc, offenseDist.get('rushYpc')!) +
+        z(allowed.rushYpc, defenseDist.get('rushYpc')!),
+      protection:
+        -z(offense.sackRate, offenseDist.get('sackRate')!) -
+        z(allowed.sackRate, defenseDist.get('sackRate')!),
+      ballSecurity:
+        -z(offense.turnoverRate, offenseDist.get('turnoverRate')!) -
+        z(allowed.turnoverRate, defenseDist.get('turnoverRate')!)
+    };
+    return enabled.length
+      ? enabled.reduce((sum, component) => sum + components[component], 0) / enabled.length
+      : 0;
   };
 
   return Math.max(-4, Math.min(4, matchup(home, away) - matchup(away, home)));
+}
+
+function emptyMetrics(): Metrics {
+  return { n: 0, correct: 0, brier: 0, logLoss: 0 };
 }
 
 function addMetric(metric: Metrics, pHome: number, actualHome: boolean) {
@@ -177,6 +210,12 @@ function addMetric(metric: Metrics, pHome: number, actualHome: boolean) {
   metric.correct += (p >= 0.5) === actualHome ? 1 : 0;
   metric.brier += Math.pow(p - y, 2);
   metric.logLoss += -(y * Math.log(p) + (1 - y) * Math.log(1 - p));
+}
+
+function metricsFromRows(rows: EvaluationRow[], probability: 'controlPHome' | 'challengerPHome'): Metrics {
+  const metric = emptyMetrics();
+  for (const row of rows) addMetric(metric, row[probability], row.actualHome);
+  return metric;
 }
 
 async function loadStats(season: number): Promise<TeamWeek[]> {
@@ -192,12 +231,14 @@ async function evaluate(
   games: Game[],
   stats: TeamWeek[],
   weight: number,
-  controlCache: Map<string, number>
-): Promise<Metrics> {
+  controlCache: Map<string, number>,
+  enabled: readonly Component[] = ALL_COMPONENTS
+): Promise<Evaluation> {
   const teams = parseTeamData();
   const byAbbr = new Map(teams.map(team => [team.abbr, team]));
   const sample = games.filter(game => game.season === season && game.gameType === 'REG' && Number.isFinite(game.homeScore) && Number.isFinite(game.awayScore) && game.homeScore !== game.awayScore);
-  const metrics: Metrics = { n: 0, correct: 0, brier: 0, logLoss: 0 };
+  const metrics = emptyMetrics();
+  const rows: EvaluationRow[] = [];
 
   for (const game of sample) {
     const home = byAbbr.get(game.homeTeam);
@@ -212,15 +253,53 @@ async function evaluate(
         : result.winner.abbr === home.abbr ? result.confidence / 100 : 1 - result.confidence / 100;
       controlCache.set(key, control);
     }
-    const edge = matchupEdge(stats, game.homeTeam, game.awayTeam, game.week);
-    const pHome = logistic(logit(control) + edge * weight);
-    addMetric(metrics, pHome, game.homeScore! > game.awayScore!);
+    const edge = matchupEdge(stats, game.homeTeam, game.awayTeam, game.week, enabled);
+    const challengerPHome = logistic(logit(control) + edge * weight);
+    const actualHome = game.homeScore! > game.awayScore!;
+    addMetric(metrics, challengerPHome, actualHome);
+    rows.push({
+      week: game.week,
+      actualHome,
+      controlPHome: control,
+      challengerPHome,
+      controlHit: (control >= 0.5) === actualHome,
+      challengerHit: (challengerPHome >= 0.5) === actualHome
+    });
   }
-  return metrics;
+  return { metrics, rows };
 }
 
 function report(label: string, metric: Metrics) {
   console.log(`${label}: ${metric.correct}/${metric.n} = ${(100 * metric.correct / metric.n).toFixed(2)}% | Brier ${(metric.brier / metric.n).toFixed(4)} | LogLoss ${(metric.logLoss / metric.n).toFixed(4)}`);
+}
+
+function delta(control: Metrics, challenger: Metrics) {
+  return {
+    accuracy: challenger.correct / challenger.n - control.correct / control.n,
+    brier: challenger.brier / challenger.n - control.brier / control.n,
+    logLoss: challenger.logLoss / challenger.n - control.logLoss / control.n
+  };
+}
+
+function exactMcNemarP(challengerOnly: number, controlOnly: number): number {
+  const n = challengerOnly + controlOnly;
+  if (!n) return 1;
+  const tail = Math.min(challengerOnly, controlOnly);
+  let term = Math.pow(0.5, n);
+  let sum = term;
+  for (let k = 0; k < tail; k++) {
+    term *= (n - k) / (k + 1);
+    sum += term;
+  }
+  return Math.min(1, 2 * sum);
+}
+
+function reportSplit(label: string, rows: EvaluationRow[]) {
+  if (!rows.length) return;
+  const control = metricsFromRows(rows, 'controlPHome');
+  const challenger = metricsFromRows(rows, 'challengerPHome');
+  const d = delta(control, challenger);
+  console.log(`${label.padEnd(14)} n=${rows.length} | control ${(100 * control.correct / control.n).toFixed(2)}% | challenger ${(100 * challenger.correct / challenger.n).toFixed(2)}% | Δacc ${(d.accuracy * 100).toFixed(2)} | ΔBrier ${d.brier.toFixed(4)}`);
 }
 
 async function main() {
@@ -237,36 +316,69 @@ async function main() {
   console.log('All matchup inputs use prior weeks only; same-week completed games are conservatively excluded.');
   console.log(`Discovery weights: ${CANDIDATE_WEIGHTS.join(', ')} logit per matchup-z edge. 2024 selects by Brier; 2025 is untouched confirmation.`);
 
-  const discovery: Array<{ weight: number; metrics: Metrics }> = [];
+  const discovery: Array<{ weight: number; evaluation: Evaluation }> = [];
   for (const weight of CANDIDATE_WEIGHTS) {
-    const metrics = await evaluate(2024, games, stats2024, weight, cache);
-    discovery.push({ weight, metrics });
-    report(`2024 weight=${weight.toFixed(2)}`, metrics);
+    const evaluation = await evaluate(2024, games, stats2024, weight, cache);
+    discovery.push({ weight, evaluation });
+    report(`2024 weight=${weight.toFixed(2)}`, evaluation.metrics);
   }
-  const selected = discovery.reduce((best, candidate) => candidate.metrics.brier / candidate.metrics.n < best.metrics.brier / best.metrics.n ? candidate : best);
+  const selected = discovery.reduce((best, candidate) => candidate.evaluation.metrics.brier / candidate.evaluation.metrics.n < best.evaluation.metrics.brier / best.evaluation.metrics.n ? candidate : best);
   console.log(`\nSelected on 2024 Brier: weight=${selected.weight.toFixed(2)}`);
 
-  const control = await evaluate(2025, games, stats2025, 0, cache);
-  const challenger = await evaluate(2025, games, stats2025, selected.weight, cache);
+  const controlEval = await evaluate(2025, games, stats2025, 0, cache);
+  const challengerEval = await evaluate(2025, games, stats2025, selected.weight, cache);
+  const control = controlEval.metrics;
+  const challenger = challengerEval.metrics;
   console.log('\nUntouched 2025 confirmation');
   report('CONTROL v2.2', control);
   report(`CHALLENGER matchup weight=${selected.weight.toFixed(2)}`, challenger);
 
-  const accuracyDelta = challenger.correct / challenger.n - control.correct / control.n;
-  const brierDelta = challenger.brier / challenger.n - control.brier / control.n;
-  const logLossDelta = challenger.logLoss / challenger.n - control.logLoss / control.n;
+  const d = delta(control, challenger);
   console.log('\nDelta challenger - control');
-  console.log(`Accuracy: ${(accuracyDelta * 100).toFixed(2)} points`);
-  console.log(`Brier: ${brierDelta.toFixed(4)} (negative is better)`);
-  console.log(`LogLoss: ${logLossDelta.toFixed(4)} (negative is better)`);
+  console.log(`Accuracy: ${(d.accuracy * 100).toFixed(2)} points`);
+  console.log(`Brier: ${d.brier.toFixed(4)} (negative is better)`);
+  console.log(`LogLoss: ${d.logLoss.toFixed(4)} (negative is better)`);
 
-  const verdict = selected.weight === 0
-    ? 'REJECT: discovery selected the zero-weight control.'
-    : accuracyDelta > 0 && brierDelta < 0 && logLossDelta < 0
-      ? 'KEEP FOR RESEARCH: all primary untouched 2025 metrics improved; ablation and neighboring-weight robustness remain required before promotion.'
+  console.log('\nPost-confirmation neighboring-weight robustness (NOT used to reselect weight)');
+  for (const weight of [0.10, 0.15, 0.20]) {
+    const evaluation = await evaluate(2025, games, stats2025, weight, cache);
+    report(`2025 robustness weight=${weight.toFixed(2)}`, evaluation.metrics);
+  }
+
+  console.log('\nComponent ablation at the frozen selected weight');
+  for (const removed of ALL_COMPONENTS) {
+    const enabled = ALL_COMPONENTS.filter(component => component !== removed);
+    const evaluation = await evaluate(2025, games, stats2025, selected.weight, cache, enabled);
+    report(`REMOVE ${removed}`, evaluation.metrics);
+  }
+
+  console.log('\n2025 split behavior at frozen selected weight');
+  const rows = challengerEval.rows;
+  reportSplit('Weeks 1-4', rows.filter(row => row.week <= 4));
+  reportSplit('Weeks 5-9', rows.filter(row => row.week >= 5 && row.week <= 9));
+  reportSplit('Weeks 10-18', rows.filter(row => row.week >= 10));
+  reportSplit('Control home', rows.filter(row => row.controlPHome >= 0.5));
+  reportSplit('Control away', rows.filter(row => row.controlPHome < 0.5));
+
+  const challengerOnly = rows.filter(row => row.challengerHit && !row.controlHit).length;
+  const controlOnly = rows.filter(row => row.controlHit && !row.challengerHit).length;
+  const pairedP = exactMcNemarP(challengerOnly, controlOnly);
+  console.log('\nPaired winner comparison');
+  console.log(`Challenger correct / control wrong: ${challengerOnly}`);
+  console.log(`Control correct / challenger wrong: ${controlOnly}`);
+  console.log(`Exact McNemar/binomial two-sided p: ${pairedP.toFixed(4)}`);
+  console.log(pairedP < 0.05
+    ? 'Paired winner improvement clears the conventional 0.05 threshold on this test.'
+    : 'Winner gain does NOT clear the conventional 0.05 threshold; treat it as promising rather than established.');
+
+  const improvesAll = selected.weight !== 0 && d.accuracy > 0 && d.brier < 0 && d.logLoss < 0;
+  const verdict = improvesAll
+    ? 'KEEP FOR RESEARCH: untouched 2025 improved all three primary metrics. Robustness and ablation are reported above; promotion still requires broader walk-forward replication and uncertainty review.'
+    : selected.weight === 0
+      ? 'REJECT: discovery selected the zero-weight control.'
       : 'INCONCLUSIVE/REJECT FOR PROMOTION: untouched 2025 did not improve all primary metrics.';
   console.log(`\nVERDICT: ${verdict}`);
-  console.log('Governance: this experiment never modifies production model weights.');
+  console.log('Governance: 2025 robustness/ablation output is diagnostic only and cannot be used to reselect the frozen 0.15 weight. Production weights remain unchanged.');
 }
 
 main().catch(error => {
