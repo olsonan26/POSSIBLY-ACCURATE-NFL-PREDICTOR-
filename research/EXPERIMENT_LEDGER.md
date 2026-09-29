@@ -11,6 +11,8 @@ Failed experiments are retained. Results from live-forward games are never moved
 | EXP-005 | NFL v3.2 multi-chart ecosystem + venue context generalizes prospectively | v2.2 remains separate control | v3.2 astrology ecosystem | frozen 2026 Week 1 forward slate | 6/15 = 40.00%; Sunday Sep 13 subset 4/13 = 30.77% | REJECT FOR PROMOTION; keep for research and error analysis |
 | EXP-006 | Simple same-season opponent-adjusted point differential improves beyond v2.2 | v2.2 | iterative SRS-style opponent adjustment; 0.00–0.04 logit/point | choose weight on 2024 Brier; confirm once on untouched 2025 | 2024 chose 0.03; 2025 control 180/271, 66.42%, Brier 0.2250, log loss 0.6416; challenger 179/271, 66.05%, Brier 0.2259, log loss 0.6448 | REJECT FOR PROMOTION; simple OAE did not replicate |
 | EXP-007 | Offense-vs-defense matchup efficiency adds value aggregate Elo/form misses | v2.2 | prior-week passing EPA/dropback + rushing efficiency + protection/pressure + ball security, frozen weight 0.15 | five weights on 2024 Brier; untouched 2025 confirmation; then post-confirmation robustness/ablation | 184/271 = 67.90%; Brier 0.2243; log loss 0.6412 vs control 180/271, 0.2250, 0.6416. McNemar exact p=0.4240 | KEEP FOR RESEARCH; promising but not statistically established or broad enough for production promotion |
+| EXP-008 | Predicting expected scoring margin first improves forecasting quality | v2.2 | ridge expected-margin model + discovery-only residual probability map | choose ridge penalty on 2024 margin MAE; untouched 2025; 2026 observational | 2025 176/271 = 64.94% vs 66.42% control; Brier 0.2240 vs 0.2250; log loss 0.6384 vs 0.6416; ECE 0.0396 vs 0.0840 | KEEP AS SECONDARY RESEARCH ARCHITECTURE; not a winner-model promotion candidate |
+| EXP-010 | Rolling QB EPA/CPOE/protection/rushing value adds information beyond team-level v2.2 | v2.2 | 16-game QB window, 100-DB shrinkage, frozen 0.20 logit weight selected from 45 2024 variants | 2024 discovery; untouched 2025; 2026 observational; ablation/robustness | 2025 180/271 = 66.42% tie; Brier 0.2245 vs 0.2250; log loss 0.6405 vs 0.6416; ECE 0.0744 vs 0.0840. 2026 observational 29/48 vs 28/48 | KEEP FOR RESEARCH; improves probability quality but winner gain not established |
 
 ## EXP-006 detail
 
@@ -75,6 +77,59 @@ Split behavior:
 Paired winner discordance was 9 games fixed by the challenger versus 5 games broken by it. Exact two-sided McNemar/binomial **p = 0.4240**, so the apparent +1.48-point accuracy gain is not statistically established on one season.
 
 Therefore EXP-007 remains **KEEP FOR RESEARCH**, not a production replacement. Required next evidence is multi-season walk-forward replication and genuine prospective 2026 observations after enough prior-week data exist.
+
+## EXP-008 detail
+
+EXP-008 predicted continuous home-minus-away scoring margin with ridge regression using only the frozen control's leakage-safe pregame factors, then mapped margin to win probability using a discovery-only residual distribution.
+
+The 2024 discovery selected ridge `lambda=100` with residual sigma **13.342 points**. On untouched 2025:
+
+- control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**, ECE **0.0840**
+- expected margin: **176/271 = 64.94%**, Brier **0.2240**, log loss **0.6384**, ECE **0.0396**
+- margin MAE: **10.283 points**
+- challenger-only correct flips: **0**
+- control-only correct flips: **4**
+
+EXP-008 therefore remains useful as a secondary probability/calibration and future Monte Carlo architecture, but is not a straight-up winner promotion candidate.
+
+## EXP-010 detail
+
+EXP-010 used nflverse weekly QB statistics from prior NFL weeks only. The predeclared signal combined:
+
+1. passing EPA per dropback,
+2. passing CPOE,
+3. sack avoidance / protection outcome,
+4. QB rushing EPA per carry.
+
+The 2024 discovery tested **45 variants**: 3 rolling windows × 3 shrinkage priors × 5 QB logit weights. Brier selected:
+
+- **16-game** rolling window,
+- **100-dropback** shrinkage prior,
+- **0.20** logit weight.
+
+Untouched 2025 confirmation:
+
+- control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**, ECE **0.0840**
+- EXP-010: **180/271 = 66.42%**, Brier **0.2245**, log loss **0.6405**, ECE **0.0744**
+- paired flips: 2 challenger-only vs 2 control-only; exact p **1.0000**
+
+The locked QB signal improved probability quality but did not improve winner accuracy.
+
+Post-confirmation ablation is diagnostic only:
+
+- remove EPA: **181/271 = 66.79%**
+- remove CPOE: **179/271 = 66.05%**
+- remove protection: **179/271 = 66.05%**
+- remove rushing: **182/271 = 67.16%**, Brier **0.2243**, log loss **0.6401**
+
+The rushing ablation is a future hypothesis, not permission to rewrite EXP-010 after seeing 2025.
+
+Frozen 2026 observational check at 48 games:
+
+- control: **28/48 = 58.33%**, Brier **0.2331**, ECE **0.1375**
+- EXP-010: **29/48 = 60.42%**, Brier **0.2331**, ECE **0.1056**
+
+That sample is encouraging but too small for promotion. EXP-010 remains **KEEP FOR RESEARCH**.
 
 ## Required template for every new experiment
 
