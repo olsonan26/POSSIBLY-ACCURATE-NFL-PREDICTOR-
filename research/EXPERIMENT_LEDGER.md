@@ -14,6 +14,7 @@ Failed experiments are retained. Results from live-forward games are never moved
 | EXP-008 | Predicting expected scoring margin first improves forecasting quality | v2.2 | ridge expected-margin model + discovery-only residual probability map | 2024 select; untouched 2025; 2026 observation | 176/271 = 64.94%; Brier 0.2240; log loss 0.6384; ECE 0.0396 | KEEP AS SECONDARY RESEARCH ARCHITECTURE; not a winner promotion candidate |
 | EXP-009 | Play-level ridge opponent-adjusted pass/rush EPA adds independent predictive value | v2.2 | simultaneous offense/defense ridge EPA, early-season ramp, locked 0.20 logit weight | 60 preregistered 2024 variants; untouched 2025; 2026 observation; ablation/robustness | 2025 179/271 = 66.05%; Brier 0.2276; log loss 0.6523; ECE 0.0707 vs control 66.42%, 0.2250, 0.6416, 0.0840; 2026 tied 28/48 but worse probability quality | REJECT FOR PROMOTION |
 | EXP-010 | Rolling QB EPA/CPOE/protection/rushing value adds information beyond team-level v2.2 | v2.2 | 16-game QB window, 100-DB shrinkage, 0.20 logit weight | 45 preregistered 2024 variants; untouched 2025; 2026 observation | 2025 accuracy tied 66.42%; Brier 0.2245; log loss 0.6405; ECE 0.0744; 2026 29/48 vs 28/48 | KEEP FOR RESEARCH |
+| EXP-011 | Regressed prior-season offense/defense efficiency stabilizes early-season estimates without harming later weeks | v2.2 | dynamic pass/rush EPA carryover with separate offense/defense K and prior retention | 135 preregistered 2024 variants; untouched 2025; 2026 observation; ablation/robustness | 2025 179/271 = 66.05%; Brier 0.2267; log loss 0.6500; ECE 0.0786 vs control 66.42%, 0.2250, 0.6416; 2026 tied 28/48 but Brier/log loss materially worse | REJECT FOR PROMOTION |
 | EXP-014 | Success and explosive-play matchup rates add repeatable signal beyond v2.2 | v2.2 | prior-week pass/rush success + explosive rates | 40 preregistered 2024 variants; untouched 2025; 2026 observation | 2025 178/271 = 65.68%; Brier 0.2253; log loss 0.6440; ECE 0.0885; 2026 27/48 | REJECT FOR PROMOTION |
 
 ## EXP-006 detail
@@ -107,6 +108,60 @@ Untouched 2025:
 - EXP-010: **180/271 = 66.42%**, Brier **0.2245**, log loss **0.6405**, ECE **0.0744**
 
 Frozen 2026 observation: **29/48** for EXP-010 vs **28/48** control. This remains research-only.
+
+## EXP-011 detail
+
+EXP-011 tested whether previous-season team efficiency should fade out gradually rather than disappear at the season boundary. It used nflverse weekly team statistics and blended previous-season pass/rush EPA with current-season pass/rush EPA separately for offense and defense.
+
+The 2024 discovery predeclared **135 variants**:
+
+- offense shrinkage K: `2`, `4`, `6`
+- defense shrinkage K: `3`, `6`, `9`
+- prior-season retention: `0.50`, `0.75`, `1.00`
+- logit weights: `0`, `0.05`, `0.10`, `0.15`, `0.20`
+
+Brier selected and locked before 2025:
+
+- offense K **2**
+- defense K **3**
+- prior retention **0.50**
+- logit weight **0.20**
+
+Untouched 2025 confirmation:
+
+- control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**, ECE **0.0840**
+- EXP-011: **179/271 = 66.05%**, Brier **0.2267**, log loss **0.6500**, ECE **0.0786**
+- challenger-only correct flips: **7**
+- control-only correct flips: **8**
+- exact paired p-value: **1.0000**
+
+The experiment did not achieve its specific early-season objective. Weeks 1–2 tied winner accuracy and improved Brier, but Weeks 3–4 lost two additional winners:
+
+- Week 1: **75.00% → 75.00%**, Brier delta **-0.0226**
+- Week 2: **81.25% → 81.25%**, Brier delta **-0.0022**
+- Week 3: **68.75% → 62.50%**, Brier delta **+0.0169**
+- Week 4: **66.67% → 60.00%**, Brier delta **+0.0080**
+- Weeks 1–4 overall: **73.02% → 69.84%**
+- Weeks 5–9: **64.79% → 67.61%**
+- Weeks 10–18: **64.23% → 63.50%**
+
+Post-confirmation ablation was diagnostic only:
+
+- offense-only: **175/271 = 64.58%**, Brier **0.2291**, log loss **0.6525**
+- defense-only: **180/271 = 66.42%**, Brier **0.2235**, log loss **0.6403**, ECE **0.0646**
+- pass-only: **180/271 = 66.42%**, Brier **0.2256**, log loss **0.6484**
+- rush-only: **174/271 = 64.21%**, Brier **0.2313**, log loss **0.6602**
+
+The defense-only result is a useful **future hypothesis only**. It cannot be used to rewrite EXP-011 after observing 2025.
+
+Neighboring settings did not provide a robust rescue. A post-confirmation weight of 0.15 happened to score **181/271 = 66.79%**, but because 2025 had already been opened this cannot be treated as untouched evidence or selected retroactively.
+
+Frozen 2026 observation at the original locked parameters:
+
+- control: **28/48 = 58.33%**, Brier **0.2331**, log loss **0.6602**, ECE **0.1375**
+- EXP-011: **28/48 = 58.33%**, Brier **0.2464**, log loss **0.6911**, ECE **0.1123**
+
+Decision: **REJECT FOR PROMOTION**. The combined offense+defense prior-carryover specification failed untouched confirmation and materially worsened 2026 probability quality. The defense-only clue is quarantined as a possible future preregistered hypothesis.
 
 ## EXP-014 detail
 
