@@ -55,6 +55,9 @@ jobs:
       - name: EXP-010 QB EPA + CPOE challenger
         run: bun run research:qb
 
+      - name: EXP-011 dynamic prior-season shrinkage challenger
+        run: bun run research:priors
+
       - name: EXP-014 explosive-play + success-rate challenger
         run: bun run research:explosives
 
@@ -75,5 +78,6 @@ jobs:
             research/reports/exp-008.md
             research/reports/exp-009.md
             research/reports/exp-010.md
+            research/reports/exp-011.md
             research/reports/exp-014.md
           if-no-files-found: warn
