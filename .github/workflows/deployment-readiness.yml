@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 65
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,6 +49,9 @@ jobs:
       - name: EXP-008 expected-margin challenger
         run: bun run research:margin
 
+      - name: EXP-009 ridge opponent-adjusted EPA challenger
+        run: bun run research:ridge-epa
+
       - name: EXP-010 QB EPA + CPOE challenger
         run: bun run research:qb
 
@@ -70,6 +73,7 @@ jobs:
             research/runtime
             research/reports/latest.md
             research/reports/exp-008.md
+            research/reports/exp-009.md
             research/reports/exp-010.md
             research/reports/exp-014.md
           if-no-files-found: warn
