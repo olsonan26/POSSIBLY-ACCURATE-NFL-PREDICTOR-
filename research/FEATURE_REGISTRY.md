@@ -13,16 +13,20 @@ This registry exists to prevent hidden, duplicated, or silently changing logic.
 | Rest differential | RESEARCH ONLY | schedule/game data | pregame | legacy research adjustment | missing -> neutral | zero production influence | rejected for 2025 incremental accuracy |
 | Legacy numerology | RESEARCH ONLY | internal historical patterns | pregame | legacy daily definitions | missing -> neutral | zero production influence | superseded / audit only |
 | Provisional Lettrology | RESEARCH ONLY | internal source-derived formulas | pregame | Daily Environment + Daily ESS provisional research | fail closed | zero production influence | not validated |
-| PURE Astrology | RESEARCH ONLY | private source-authoritative engine | pregame only; retrospective current personnel blocked | independent ecosystem analysis; no invented blend with football | unavailable/limited/unresolved states preserved | zero production influence | v3.x research |
+| PURE Astrology | RESEARCH ONLY | private source-authoritative engine | pregame only; retrospective current personnel blocked | independent ecosystem analysis; no invented blend with football | unavailable/limited/unresolved states preserved | zero production influence | v3.x research; frozen 2026 Week 1 v3.2 slate 6/15 |
+| Simple opponent-adjusted point differential | REJECTED RESEARCH | nflverse historical games | same-season completed games strictly before target | iterative SRS-style opponent adjustment; 2024 selected 0.03 logit/point | no prior sample -> neutral | zero | EXP-006 failed untouched 2025: 66.05%, Brier 0.2259, log loss 0.6448 vs v2.2 66.42%, 0.2250, 0.6416 |
+| Offense-vs-defense matchup efficiency | RESEARCH CANDIDATE | nflverse weekly team stats | prior weeks only; same-week games excluded | passing EPA/dropback + rushing YPC + protection/sack rate + ball-security/turnover interaction; 2024 selected 0.15 | Week 1 / insufficient prior sample -> zero edge | zero | EXP-007 untouched 2025: 67.90%, Brier 0.2243, log loss 0.6412; paired p=0.424; needs broader replication |
+| Probability calibration | RESEARCH TARGET | prior out-of-sample model probabilities | calibration fit must precede evaluated season | Platt/logistic or isotonic candidate; not yet promoted | no valid calibration sample -> raw probability | none | 2025 ECE 0.0804 exposes non-monotonic confidence buckets |
 | Market benchmark | NOT IMPLEMENTED | future point-in-time sportsbook source | line available at prediction cutoff | benchmark only unless separate market-assisted model is created | missing -> unavailable | none | master-prompt research target |
-| Opponent-adjusted EPA / success rate | NOT IMPLEMENTED | future nflverse play-by-play research pipeline | strictly pregame rolling features | TBD challenger only | missing -> explicit unknown | none | priority challenger |
+| Opponent-adjusted EPA / success rate | NOT IMPLEMENTED | future nflverse play-by-play research pipeline | strictly pregame rolling features | separate future challenger, distinct from failed EXP-006 point-differential SRS | missing -> explicit unknown | none | future research |
 | OL vs pass-rush matchup | NOT IMPLEMENTED | future point-in-time efficiency + personnel | strictly pregame | TBD challenger only | missing -> explicit unknown | none | priority challenger |
 | Weather | NOT IMPLEMENTED | future historical/live weather source | observed/forecast known before kickoff | matchup/scoring modifier only if validated | missing -> unavailable | none | research target |
 
 ## Rules
 
-1. `v2.2-validated-current-season` remains runnable as the control.
+1. `v2.2-validated-current-season` remains runnable as the production/control model.
 2. Experimental features cannot modify the control's historical predictions.
 3. Every new feature needs a timestamp rule and a missing-data rule before backtesting.
-4. A feature is not promoted because it makes one slate look better.
+4. A feature is not promoted because it makes one slate or one season look better.
 5. Market-assisted and non-market models must remain separately labeled.
+6. Post-confirmation ablations can generate hypotheses but cannot be used to retune the same test season and call it untouched.
