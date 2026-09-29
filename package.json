@@ -8,8 +8,9 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build",
     "backtest": "bun scripts/backtest.ts",
+    "evaluate": "bun scripts/evaluate-model.ts --season=2025",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run backtest && bun run forward-test"
+    "verify": "bun run typecheck && bun run build && bun run backtest && bun run evaluate && bun run forward-test"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
