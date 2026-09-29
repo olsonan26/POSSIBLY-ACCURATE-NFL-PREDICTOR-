@@ -1,0 +1,39 @@
+{
+  "experimentId": "NFL-V3.2-WEEK1-2026",
+  "model": "NFL v3.2 — Multi-Chart Ecosystem + Venue Context",
+  "status": "research-only",
+  "predictionState": "frozen-before-outcomes",
+  "governance": {
+    "historicalPredictionsMutable": false,
+    "mayTuneFromThisSampleAndCallItUntouched": false,
+    "promotionDecision": "REJECT_FOR_PROMOTION_KEEP_FOR_RESEARCH",
+    "reason": "The frozen 15-game Week 1 slate finished 6-9 (40.00%). This is a small forward sample, but it is negative evidence and cannot be hidden or retuned away."
+  },
+  "summary": {
+    "games": 15,
+    "correct": 6,
+    "incorrect": 9,
+    "accuracy": 0.4,
+    "sundaySep13Games": 13,
+    "sundaySep13Correct": 4,
+    "sundaySep13Incorrect": 9,
+    "sundaySep13Accuracy": 0.3076923077
+  },
+  "games": [
+    {"date":"2026-09-10","away":"SF","home":"LA","neutralSite":true,"predictedWinner":"SF","actualWinner":"SF","finalScore":"SF 27-7 LA","correct":true},
+    {"date":"2026-09-13","away":"CHI","home":"CAR","predictedWinner":"CAR","actualWinner":"CHI","finalScore":"CHI 59-37 CAR","correct":false},
+    {"date":"2026-09-13","away":"BAL","home":"IND","predictedWinner":"IND","actualWinner":"BAL","finalScore":"BAL 41-23 IND","correct":false},
+    {"date":"2026-09-13","away":"ATL","home":"PIT","predictedWinner":"PIT","actualWinner":"PIT","finalScore":"PIT 20-13 ATL","correct":true},
+    {"date":"2026-09-13","away":"CLE","home":"JAX","predictedWinner":"CLE","actualWinner":"JAX","finalScore":"JAX 34-10 CLE","correct":false},
+    {"date":"2026-09-13","away":"TB","home":"CIN","predictedWinner":"CIN","actualWinner":"CIN","finalScore":"CIN 33-27 TB","correct":true},
+    {"date":"2026-09-13","away":"NYJ","home":"TEN","predictedWinner":"TEN","actualWinner":"NYJ","finalScore":"NYJ 23-10 TEN","correct":false},
+    {"date":"2026-09-13","away":"NO","home":"DET","predictedWinner":"NO","actualWinner":"DET","finalScore":"DET 31-30 NO","correct":false},
+    {"date":"2026-09-13","away":"BUF","home":"HOU","predictedWinner":"HOU","actualWinner":"BUF","finalScore":"BUF 36-31 HOU","correct":false},
+    {"date":"2026-09-13","away":"ARI","home":"LAC","predictedWinner":"ARI","actualWinner":"ARI","finalScore":"ARI 26-14 LAC","correct":true},
+    {"date":"2026-09-13","away":"GB","home":"MIN","predictedWinner":"GB","actualWinner":"MIN","finalScore":"MIN 39-22 GB","correct":false},
+    {"date":"2026-09-13","away":"MIA","home":"LV","predictedWinner":"MIA","actualWinner":"LV","finalScore":"LV 27-13 MIA","correct":false},
+    {"date":"2026-09-13","away":"WAS","home":"PHI","predictedWinner":"PHI","actualWinner":"PHI","finalScore":"PHI 24-22 WAS","correct":true},
+    {"date":"2026-09-13","away":"DAL","home":"NYG","predictedWinner":"DAL","actualWinner":"NYG","finalScore":"NYG 28-20 DAL","correct":false},
+    {"date":"2026-09-14","away":"DEN","home":"KC","predictedWinner":"KC","actualWinner":"KC","finalScore":"KC 31-10 DEN","correct":true}
+  ]
+}
