@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,6 +46,9 @@ jobs:
       - name: EXP-007 offense-vs-defense matchup efficiency challenger
         run: bun run research:matchup
 
+      - name: EXP-008 expected-margin challenger
+        run: bun run research:margin
+
       - name: Full failure-cluster autoresearch cycle
         run: bun run research:cycle
 
@@ -60,4 +63,5 @@ jobs:
           path: |
             research/runtime
             research/reports/latest.md
+            research/reports/exp-008.md
           if-no-files-found: warn
