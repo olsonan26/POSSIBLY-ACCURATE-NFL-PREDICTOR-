@@ -13,6 +13,7 @@ Failed experiments are retained. Results from live-forward games are never moved
 | EXP-007 | Offense-vs-defense matchup efficiency adds value aggregate Elo/form misses | v2.2 | prior-week passing EPA/dropback + rushing efficiency + protection/pressure + ball security, frozen weight 0.15 | five weights on 2024 Brier; untouched 2025 confirmation; then post-confirmation robustness/ablation | 184/271 = 67.90%; Brier 0.2243; log loss 0.6412 vs control 180/271, 0.2250, 0.6416. McNemar exact p=0.4240 | KEEP FOR RESEARCH; promising but not statistically established or broad enough for production promotion |
 | EXP-008 | Predicting expected scoring margin first improves forecasting quality | v2.2 | ridge expected-margin model + discovery-only residual probability map | choose ridge penalty on 2024 margin MAE; untouched 2025; 2026 observational | 2025 176/271 = 64.94% vs 66.42% control; Brier 0.2240 vs 0.2250; log loss 0.6384 vs 0.6416; ECE 0.0396 vs 0.0840 | KEEP AS SECONDARY RESEARCH ARCHITECTURE; not a winner-model promotion candidate |
 | EXP-010 | Rolling QB EPA/CPOE/protection/rushing value adds information beyond team-level v2.2 | v2.2 | 16-game QB window, 100-DB shrinkage, frozen 0.20 logit weight selected from 45 2024 variants | 2024 discovery; untouched 2025; 2026 observational; ablation/robustness | 2025 180/271 = 66.42% tie; Brier 0.2245 vs 0.2250; log loss 0.6405 vs 0.6416; ECE 0.0744 vs 0.0840. 2026 observational 29/48 vs 28/48 | KEEP FOR RESEARCH; improves probability quality but winner gain not established |
+| EXP-014 | Success and explosive-play matchup rates add repeatable signal beyond v2.2 | v2.2 | prior-week pass/rush success + pass/rush explosive rates; 40 preregistered threshold/filter/weight variants | 2024 discovery; untouched 2025; 2026 observational; ablation/robustness | 2024 selected pass>=20, rush>=15, no garbage filter, weight 0.20; 2025 fell to 178/271 = 65.68%, Brier 0.2253, log loss 0.6440, ECE 0.0885; 2026 obs 27/48 | REJECT FOR PROMOTION; strong discovery result failed untouched confirmation and forward observation |
 
 ## EXP-006 detail
 
@@ -130,6 +131,39 @@ Frozen 2026 observational check at 48 games:
 - EXP-010: **29/48 = 60.42%**, Brier **0.2331**, ECE **0.1056**
 
 That sample is encouraging but too small for promotion. EXP-010 remains **KEEP FOR RESEARCH**.
+
+## EXP-014 detail
+
+EXP-014 used nflverse play-by-play from prior weeks only and built four equally represented offense-vs-defense matchup components:
+
+1. pass success rate,
+2. rush success rate,
+3. explosive pass rate,
+4. explosive rush rate.
+
+The 2024 discovery tested **40 preregistered variants** across four explosive threshold definitions, with/without a 5%-95% win-probability garbage-time filter, and five logit weights. Brier selected:
+
+- explosive pass: **20+ yards**
+- explosive rush: **15+ yards**
+- garbage-time filter: **off**
+- logit weight: **0.20**
+
+That specification looked strong on discovery: **187/272 = 68.75%**, Brier **0.2068**, log loss **0.6022**, compared with the 2024 control at **181/272 = 66.54%**, Brier **0.2118**, log loss **0.6122**.
+
+Untouched 2025 confirmation reversed the result:
+
+- control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**, ECE **0.0840**
+- EXP-014: **178/271 = 65.68%**, Brier **0.2253**, log loss **0.6440**, ECE **0.0885**
+- paired flips: **5** challenger-only vs **7** control-only; exact p **0.7744**
+
+Post-confirmation ablations were also not sufficient to rescue the locked experiment. Removing rush explosive rate was least harmful at **179/271 = 66.05%**, but that is a future hypothesis only.
+
+Frozen 2026 observational check at 48 games:
+
+- control: **28/48 = 58.33%**, Brier **0.2331**, log loss **0.6602**, ECE **0.1375**
+- EXP-014: **27/48 = 56.25%**, Brier **0.2479**, log loss **0.6935**, ECE **0.1515**
+
+EXP-014 is therefore **REJECT FOR PROMOTION**. The failed result is retained permanently and may not be retuned on 2025/2026 and relabeled as untouched evidence.
 
 ## Required template for every new experiment
 
