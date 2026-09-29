@@ -3,6 +3,8 @@
 ## Status
 Research challenger only. Production v2.2 remains frozen and unchanged.
 
+**Manager decision after the untouched 2025 confirmation:** retain EXP-008 as a probability/calibration research component, but **do not promote it as the straight-up winner model**. It improved Brier, log loss, and calibration, but reduced winner accuracy and corrected zero games that v2.2 missed.
+
 ## Hypothesis
 Predicting a continuous pregame estimate of `home score - away score` first, then converting that margin into a win probability through a discovery-only residual distribution, may retain more information than direct winner classification.
 
@@ -34,6 +36,88 @@ For each predicted margin `m`, the challenger maps the result to home-win probab
 `P(home wins) = NormalCDF(m / sigma)`
 
 The residual sigma is frozen before the 2025 confirmation season.
+
+## Verified run — 2026-09-29
+
+Historical snapshot populations:
+
+- 2023: 272 games
+- 2024: 272 games
+- 2025: 271 games
+- 2026 observational sample at run time: 48 completed regular-season games
+
+### 2024 discovery lock
+
+The preregistered ridge grid was `0, 0.01, 0.1, 1, 10, 100` and selection used 2024 margin MAE only.
+
+- selected lambda: **100**
+- frozen residual sigma: **13.342 points**
+- 2024 discovery MAE at the selected lambda: **10.368 points**
+- 2024 discovery RMSE: **13.366 points**
+
+The selected lambda landed on the upper boundary of the preregistered grid. That is recorded as a robustness warning; the grid is not extended after seeing 2025.
+
+### Untouched 2025 confirmation
+
+| Model | Accuracy | Brier | Log loss | ECE |
+|---|---:|---:|---:|---:|
+| v2.2 control | **66.42%** | 0.2250 | 0.6416 | 0.0840 |
+| EXP-008 expected margin | 64.94% | **0.2240** | **0.6384** | **0.0396** |
+
+EXP-008 margin error:
+
+- MAE: **10.283 points**
+- RMSE: **12.980 points**
+
+Paired winner comparison:
+
+- EXP-008 correct / control wrong: **0**
+- control correct / EXP-008 wrong: **4**
+- exact paired p: **0.1250**
+
+So EXP-008 improved probability quality and calibration, but lost **1.48 percentage points** of straight-up accuracy.
+
+### 2025 split findings
+
+- Weeks 1–4: tied control at 73.02% accuracy
+- Weeks 5–9: EXP-008 60.56% vs control 64.79%
+- Weeks 10–18: EXP-008 63.50% vs control 64.23%
+- actual away winners: EXP-008 51.20% vs control 54.40%
+- one-score games: EXP-008 55.56% vs control 56.94%
+- blowouts: EXP-008 76.04% vs control 77.08%
+
+### Frozen ablation diagnostics
+
+These are diagnostics only and are **not** used to retune EXP-008 after 2025 was revealed.
+
+- removing base Elo dropped accuracy to 64.21%
+- removing current form dropped accuracy to 64.58%
+- removing venue left accuracy at 64.94% while slightly improving Brier/log loss
+- removing H2H raised accuracy to 66.05% and slightly improved probability metrics
+
+The H2H/venue observations become future hypotheses only; they are not retroactively used to rescue EXP-008.
+
+### 2026 observational check
+
+At 48 completed games:
+
+| Model | Accuracy | Brier | Log loss | ECE |
+|---|---:|---:|---:|---:|
+| v2.2 control | 58.33% | **0.2331** | **0.6602** | 0.1375 |
+| EXP-008 | 58.33% | 0.2342 | 0.6612 | **0.0853** |
+
+EXP-008 again showed better calibration but did not improve winner accuracy.
+
+## Management conclusion
+
+**Keep the expected-margin architecture, but do not replace v2.2 with this version.** The margin-first idea is still potentially useful as:
+
+- a calibrated secondary probability model,
+- an input to later Monte Carlo work,
+- a target that can be improved by stronger QB, EPA, explosive-play, and personnel features,
+- a future ensemble member only if it contributes unique out-of-fold value.
+
+For the user's primary objective — straight-up winner accuracy — this exact EXP-008 specification is **not a promotion candidate**.
 
 ## Primary evaluation
 
@@ -68,7 +152,7 @@ The selected ridge penalty and its immediate neighboring candidate penalties are
 - `PROMISING`
 - `SURVIVES FOR REPLICATION`
 
-A separate explicit promotion decision would still be required before any production change.
+The runtime script labels the probability-quality result `PROMISING` because two of three probability metrics improved. The management decision above is stricter for straight-up winner promotion.
 
 ## Reproduce
 
