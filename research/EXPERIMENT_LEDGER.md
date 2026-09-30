@@ -17,6 +17,7 @@ Failed experiments are retained. Results from live-forward games are never moved
 | EXP-011 | Regressed prior-season offense/defense efficiency stabilizes early-season estimates without harming later weeks | v2.2 | dynamic pass/rush EPA carryover with separate offense/defense K and prior retention | 135 preregistered 2024 variants; untouched 2025; 2026 observation; ablation/robustness | 2025 179/271 = 66.05%; Brier 0.2267; log loss 0.6500; ECE 0.0786 vs control 66.42%, 0.2250, 0.6416; 2026 tied 28/48 but Brier/log loss materially worse | REJECT FOR PROMOTION |
 | EXP-013A | Trailing snap-weighted personnel continuity adds leakage-safe information beyond v2.2 | v2.2 | prior-game offensive/defensive player-role snap overlap; target-game and same-week snaps excluded | 60 preregistered 2024 variants; untouched 2025; frozen 2026 observation | 2025 173/271 = 63.84%, Brier 0.2245, log loss 0.6418, ECE 0.0436 vs control 66.42%, 0.2250, 0.6416, 0.0840; 2026 32/48 vs 28/48, but only 16/48 games had usable continuity and the gain was entirely Week 3 | INCONCLUSIVE / NO PROMOTION |
 | EXP-014 | Success and explosive-play matchup rates add repeatable signal beyond v2.2 | v2.2 | prior-week pass/rush success + explosive rates | 40 preregistered 2024 variants; untouched 2025; 2026 observation | 2025 178/271 = 65.68%; Brier 0.2253; log loss 0.6440; ECE 0.0885; 2026 27/48 | REJECT FOR PROMOTION |
+| EXP-015 | Prior-week offensive-line pressure allowed matched against opponent pass-rush pressure generated adds predictive information beyond v2.2 | v2.2 | sack rate + QB-hit-or-sack rate per dropback, 50-DB shrinkage, full-season history, locked hits mode at 0.05 | 45 preregistered 2024 variants; untouched 2025; frozen 2026 observation; diagnostics | 2025 181/271 = 66.79%, Brier 0.2236, log loss 0.6385, ECE 0.0657 vs control 66.42%, 0.2250, 0.6416, 0.0840; paired p=1.0000; 2026 29/48 vs 28/48 | KEEP FOR RESEARCH / NO PROMOTION |
 
 ## EXP-006 detail
 
@@ -224,6 +225,69 @@ The discovery result was strong (**187/272 = 68.75%**) but failed untouched 2025
 - EXP-014: **178/271 = 65.68%**, Brier **0.2253**, log loss **0.6440**, ECE **0.0885**
 
 Frozen 2026 observation was also worse at **27/48**. Decision: **REJECT FOR PROMOTION**.
+
+## EXP-015 detail
+
+EXP-015 tested whether a direct protection-versus-pressure matchup adds information beyond the control model. It uses prior-week nflverse play-by-play only and measures the rate at which each offense allows sacks or QB hits and each defense generates them. Target-game and same-week plays are excluded.
+
+The 2024 discovery predeclared **45 variants**:
+
+- history windows: `4`, `8`, full same-season history (`99`)
+- pressure modes: `sacks`, `hits`, `combined`
+- logit weights: `0`, `0.05`, `0.10`, `0.15`, `0.20`
+- fixed shrinkage: **50 dropbacks** toward the contemporaneous league mean
+
+Brier then log loss selected and locked before 2025:
+
+- history window: **full same-season history (`99`)**
+- pressure mode: **QB-hit-or-sack (`hits`)**
+- logit weight: **0.05**
+
+The 2024 discovery edge was intentionally treated as weak. At the locked setting:
+
+- control: **181/272 = 66.54%**, Brier **0.2118**, log loss **0.6122**
+- EXP-015: **180/272 = 66.18%**, Brier **0.2117**, log loss **0.6124**
+
+The locked challenger was selected because Brier was fractionally lower under the preregistered rule, despite slightly worse discovery accuracy and log loss.
+
+Untouched 2025 confirmation:
+
+- control: **180/271 = 66.42%**, Brier **0.2250**, log loss **0.6416**, ECE **0.0840**
+- EXP-015: **181/271 = 66.79%**, Brier **0.2236**, log loss **0.6385**, ECE **0.0657**
+- accuracy delta: **+0.37 percentage points**
+- Brier delta: **-0.0015**
+- log-loss delta: **-0.0031**
+- challenger-only correct flips: **4**
+- control-only correct flips: **3**
+- exact paired p-value: **1.0000**
+
+2025 split behavior:
+
+- Weeks 1–4: **73.02% → 73.02%**, Brier delta **-0.0016**
+- Weeks 5–9: **64.79% → 63.38%**, Brier delta **-0.0018**
+- Weeks 10–18: **64.23% → 65.69%**, Brier delta **-0.0013**
+- control home picks: **66.27% → 66.27%**
+- control away picks: **66.67% → 67.65%**
+- one-score games: **56.94% → 58.33%**
+- blowouts: **77.08% → 76.04%**
+
+Post-confirmation component diagnostics are quarantined and cannot be used to rewrite the locked test:
+
+- sacks-only: **182/271 = 67.16%**, Brier **0.2234**, log loss **0.6377**, ECE **0.0920**
+- combined: **182/271 = 67.16%**, Brier **0.2234**, log loss **0.6380**, ECE **0.0806**
+- neighboring 0.10 weight: **181/271 = 66.79%**, Brier **0.2229**, log loss **0.6374**
+
+Because these variants were inspected only after 2025 was opened, none may replace the locked `hits` / `0.05` specification.
+
+Frozen 2026 observation:
+
+- control: **28/48 = 58.33%**, Brier **0.2331**, log loss **0.6602**, ECE **0.1375**
+- EXP-015: **29/48 = 60.42%**, Brier **0.2314**, log loss **0.6557**, ECE **0.1433**
+- Week 1: **62.50% → 62.50%**
+- Week 2: **56.25% → 50.00%**
+- Week 3: **56.25% → 68.75%**
+
+Decision: **KEEP FOR RESEARCH / NO PROMOTION**. EXP-015 improved untouched 2025 accuracy, Brier, log loss, and ECE and improved frozen 2026 accuracy/Brier/log loss, but the winner gain is only one net 2025 game, the exact paired p-value is 1.0000, and the 2024 discovery advantage was extremely small. Broader walk-forward replication is required before any production decision.
 
 ## Required template for every new experiment
 
