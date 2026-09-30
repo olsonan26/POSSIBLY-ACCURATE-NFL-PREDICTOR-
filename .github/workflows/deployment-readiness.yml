@@ -12,7 +12,7 @@ permissions:
 jobs:
   exp020_fast:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,20 +31,25 @@ jobs:
       - name: EXP-021 early-season market disagreement gate
         run: bun run research:early-market
 
+      - name: EXP-022 structural market trust gates
+        run: bun run research:structural-market
+
       - name: Preserve fast research output
         uses: actions/upload-artifact@v4
         with:
-          name: exp-020-021-output
+          name: exp-020-022-output
           path: |
             research/reports/exp-020.md
             research/runtime/exp-020.json
             research/reports/exp-021.md
             research/runtime/exp-021.json
+            research/reports/exp-022.md
+            research/runtime/exp-022.json
           if-no-files-found: error
 
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 110
+    timeout-minutes: 120
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,6 +73,9 @@ jobs:
 
       - name: EXP-021 early-season market disagreement gate
         run: bun run research:early-market
+
+      - name: EXP-022 structural market trust gates
+        run: bun run research:structural-market
 
       - name: Autoresearch synthetic acceptance tests
         run: bun run research:test
@@ -143,4 +151,6 @@ jobs:
             research/runtime/exp-020.json
             research/reports/exp-021.md
             research/runtime/exp-021.json
+            research/reports/exp-022.md
+            research/runtime/exp-022.json
           if-no-files-found: warn
