@@ -783,7 +783,7 @@ function scoredMetrics(rows: ScoredRow[]): Metrics {
     brier: brier / rows.length,
     logLoss: logLoss / rows.length,
     ece: expectedCalibrationError(rows),
-    mae: mean(errors.map(Math.abs)),
+    mae: mean(errors.map(error => Math.abs(error))),
     rmse: Math.sqrt(mean(errors.map(error => error * error)))
   };
 }
@@ -854,19 +854,19 @@ function failureSummary(shadow: ScoredRow[], controls: Map<string, ControlRow>) 
     priorDominantWeek1to3: misses.filter(row => row.week <= 3).length,
     shadowCorrectControlWrong: shadow.filter(row => {
       const control = controls.get(row.gameId);
-      return control && ((row.pHome >= 0.5) === row.actualHomeWin) && ((control.pHome >= 0.5) !== row.actualHomeWin);
+      return Boolean(control && ((row.pHome >= 0.5) === row.actualHomeWin) && ((control.pHome >= 0.5) !== row.actualHomeWin));
     }).length,
     controlCorrectShadowWrong: shadow.filter(row => {
       const control = controls.get(row.gameId);
-      return control && ((row.pHome >= 0.5) !== row.actualHomeWin) && ((control.pHome >= 0.5) === row.actualHomeWin);
+      return Boolean(control && ((row.pHome >= 0.5) !== row.actualHomeWin) && ((control.pHome >= 0.5) === row.actualHomeWin));
     }).length
   };
 }
 
 function decide(shadow2025: Metrics, control2025: Metrics, shadow2026: Metrics, control2026: Metrics): string {
-  const 2025Good = shadow2025.accuracy >= control2025.accuracy && shadow2025.brier <= control2025.brier && shadow2025.logLoss <= control2025.logLoss;
-  const 2026Good = shadow2026.accuracy >= control2026.accuracy;
-  if (2025Good && 2026Good) return 'V3-SHADOW CANDIDATE';
+  const good2025 = shadow2025.accuracy >= control2025.accuracy && shadow2025.brier <= control2025.brier && shadow2025.logLoss <= control2025.logLoss;
+  const good2026 = shadow2026.accuracy >= control2026.accuracy;
+  if (good2025 && good2026) return 'V3-SHADOW CANDIDATE';
   if (shadow2025.brier < control2025.brier || shadow2026.accuracy > control2026.accuracy) return 'KEEP FOR RESEARCH';
   return 'REJECT';
 }
