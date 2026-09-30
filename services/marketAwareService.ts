@@ -25,6 +25,7 @@ interface MarketRow {
 export interface MarketAwarePrediction {
   modelVersion: 'market-aware-shadow-v1';
   gameId?: string;
+  gameday: string;
   homeTeam: string;
   awayTeam: string;
   pureHomeProbability: number;
@@ -173,7 +174,7 @@ function findMarketRow(rows: MarketRow[], game: MarketLookupGame): MarketRow | u
 function persistSnapshot(snapshot: MarketAwarePrediction) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
-    const key = `nfl-market-shadow:${snapshot.gameId || `${snapshot.gameday ?? ''}:${snapshot.awayTeam}@${snapshot.homeTeam}`}`;
+    const key = `nfl-market-shadow:${snapshot.gameId || `${snapshot.gameday}:${snapshot.awayTeam}@${snapshot.homeTeam}`}`;
     window.localStorage.setItem(key, JSON.stringify(snapshot));
   } catch {
     // Prediction must never fail because local audit persistence is unavailable.
@@ -201,6 +202,7 @@ export async function getMarketAwarePrediction(
   const snapshot: MarketAwarePrediction = {
     modelVersion: 'market-aware-shadow-v1',
     gameId: row.gameId || game.gameId,
+    gameday: game.gameday,
     homeTeam: homeAbbr,
     awayTeam: awayAbbr,
     pureHomeProbability: controlPHome,
