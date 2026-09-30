@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 import { PredictionResult, Team } from './types';
 import { parseTeamData, predictWinner } from './services/validatedPredictionService';
 import { getGamesForDate, getRegularSeasonWeek, ScheduledGame } from './services/scheduleService';
+import { getMarketAwarePrediction, MarketAwarePrediction } from './services/marketAwareService';
 import TeamSelector from './components/TeamSelector';
 import DatePicker from './components/DatePicker';
 import PredictionDisplay from './components/PredictionDisplay';
@@ -11,6 +12,7 @@ import Button from './components/Button';
 interface BatchPredictionRow {
   game: ScheduledGame;
   result?: PredictionResult;
+  marketAware?: MarketAwarePrediction;
   error?: string;
 }
 
@@ -34,6 +36,8 @@ const actualWinnerAbbr = (game: ScheduledGame): string | null => {
   return game.homeScore! > game.awayScore! ? game.homeTeam : game.awayTeam;
 };
 
+const moneyline = (value: number) => value > 0 ? `+${value}` : String(value);
+
 const App: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [homeTeam, setHomeTeam] = useState('');
@@ -41,6 +45,7 @@ const App: React.FC = () => {
   const [gameDate, setGameDate] = useState(localDateIso());
   const [neutralSite, setNeutralSite] = useState(false);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [marketPrediction, setMarketPrediction] = useState<MarketAwarePrediction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -78,6 +83,15 @@ const App: React.FC = () => {
     [historicalBatch]
   );
   const historicalIncorrect = historicalBatch.length - historicalCorrect;
+
+  const historicalMarketBatch = useMemo(
+    () => batchRows.filter(row => row.marketAware && actualWinnerAbbr(row.game) && actualWinnerAbbr(row.game) !== 'TIE'),
+    [batchRows]
+  );
+  const historicalMarketCorrect = useMemo(
+    () => historicalMarketBatch.filter(row => row.marketAware?.winnerAbbr === actualWinnerAbbr(row.game)).length,
+    [historicalMarketBatch]
+  );
 
   const resetScheduleResults = () => {
     setBatchRows([]);
@@ -148,7 +162,13 @@ const App: React.FC = () => {
           if (!home || !away) return { game, error: `Team registry could not match ${game.awayTeam} @ ${game.homeTeam}.` } as BatchPredictionRow;
           try {
             const result = await predictWinner(home, away, new Date(`${game.gameday}T12:00:00Z`), true, { neutralSite: game.neutralSite });
-            return { game, result } as BatchPredictionRow;
+            let marketAware: MarketAwarePrediction | undefined;
+            try {
+              marketAware = (await getMarketAwarePrediction(game, result)) || undefined;
+            } catch (marketError) {
+              console.warn('Market-aware shadow unavailable for game', game.gameId, marketError);
+            }
+            return { game, result, marketAware } as BatchPredictionRow;
           } catch (err) {
             console.error(err);
             return { game, error: err instanceof Error ? err.message : 'Prediction failed.' } as BatchPredictionRow;
@@ -180,9 +200,21 @@ const App: React.FC = () => {
     }
     setError('');
     setPrediction(null);
+    setMarketPrediction(null);
     setIsLoading(true);
     try {
-      setPrediction(await predictWinner(home, away, new Date(`${gameDate}T12:00:00Z`), true, { neutralSite }));
+      const result = await predictWinner(home, away, new Date(`${gameDate}T12:00:00Z`), true, { neutralSite });
+      setPrediction(result);
+      try {
+        setMarketPrediction(await getMarketAwarePrediction({
+          gameday: gameDate,
+          homeTeam: home.abbr,
+          awayTeam: away.abbr,
+          completed: false
+        }, result));
+      } catch (marketError) {
+        console.warn('Market-aware shadow unavailable for manual matchup', marketError);
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Prediction failed because verified NFL data could not be loaded.');
@@ -197,10 +229,10 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.2
+            Verified-data engine v2.2 + market-aware shadow
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Numerology Predictor</h1>
-          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Pull the real NFL schedule for a date or historical regular-season week, automatically match the actual opponents, and run the same leakage-safe predictor across every game.</p>
+          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen pure-football control and, when a two-sided pregame moneyline exists, a separately labeled market-aware shadow model validated as EXP-019.</p>
         </header>
 
         <section className="bg-gray-900/80 backdrop-blur-sm p-5 sm:p-7 rounded-2xl shadow-2xl border border-indigo-500/25 mb-7">
@@ -249,20 +281,27 @@ const App: React.FC = () => {
               {historicalBatch.length > 0 && !batchLoading && (
                 <div className="mb-4 rounded-xl border border-gray-700 bg-gray-950/60 p-4">
                   <p className="text-xs uppercase tracking-wider font-bold text-gray-400">Historical results for this loaded slate</p>
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className={`mt-3 grid grid-cols-1 sm:grid-cols-2 ${historicalMarketBatch.length ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3`}>
                     <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3">
-                      <div className="flex items-center gap-2 text-emerald-300"><CheckCircle2 className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-wider">Correct</span></div>
+                      <div className="flex items-center gap-2 text-emerald-300"><CheckCircle2 className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-wider">v2.2 Correct</span></div>
                       <p className="mt-1 text-2xl font-black text-white">{historicalCorrect}</p>
                     </div>
                     <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-3">
-                      <div className="flex items-center gap-2 text-rose-300"><XCircle className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-wider">Wrong</span></div>
+                      <div className="flex items-center gap-2 text-rose-300"><XCircle className="h-5 w-5" /><span className="text-xs font-bold uppercase tracking-wider">v2.2 Wrong</span></div>
                       <p className="mt-1 text-2xl font-black text-white">{historicalIncorrect}</p>
                     </div>
                     <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-3">
-                      <p className="text-xs font-bold uppercase tracking-wider text-indigo-300">Accuracy</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-indigo-300">v2.2 Accuracy</p>
                       <p className="mt-1 text-2xl font-black text-white">{((historicalCorrect / historicalBatch.length) * 100).toFixed(1)}%</p>
                       <p className="mt-1 text-[10px] text-gray-500">{historicalCorrect}/{historicalBatch.length} completed non-tied games</p>
                     </div>
+                    {historicalMarketBatch.length > 0 && (
+                      <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-amber-300">Market-Aware Shadow</p>
+                        <p className="mt-1 text-2xl font-black text-white">{((historicalMarketCorrect / historicalMarketBatch.length) * 100).toFixed(1)}%</p>
+                        <p className="mt-1 text-[10px] text-gray-500">{historicalMarketCorrect}/{historicalMarketBatch.length} games with two-sided moneylines</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -271,17 +310,20 @@ const App: React.FC = () => {
                 {scheduleGames.map(game => {
                   const row = batchRows.find(item => item.game.gameId === game.gameId);
                   const result = row?.result;
+                  const shadow = row?.marketAware;
                   const actual = actualWinnerAbbr(game);
                   const scoredHistoricalGame = Boolean(result && actual && actual !== 'TIE');
                   const correct = Boolean(scoredHistoricalGame && result!.winner.abbr === actual);
+                  const shadowCorrect = Boolean(shadow && actual && actual !== 'TIE' && shadow.winnerAbbr === actual);
                   const awayName = teamByAbbr.get(game.awayTeam)?.name || game.awayTeam;
                   const homeName = teamByAbbr.get(game.homeTeam)?.name || game.homeTeam;
+                  const shadowWinnerName = shadow ? (teamByAbbr.get(shadow.winnerAbbr)?.name || shadow.winnerAbbr) : '';
 
                   return (
                     <div key={game.gameId} className={`rounded-xl border p-4 ${scoredHistoricalGame ? (correct ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-rose-500/30 bg-rose-950/10') : 'border-gray-700 bg-gray-950/50'}`}>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4">
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm font-black text-white">{awayName} @ {homeName}</span>
@@ -291,17 +333,25 @@ const App: React.FC = () => {
                               {game.completed && <p className="mt-1 text-xs text-gray-500">Final: {game.awayTeam} {game.awayScore} · {game.homeTeam} {game.homeScore}</p>}
                             </div>
 
-                            <div className="lg:text-right">
+                            <div className="xl:text-right">
                               {row?.error ? (
                                 <p className="text-xs text-rose-300 max-w-lg">{row.error}</p>
                               ) : result ? (
-                                <div className="flex flex-wrap lg:justify-end items-center gap-3">
+                                <div className="flex flex-wrap xl:justify-end items-center gap-3">
                                   <div>
-                                    <p className="text-[10px] uppercase tracking-wider text-gray-500">Prediction</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-gray-500">Pure Football · v2.2</p>
                                     <p className="text-sm font-black text-emerald-300">{result.winner.name} {result.confidence.toFixed(1)}%</p>
                                     <p className="text-xs text-gray-500">{result.loser.name} {(100 - result.confidence).toFixed(1)}%</p>
                                   </div>
-                                  {scoredHistoricalGame && <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold ${correct ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : 'border-rose-500/30 bg-rose-950/30 text-rose-300'}`}>{correct ? 'Correct' : `Wrong · Actual ${actual}`}</span>}
+                                  {shadow && (
+                                    <div className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-left xl:text-right">
+                                      <p className="text-[10px] uppercase tracking-wider font-bold text-amber-300">Market-Aware Shadow</p>
+                                      <p className="text-sm font-black text-amber-100">{shadowWinnerName} {shadow.confidence.toFixed(1)}%</p>
+                                      <p className="text-[10px] text-amber-200/60">Market {shadow.marketWinnerAbbr} {shadow.marketConfidence.toFixed(1)}% · ML {game.awayTeam} {moneyline(shadow.awayMoneyline)} / {game.homeTeam} {moneyline(shadow.homeMoneyline)}</p>
+                                      {actual && actual !== 'TIE' && <p className={`mt-1 text-[10px] font-bold ${shadowCorrect ? 'text-emerald-300' : 'text-rose-300'}`}>{shadowCorrect ? 'Shadow correct' : `Shadow wrong · Actual ${actual}`}</p>}
+                                    </div>
+                                  )}
+                                  {scoredHistoricalGame && <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold ${correct ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : 'border-rose-500/30 bg-rose-950/30 text-rose-300'}`}>{correct ? 'v2.2 Correct' : `v2.2 Wrong · Actual ${actual}`}</span>}
                                   {actual === 'TIE' && <span className="text-[10px] uppercase tracking-wider text-gray-500">Actual: Tie</span>}
                                   <button onClick={() => setSelectedBatchPrediction(result)} className="rounded-lg border border-gray-600 bg-gray-900 hover:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-200">Full Breakdown</button>
                                 </div>
@@ -339,14 +389,30 @@ const App: React.FC = () => {
           <Button onClick={handlePredict} disabled={!homeTeam || !awayTeam || !gameDate || isLoading}>{isLoading ? 'Loading verified pregame data…' : 'Predict Winner'}</Button>
           {error && <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-center text-sm text-rose-300">{error}</div>}
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-400">
-            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Actual schedule pairing</strong>Schedule Runner uses the NFL feed's home/away opponent pairing automatically.</div>
+            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Pure + shadow lanes</strong>v2.2 stays frozen. The market-aware shadow appears only when a verified two-sided moneyline is available.</div>
             <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">No future leakage</strong>Historical predictions only use information available before the selected game date.</div>
-            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Past-week scoring</strong>Completed slates display a green check for correct picks, a red X for misses, and the total correct/wrong count.</div>
+            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Timestamped market snapshot</strong>The shadow records the exact moneyline snapshot used locally for audit instead of silently changing v2.2.</div>
           </div>
         </section>
 
         {isLoading && <div className="text-center mt-8" role="status" aria-live="polite"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400" /><p className="mt-3 text-sm text-gray-300">Building the pregame snapshot and checking live availability…</p></div>}
         {prediction && <PredictionDisplay result={prediction} />}
+        {prediction && marketPrediction && (
+          <section className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 sm:p-6 shadow-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] font-bold text-amber-300">Market-Aware Shadow · EXP-019</p>
+                <h3 className="mt-1 text-2xl font-black text-white">{teamByAbbr.get(marketPrediction.winnerAbbr)?.name || marketPrediction.winnerAbbr} · {marketPrediction.confidence.toFixed(1)}%</h3>
+                <p className="mt-1 text-sm text-gray-400">Locked formula: 25% v2.2 + 75% no-vig market probability in logit space.</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/20 bg-black/20 p-4 text-sm">
+                <p className="text-gray-300">Market-only: <strong className="text-white">{marketPrediction.marketWinnerAbbr} {marketPrediction.marketConfidence.toFixed(1)}%</strong></p>
+                <p className="mt-1 text-gray-400">Moneyline: {marketPrediction.awayTeam} {moneyline(marketPrediction.awayMoneyline)} · {marketPrediction.homeTeam} {moneyline(marketPrediction.homeMoneyline)}</p>
+                <p className="mt-1 text-[11px] text-gray-500">{marketPrediction.lineLabel} · snapshot {new Date(marketPrediction.snapshotAt).toLocaleString()}</p>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
