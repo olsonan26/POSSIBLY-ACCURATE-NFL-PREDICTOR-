@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 100
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,6 +76,9 @@ jobs:
       - name: EXP-019 market-aware residual challenger
         run: bun run research:market
 
+      - name: EXP-020 disagreement arbiter / meta-stacker
+        run: bun run research:arbiter
+
       - name: Full failure-cluster autoresearch cycle
         run: bun run research:cycle
 
@@ -101,4 +104,6 @@ jobs:
             research/reports/exp-016a.md
             research/reports/exp-019.md
             research/reports/exp-019.json
+            research/reports/exp-020.md
+            research/runtime/exp-020.json
           if-no-files-found: warn
