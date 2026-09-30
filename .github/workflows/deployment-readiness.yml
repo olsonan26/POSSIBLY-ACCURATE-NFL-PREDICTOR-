@@ -31,6 +31,9 @@ jobs:
       - name: Production build
         run: bun run build
 
+      - name: EXP-020 disagreement arbiter / meta-stacker
+        run: bun run research:arbiter
+
       - name: Autoresearch synthetic acceptance tests
         run: bun run research:test
 
@@ -75,9 +78,6 @@ jobs:
 
       - name: EXP-019 market-aware residual challenger
         run: bun run research:market
-
-      - name: EXP-020 disagreement arbiter / meta-stacker
-        run: bun run research:arbiter
 
       - name: Full failure-cluster autoresearch cycle
         run: bun run research:cycle
