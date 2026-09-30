@@ -21,10 +21,11 @@
     "research:ol-pass-rush": "bun scripts/ol-pass-rush.ts",
     "research:architecture": "bun scripts/architecture-benchmark.ts",
     "research:market": "bun scripts/market-aware.ts",
+    "research:arbiter": "bun scripts/disagreement-arbiter.ts",
     "research:cycle": "bun scripts/research-cycle.ts",
     "research:test": "bun scripts/research-cycle.test.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run research:test && bun run backtest && bun run evaluate && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run forward-test"
+    "verify": "bun run typecheck && bun run build && bun run research:test && bun run backtest && bun run evaluate && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run forward-test"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
