@@ -12,7 +12,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,6 +67,9 @@ jobs:
       - name: EXP-014 explosive-play + success-rate challenger
         run: bun run research:explosives
 
+      - name: EXP-015 offensive line vs pass-rush challenger
+        run: bun run research:ol-pass-rush
+
       - name: Full failure-cluster autoresearch cycle
         run: bun run research:cycle
 
@@ -88,4 +91,5 @@ jobs:
             research/reports/exp-012.md
             research/reports/exp-013a.md
             research/reports/exp-014.md
+            research/reports/exp-015.md
           if-no-files-found: warn
