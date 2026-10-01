@@ -82,3 +82,15 @@ export async function getRegularSeasonWeek(season: number, week: number): Promis
     game.gameType === 'REG'
   ));
 }
+
+export async function getSeasonGames(season: number, includePostseason = true): Promise<ScheduledGame[]> {
+  const games = await loadSchedule();
+  const allowedTypes = includePostseason
+    ? new Set(['REG', 'WC', 'DIV', 'CON', 'SB'])
+    : new Set(['REG']);
+
+  return sortGames(games.filter(game =>
+    game.season === season &&
+    allowedTypes.has(game.gameType)
+  ));
+}
