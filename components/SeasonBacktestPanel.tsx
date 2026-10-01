@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { parseTeamData, predictWinner } from '../services/validatedPredictionService';
-import { getRegularSeasonWeek, ScheduledGame } from '../services/scheduleService';
+import { getSeasonGames, ScheduledGame } from '../services/scheduleService';
 import { getMarketAwarePrediction } from '../services/marketAwareService';
 import { Team } from '../types';
 
@@ -15,6 +15,7 @@ type WeeklySummary = {
 
 type SeasonSummary = {
   season: number;
+  includePostseason: boolean;
   games: number;
   pureCorrect: number;
   marketCovered: number;
@@ -40,6 +41,7 @@ const pct = (correct: number, total: number) => total ? `${((correct / total) * 
 
 const SeasonBacktestPanel: React.FC = () => {
   const [season, setSeason] = useState(currentNflSeason());
+  const [includePostseason, setIncludePostseason] = useState(true);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
@@ -62,17 +64,13 @@ const SeasonBacktestPanel: React.FC = () => {
     setProgress({ done: 0, total: 0 });
 
     try {
-      const weeks = await Promise.all(
-        Array.from({ length: 18 }, (_, index) => getRegularSeasonWeek(Number(season), index + 1))
-      );
-      const byId = new Map<string, ScheduledGame>();
-      weeks.flat().forEach(game => byId.set(game.gameId, game));
-      const games = [...byId.values()]
+      const allSeasonGames = await getSeasonGames(Number(season), includePostseason);
+      const games = allSeasonGames
         .filter(game => actualWinner(game))
-        .sort((a, b) => a.week - b.week || a.gameday.localeCompare(b.gameday) || a.gameId.localeCompare(b.gameId));
+        .sort((a, b) => a.gameday.localeCompare(b.gameday) || a.week - b.week || a.gameId.localeCompare(b.gameId));
 
       if (!games.length) {
-        throw new Error(`No completed, non-tied regular-season games are available for ${season}.`);
+        throw new Error(`No completed, non-tied ${includePostseason ? 'NFL season' : 'regular-season'} games are available for ${season}.`);
       }
       if (!teams.length) throw new Error('Team registry could not be loaded.');
 
@@ -160,6 +158,7 @@ const SeasonBacktestPanel: React.FC = () => {
 
       setSummary({
         season: Number(season),
+        includePostseason,
         games: games.length - errors,
         pureCorrect,
         marketCovered,
@@ -191,7 +190,7 @@ const SeasonBacktestPanel: React.FC = () => {
           <div>
             <p className="text-xs uppercase tracking-[0.18em] font-bold text-amber-300">Full Season Backtest</p>
             <h2 className="mt-1 text-2xl font-black text-white">Pure Forecast vs Market Shadow</h2>
-            <p className="mt-1 max-w-3xl text-sm text-gray-400">Choose any NFL season and score every completed regular-season game. This runner calls the existing prediction formulas exactly as they are; it does not change model weights or calculations.</p>
+            <p className="mt-1 max-w-3xl text-sm text-gray-400">Choose any NFL season and score every completed game. This runner calls the existing prediction formulas exactly as they are; it does not change model weights or calculations.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
             <label className="block">
@@ -206,6 +205,16 @@ const SeasonBacktestPanel: React.FC = () => {
                 disabled={loading}
                 className="w-full sm:w-32 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white disabled:opacity-50"
               />
+            </label>
+            <label className="flex min-h-[42px] items-center gap-2 rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300">
+              <input
+                type="checkbox"
+                checked={includePostseason}
+                onChange={event => setIncludePostseason(event.target.checked)}
+                disabled={loading}
+                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500"
+              />
+              Include playoffs
             </label>
             <button
               onClick={runSeason}
@@ -259,7 +268,7 @@ const SeasonBacktestPanel: React.FC = () => {
             <div className="mt-4 rounded-xl border border-gray-700 bg-black/20 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-800">
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Week-by-week audit · {summary.season}</p>
-                <p className="mt-1 text-[11px] text-gray-600">Market comparison uses the same market-covered games for both models so missing historical moneylines cannot make one model look artificially better.</p>
+                <p className="mt-1 text-[11px] text-gray-600">{summary.includePostseason ? 'Regular season + postseason.' : 'Regular season only.'} Market comparison uses the same market-covered games for both models so missing historical moneylines cannot make one model look artificially better.</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[680px] text-sm">
@@ -289,7 +298,7 @@ const SeasonBacktestPanel: React.FC = () => {
               </div>
             </div>
 
-            <p className="mt-3 text-[11px] text-gray-600">Regular season only. Ties and unfinished games are excluded from accuracy. {summary.errors > 0 ? `${summary.errors} game(s) could not be scored and were excluded.` : 'Every eligible game was scored successfully.'}</p>
+            <p className="mt-3 text-[11px] text-gray-600">Ties and unfinished games are excluded from accuracy. {summary.errors > 0 ? `${summary.errors} game(s) could not be scored and were excluded.` : 'Every eligible game was scored successfully.'}</p>
           </div>
         )}
       </div>
