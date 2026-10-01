@@ -116,7 +116,7 @@ export interface DecisionFactor {
   winnerScore?: number;
   loserScore?: number;
   edgeScore: number;
-  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data' | 'astrology';
+  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data' | 'astrology' | 'epa' | 'weather' | 'travel' | 'divisional' | 'hfa' | 'prior' | 'pace' | 'special-teams' | 'turnover';
   includedInScore?: boolean;
 }
 
@@ -164,6 +164,18 @@ export interface ModelScores {
   numerologyLogitAdjustment: number;
   restLogitAdjustment: number;
   h2hLogitAdjustment: number;
+  // Tier 1 accuracy improvement fields
+  epaLogitAdjustment: number;
+  weatherLogitAdjustment: number;
+  travelLogitAdjustment: number;
+  // Tier 2 accuracy improvement fields
+  dynamicHfaLogitAdjustment: number;
+  divisionalLogitAdjustment: number;
+  preseasonPriorLogitAdjustment: number;
+  paceLogitAdjustment: number;
+  // Tier 3 accuracy improvement fields
+  specialTeamsLogitAdjustment: number;
+  turnoverExpectationLogitAdjustment: number;
 }
 
 /**
@@ -267,4 +279,80 @@ export interface PredictionResult {
   matchupResolver?: MatchupResolver;
   warnings?: string[];
   modelVersion?: string;
+  // Accuracy improvement features (Tier 1-3)
+  accuracyFeatures?: AccuracyFeatures;
+  marketAware?: {
+    shadowHomeProbability: number;
+    marketHomeProbability: number;
+    blendedHomeProbability: number;
+    lineLabel: string;
+  };
+}
+
+/**
+ * Accuracy improvement features from the Tier 1-3 roadmap.
+ * Each field is null when data is unavailable or the feature
+ * has not been integrated for this prediction.
+ */
+export interface AccuracyFeatures {
+  // Tier 1
+  epa?: {
+    homeOffEpaPerPlay: number;
+    homeDefEpaPerPlay: number;
+    awayOffEpaPerPlay: number;
+    awayDefEpaPerPlay: number;
+    homeAdjNetEpa: number;
+    awayAdjNetEpa: number;
+    logitEdge: number;
+  };
+  weather?: {
+    temperatureF: number;
+    windSpeedMph: number;
+    precipitation: number;
+    isDome: boolean;
+    logitEdge: number;
+  };
+  travel?: {
+    awayTravelMiles: number;
+    awayTzChange: number;
+    isShortRest: boolean;
+    logitEdge: number;
+  };
+  // Tier 2
+  dynamicHfa?: {
+    eloAdvantage: number;
+    teamMultiplier: number;
+    logitEdge: number;
+  };
+  divisional?: {
+    isDivisional: boolean;
+    divisionalGameNumber: number;
+    logitEdge: number;
+  };
+  preseasonPrior?: {
+    homeExpectedWinPct: number;
+    awayExpectedWinPct: number;
+    priorWeight: number;
+    logitEdge: number;
+  };
+  pace?: {
+    homePlaysPerGame: number;
+    awayPlaysPerGame: number;
+    logitEdge: number;
+  };
+  // Tier 3
+  specialTeams?: {
+    homeTotalStEpa: number;
+    awayTotalStEpa: number;
+    logitEdge: number;
+  };
+  turnoverExpectation?: {
+    homeExpectedNet: number;
+    awayExpectedNet: number;
+    logitEdge: number;
+  };
+  ensemble?: {
+    models: Array<{ name: string; homeProbability: number; weight: number }>;
+    blendedHomeProbability: number;
+  };
 }
