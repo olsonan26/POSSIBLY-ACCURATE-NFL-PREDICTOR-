@@ -10,9 +10,36 @@ permissions:
   contents: read
 
 jobs:
+  exp022_fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: EXP-022 structural market trust gates
+        run: bun run research:structural-market
+
+      - name: Preserve EXP-022 output
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp-022-output
+          path: |
+            research/reports/exp-022.md
+            research/runtime/exp-022.json
+          if-no-files-found: error
+
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,6 +57,15 @@ jobs:
 
       - name: Production build
         run: bun run build
+
+      - name: EXP-020 disagreement arbiter / meta-stacker
+        run: bun run research:arbiter
+
+      - name: EXP-021 early-season market disagreement gate
+        run: bun run research:early-market
+
+      - name: EXP-022 structural market trust gates
+        run: bun run research:structural-market
 
       - name: Autoresearch synthetic acceptance tests
         run: bun run research:test
@@ -101,4 +137,10 @@ jobs:
             research/reports/exp-016a.md
             research/reports/exp-019.md
             research/reports/exp-019.json
+            research/reports/exp-020.md
+            research/runtime/exp-020.json
+            research/reports/exp-021.md
+            research/runtime/exp-021.json
+            research/reports/exp-022.md
+            research/runtime/exp-022.json
           if-no-files-found: warn
