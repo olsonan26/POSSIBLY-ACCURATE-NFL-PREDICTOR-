@@ -11,7 +11,7 @@
  */
 
 import { isDivisionalGame } from '../data/divisionMap';
-import { TEAM_BY_ABBR, normalizeTeamAbbr } from '../data/teamRegistry';
+import { normalizeTeamAbbr } from '../data/teamRegistry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,7 +59,6 @@ function countPriorMeetings(
     const gHome = normalizeTeamAbbr(g.homeTeamAbbr ?? g.home_abbr ?? g.home);
     const gAway = normalizeTeamAbbr(g.awayTeamAbbr ?? g.away_abbr ?? g.away);
 
-    // Match either direction: home/away or away/home
     if (
       (gHome === homeAbbr && gAway === awayAbbr) ||
       (gHome === awayAbbr && gAway === homeAbbr)
@@ -94,7 +93,7 @@ function isHomeUnderdog(homeAbbr: string, awayAbbr: string, games: any[]): boole
 
       if (myScore > oppScore) wins++;
     }
-    if (played === 0) return false; // no data → treat home as non-underdog
+    if (played === 0) return 0.5;
     return wins / played;
   }
 
@@ -131,7 +130,7 @@ export function getDivisionalContext(
   }
 
   const priorMeetings = countPriorMeetings(homeAbbr, awayAbbr, targetIso, games);
-  const gameNumber = priorMeetings + 1; // this game is the Nth meeting
+  const gameNumber = priorMeetings + 1;
   const homeIsUnderdog = isHomeUnderdog(homeAbbr, awayAbbr, games);
 
   const edge = homeIsUnderdog ? DIVISIONAL_HOME_DOG_LOGIT_EDGE : 0;
