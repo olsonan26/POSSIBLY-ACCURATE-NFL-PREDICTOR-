@@ -43,11 +43,6 @@ export interface NumerologyPatterns {
   monCombiner: string;
   yearCom: string;
   dayNum: string;
-  /**
-   * Provisional Lettrology Daily Environment = reduced(PM + calendar day).
-   * Optional for compatibility with the legacy raw calculator; the research
-   * wrapper fills this before exposing candidate daily signatures.
-   */
   dailyEnvironmentFull?: string;
   dailyEssenceFull: string;
 }
@@ -164,32 +159,24 @@ export interface ModelScores {
   numerologyLogitAdjustment: number;
   restLogitAdjustment: number;
   h2hLogitAdjustment: number;
-  // Tier 1 accuracy improvement fields
-  epaLogitAdjustment: number;
-  weatherLogitAdjustment: number;
-  travelLogitAdjustment: number;
-  // Tier 2 accuracy improvement fields
-  dynamicHfaLogitAdjustment: number;
-  divisionalLogitAdjustment: number;
-  preseasonPriorLogitAdjustment: number;
-  paceLogitAdjustment: number;
-  // Tier 3 accuracy improvement fields
-  specialTeamsLogitAdjustment: number;
-  turnoverExpectationLogitAdjustment: number;
+  // EXP-025 fields are optional so legacy/control model builders remain valid.
+  epaLogitAdjustment?: number;
+  weatherLogitAdjustment?: number;
+  travelLogitAdjustment?: number;
+  dynamicHfaLogitAdjustment?: number;
+  divisionalLogitAdjustment?: number;
+  preseasonPriorLogitAdjustment?: number;
+  paceLogitAdjustment?: number;
+  specialTeamsLogitAdjustment?: number;
+  turnoverExpectationLogitAdjustment?: number;
 }
 
-/**
- * Public-safe summary returned by the private PURE Astrology engine.
- * Proprietary calculation rules, source excerpts, OOI tables, raw chart
- * evidence and internal reasoning are intentionally not part of this contract.
- */
 export interface PureAstrologyResult {
   status: 'available' | 'limited' | 'unavailable' | 'source_incomplete';
   methodVersion: string;
   decisionStatus: 'decisive' | 'lean' | 'unresolved';
   winnerAbbr?: string;
   winnerName?: string;
-  /** Scenario/pick stability only. This is NOT a calibrated win probability. */
   pickStabilityPct?: number;
   sourceSafe: boolean;
   coverage: {
@@ -208,10 +195,6 @@ export interface MatchupResolver {
   footballWinnerAbbr: string;
   pureWinnerAbbr?: string;
   agreement: 'agree' | 'conflict' | 'pure-unresolved' | 'pure-unavailable';
-  /**
-   * Experimental combined call. It is populated only when PURE is source-safe
-   * and decisive; no arbitrary football/astrology percentage blend is used.
-   */
   combinedExperimentalWinnerAbbr?: string;
   combinedReason: string;
 }
@@ -279,7 +262,6 @@ export interface PredictionResult {
   matchupResolver?: MatchupResolver;
   warnings?: string[];
   modelVersion?: string;
-  // Accuracy improvement features (Tier 1-3)
   accuracyFeatures?: AccuracyFeatures;
   marketAware?: {
     shadowHomeProbability: number;
@@ -289,13 +271,7 @@ export interface PredictionResult {
   };
 }
 
-/**
- * Accuracy improvement features from the Tier 1-3 roadmap.
- * Each field is null when data is unavailable or the feature
- * has not been integrated for this prediction.
- */
 export interface AccuracyFeatures {
-  // Tier 1
   epa?: {
     homeOffEpaPerPlay: number;
     homeDefEpaPerPlay: number;
@@ -318,7 +294,6 @@ export interface AccuracyFeatures {
     isShortRest: boolean;
     logitEdge: number;
   };
-  // Tier 2
   dynamicHfa?: {
     eloAdvantage: number;
     teamMultiplier: number;
@@ -340,7 +315,6 @@ export interface AccuracyFeatures {
     awayPlaysPerGame: number;
     logitEdge: number;
   };
-  // Tier 3
   specialTeams?: {
     homeTotalStEpa: number;
     awayTotalStEpa: number;
