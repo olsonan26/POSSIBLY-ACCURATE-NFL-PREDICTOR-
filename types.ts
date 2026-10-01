@@ -43,11 +43,6 @@ export interface NumerologyPatterns {
   monCombiner: string;
   yearCom: string;
   dayNum: string;
-  /**
-   * Provisional Lettrology Daily Environment = reduced(PM + calendar day).
-   * Optional for compatibility with the legacy raw calculator; the research
-   * wrapper fills this before exposing candidate daily signatures.
-   */
   dailyEnvironmentFull?: string;
   dailyEssenceFull: string;
 }
@@ -116,7 +111,7 @@ export interface DecisionFactor {
   winnerScore?: number;
   loserScore?: number;
   edgeScore: number;
-  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data' | 'astrology';
+  category?: 'football' | 'personnel' | 'venue' | 'numerology' | 'data' | 'astrology' | 'epa' | 'weather' | 'travel' | 'divisional' | 'hfa' | 'prior' | 'pace' | 'special-teams' | 'turnover';
   includedInScore?: boolean;
 }
 
@@ -164,20 +159,24 @@ export interface ModelScores {
   numerologyLogitAdjustment: number;
   restLogitAdjustment: number;
   h2hLogitAdjustment: number;
+  // EXP-025 fields are optional so legacy/control model builders remain valid.
+  epaLogitAdjustment?: number;
+  weatherLogitAdjustment?: number;
+  travelLogitAdjustment?: number;
+  dynamicHfaLogitAdjustment?: number;
+  divisionalLogitAdjustment?: number;
+  preseasonPriorLogitAdjustment?: number;
+  paceLogitAdjustment?: number;
+  specialTeamsLogitAdjustment?: number;
+  turnoverExpectationLogitAdjustment?: number;
 }
 
-/**
- * Public-safe summary returned by the private PURE Astrology engine.
- * Proprietary calculation rules, source excerpts, OOI tables, raw chart
- * evidence and internal reasoning are intentionally not part of this contract.
- */
 export interface PureAstrologyResult {
   status: 'available' | 'limited' | 'unavailable' | 'source_incomplete';
   methodVersion: string;
   decisionStatus: 'decisive' | 'lean' | 'unresolved';
   winnerAbbr?: string;
   winnerName?: string;
-  /** Scenario/pick stability only. This is NOT a calibrated win probability. */
   pickStabilityPct?: number;
   sourceSafe: boolean;
   coverage: {
@@ -196,10 +195,6 @@ export interface MatchupResolver {
   footballWinnerAbbr: string;
   pureWinnerAbbr?: string;
   agreement: 'agree' | 'conflict' | 'pure-unresolved' | 'pure-unavailable';
-  /**
-   * Experimental combined call. It is populated only when PURE is source-safe
-   * and decisive; no arbitrary football/astrology percentage blend is used.
-   */
   combinedExperimentalWinnerAbbr?: string;
   combinedReason: string;
 }
@@ -267,4 +262,71 @@ export interface PredictionResult {
   matchupResolver?: MatchupResolver;
   warnings?: string[];
   modelVersion?: string;
+  accuracyFeatures?: AccuracyFeatures;
+  marketAware?: {
+    shadowHomeProbability: number;
+    marketHomeProbability: number;
+    blendedHomeProbability: number;
+    lineLabel: string;
+  };
+}
+
+export interface AccuracyFeatures {
+  epa?: {
+    homeOffEpaPerPlay: number;
+    homeDefEpaPerPlay: number;
+    awayOffEpaPerPlay: number;
+    awayDefEpaPerPlay: number;
+    homeAdjNetEpa: number;
+    awayAdjNetEpa: number;
+    logitEdge: number;
+  };
+  weather?: {
+    temperatureF: number;
+    windSpeedMph: number;
+    precipitation: number;
+    isDome: boolean;
+    logitEdge: number;
+  };
+  travel?: {
+    awayTravelMiles: number;
+    awayTzChange: number;
+    isShortRest: boolean;
+    logitEdge: number;
+  };
+  dynamicHfa?: {
+    eloAdvantage: number;
+    teamMultiplier: number;
+    logitEdge: number;
+  };
+  divisional?: {
+    isDivisional: boolean;
+    divisionalGameNumber: number;
+    logitEdge: number;
+  };
+  preseasonPrior?: {
+    homeExpectedWinPct: number;
+    awayExpectedWinPct: number;
+    priorWeight: number;
+    logitEdge: number;
+  };
+  pace?: {
+    homePlaysPerGame: number;
+    awayPlaysPerGame: number;
+    logitEdge: number;
+  };
+  specialTeams?: {
+    homeTotalStEpa: number;
+    awayTotalStEpa: number;
+    logitEdge: number;
+  };
+  turnoverExpectation?: {
+    homeExpectedNet: number;
+    awayExpectedNet: number;
+    logitEdge: number;
+  };
+  ensemble?: {
+    models: Array<{ name: string; homeProbability: number; weight: number }>;
+    blendedHomeProbability: number;
+  };
 }
