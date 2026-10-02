@@ -186,5 +186,37 @@
     "decision": "PROPOSED",
     "reason": "Research-only until pregame-captured official assignments with timestamps exist. Historical officials data valid for backtest. See research/EXP-027_OFFICIATING_CREW_TENDENCIES.md.",
     "git_commit": "pending"
+  },
+  {
+    "experiment_id": "EXP-030",
+    "hypothesis_id": "MARKET-CALIBRATED-META-STACKER",
+    "cluster_id": "META_STACKING",
+    "date": "2026-10-02",
+    "parent_model": "v2.2 + market no-vig",
+    "challenger": "L2-regularized logistic regression meta-stacker with Platt scaling (3 variants: 18/6/3 features)",
+    "feature_family": "meta_stacking.market_calibrated",
+    "parameters": {
+      "variants": ["Full (18 features)", "Core (6 features)", "Market-dominant (3 features)"],
+      "best_variant": "Full (18 features)",
+      "lambda": 0.001,
+      "learning_rate": 0.05,
+      "iterations": 500,
+      "calibration": "Platt scaling",
+      "srs_prior": "previous season blended with current (Bayesian shrinkage)"
+    },
+    "train_period": "2022-2023",
+    "validation_period": "2024 selection (Brier)",
+    "test_period": "2025 untouched",
+    "accuracy_control": 0.6642,
+    "accuracy_challenger": 0.6199,
+    "brier_control": 0.225,
+    "brier_challenger": 0.2241,
+    "logloss_control": 0.6416,
+    "logloss_challenger": 0.639,
+    "ece_control": 0.084,
+    "ece_challenger": 0.0602,
+    "decision": "REJECTED_FOR_PROMOTION",
+    "reason": "Meta-stacker underperformed market-only on 2026 W1-3 (62.50% vs 66.67%) and control on 2025 (61.99% vs 66.42%). Model overfitting training period. Calibration (ECE) improved but accuracy did not. Miss patterns: 72% of misses were away wins (home bias), 67% agreed with market (no independent signal), Week 2 collapsed to 43.8%, dome games 46.7%. See research/EXP-030_MARKET_CALIBRATED_META_STACKER.md.",
+    "git_commit": "pending"
   }
 ]
