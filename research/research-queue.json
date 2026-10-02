@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "EXP-028",
+    "title": "Surface / Stadium Effects",
+    "hypothesis": "Certain teams perform materially differently on grass vs. turf, dome vs. outdoor, after controlling for pregame team strength.",
+    "data_source": "games.csv (surface, stadium, roof fields, 2006+)",
+    "design": "Team-level surface performance residual with heavy shrinkage (K=32-64). Test grass/turf split, dome/outdoor split.",
+    "priority": "low",
+    "notes": "Likely confounded with home-field advantage and travel effects already in the model. Noted in EXP-027 research queue section.",
+    "date_added": "2026-10-02"
+  },
+  {
+    "id": "EXP-029",
+    "title": "Opponent-Adjusted Recent Form",
+    "hypothesis": "Opponent-adjusting the current-season form component (W/L + point differential) improves prediction beyond raw form.",
+    "data_source": "games.csv for results; v2.2 Elo for opponent strength.",
+    "design": "Replace raw current-season form with SRS-style opponent-adjusted form. Distinct from EXP-006 (rejected) because it adjusts the form component itself, not just adding standalone SRS.",
+    "priority": "medium",
+    "notes": "The distinction from EXP-006 is subtle but meaningful. Noted in EXP-027 research queue section.",
+    "date_added": "2026-10-02"
+  }
+]

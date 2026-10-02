@@ -87,13 +87,15 @@
     "parent_model": "v2.2",
     "challenger": "same-season opponent-adjusted point differential",
     "feature_family": "football_efficiency.opponent_adjusted_strength",
-    "parameters": {"selected_weight": 0.03},
+    "parameters": {
+      "selected_weight": 0.03
+    },
     "train_period": "2024",
     "validation_period": "2025",
     "test_period": "2025",
     "accuracy_control": 0.6642,
     "accuracy_challenger": 0.6605,
-    "brier_control": 0.2250,
+    "brier_control": 0.225,
     "brier_challenger": 0.2259,
     "logloss_control": 0.6416,
     "logloss_challenger": 0.6448,
@@ -109,13 +111,15 @@
     "parent_model": "v2.2",
     "challenger": "offense-vs-defense matchup efficiency",
     "feature_family": "football_matchup.aggregate",
-    "parameters": {"selected_weight": 0.15},
+    "parameters": {
+      "selected_weight": 0.15
+    },
     "train_period": "2024",
     "validation_period": "2025",
     "test_period": "2025",
     "accuracy_control": 0.6642,
-    "accuracy_challenger": 0.6790,
-    "brier_control": 0.2250,
+    "accuracy_challenger": 0.679,
+    "brier_control": 0.225,
     "brier_challenger": 0.2243,
     "logloss_control": 0.6416,
     "logloss_challenger": 0.6412,
@@ -124,5 +128,63 @@
     "decision": "SURVIVED_RESEARCH",
     "reason": "Improved untouched 2025 primary metrics but paired p=0.424; retained research-only pending broader replication.",
     "git_commit": "5d67cf4"
+  },
+  {
+    "experiment_id": "EXP-026",
+    "hypothesis_id": "HYBRID-BAYES-MONTE-CARLO",
+    "cluster_id": "ARCHITECTURE",
+    "date": "2026-10-02",
+    "parent_model": "v2.2 + EXP-019 + EXP-025",
+    "challenger": "7-layer hybrid: Monte Carlo drive simulator, Bayesian calibration, coach tendency, contextual signals, bet decision + bankroll, CLV tracking",
+    "feature_family": "architecture.hybrid_betting_system",
+    "parameters": {},
+    "train_period": "proposed",
+    "validation_period": "proposed",
+    "test_period": "proposed",
+    "decision": "PROPOSED",
+    "reason": "Architecture proposal inspired by Voulgaris hybrid methodology. No code implemented; research document only. See research/EXP-026_HYBRID_BAYES_MONTE_CARLO_ARCHITECTURE.md.",
+    "git_commit": "pending"
+  },
+  {
+    "experiment_id": "EXP-027",
+    "hypothesis_id": "OFFICIATING-CREW-TENDENCIES",
+    "cluster_id": "CREW",
+    "date": "2026-10-02",
+    "parent_model": "v2.2",
+    "challenger": "officiating crew tendency logit edge (penalty rates, home/away splits, outcome residuals, empirical-Bayes shrinkage)",
+    "feature_family": "football_officiating.crew_tendency",
+    "parameters": {
+      "weight_grid": [
+        0.0,
+        0.01,
+        0.02,
+        0.03,
+        0.05
+      ],
+      "shrinkage_profiles": [
+        "LIGHT",
+        "HEAVY"
+      ],
+      "feature_families": [
+        "penalty_only",
+        "residual_only",
+        "combined"
+      ],
+      "crew_variants": [
+        "head_ref_id",
+        "crew_signature",
+        "member_average"
+      ],
+      "time_windows": [
+        "career_to_date",
+        "recent_20"
+      ]
+    },
+    "train_period": "2024 selection",
+    "validation_period": "2025",
+    "test_period": "2025",
+    "decision": "PROPOSED",
+    "reason": "Research-only until pregame-captured official assignments with timestamps exist. Historical officials data valid for backtest. See research/EXP-027_OFFICIATING_CREW_TENDENCIES.md.",
+    "git_commit": "pending"
   }
 ]
