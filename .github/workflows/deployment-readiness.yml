@@ -112,6 +112,9 @@ jobs:
       - name: EXP-019 market-aware residual challenger
         run: bun run research:market
 
+      - name: EXP-030 market-calibrated meta-stacker
+        run: bun run research:meta-stacker
+
       - name: Full failure-cluster autoresearch cycle
         run: bun run research:cycle
 
@@ -137,6 +140,8 @@ jobs:
             research/reports/exp-016a.md
             research/reports/exp-019.md
             research/reports/exp-019.json
+            research/reports/exp-030.md
+            research/reports/exp-030.json
             research/reports/exp-020.md
             research/runtime/exp-020.json
             research/reports/exp-021.md

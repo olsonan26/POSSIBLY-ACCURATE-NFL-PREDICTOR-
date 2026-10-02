@@ -18,5 +18,36 @@
     "priority": "medium",
     "notes": "The distinction from EXP-006 is subtle but meaningful. Noted in EXP-027 research queue section.",
     "date_added": "2026-10-02"
+  },
+  {
+    "id": "EXP-030",
+    "title": "Market-Calibrated Meta-Stacker",
+    "hypothesis": "L2 logistic regression combining v2.2 control, market no-vig, SRS, rest, travel, dome, and interaction terms beats market-only.",
+    "data_source": "games.csv (moneylines, scores, surface, roof), v2.2 predictWinner, stadiumCoordinates",
+    "design": "L2-regularized logistic meta-stacker with Platt scaling. 3 variants (18/6/3 features). Train 2022-2023, select 2024, confirm 2025, observe 2026 W1-3.",
+    "priority": "completed",
+    "notes": "REJECT FOR PROMOTION. 2025: 61.99% vs 66.42% control. 2026 W1-3: 62.50% vs 66.67% market. Calibration improved (ECE 0.0805 vs 0.1041). Miss patterns: home bias (72% away wins), market agreement (67%), Week 2 collapse (43.8%), dome weakness (46.7%). See research/EXP-030_MARKET_CALIBRATED_META_STACKER.md.",
+    "date_added": "2026-10-02",
+    "date_completed": "2026-10-02"
+  },
+  {
+    "id": "EXP-031",
+    "title": "Gradient Boosted Trees Meta-Stacker",
+    "hypothesis": "GBDT (XGBoost/LightGBM) captures non-linear feature interactions that logistic regression misses, improving winner accuracy.",
+    "data_source": "Same features as EXP-030 plus play-by-play EPA from nflverse",
+    "design": "GBDT meta-stacker with walk-forward validation. Requires adding ML package to repo. Address home bias with away-upset detection features.",
+    "priority": "medium",
+    "notes": "EXP-030 showed logistic regression overfits. GBDT may capture dome/Week 2 interactions better. Must address home bias problem first.",
+    "date_added": "2026-10-02"
+  },
+  {
+    "id": "EXP-032",
+    "title": "Away-Team Upset Detection Model",
+    "hypothesis": "A model trained specifically on disagreement cases (where control and market disagree) can identify away-team upsets that the main model misses.",
+    "data_source": "games.csv, v2.2 predictWinner, market moneylines",
+    "design": "Train on disagreement cases only. Features: SRS diff, travel, rest, divisional, dome, spread distance, recent form differential.",
+    "priority": "high",
+    "notes": "EXP-030 found 72% of misses were away wins and 67% agreed with market. Targeted upset detection could break this pattern.",
+    "date_added": "2026-10-02"
   }
 ]
