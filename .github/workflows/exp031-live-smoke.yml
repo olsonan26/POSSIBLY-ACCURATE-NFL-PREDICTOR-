@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  preview-get-only:
+  local-handler-boot:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -32,19 +32,25 @@ jobs:
       - name: Production build
         run: bun run build
 
-      - name: Verify endpoint has no runtime service import
+      - name: Verify self-contained endpoint and DeepSeek V4.1
         run: |
           ! grep -q "pregameIntelligenceService" api/pregame-intelligence.ts
           grep -q "deepseek/deepseek-v4.1-flash" api/pregame-intelligence.ts
 
-      - name: Verify preview function boots without a paid POST
+      - name: Execute GET handler locally without OpenRouter
         run: |
-          for attempt in 1 2 3 4 5 6; do
-            code=$(curl --silent --show-error --max-time 30 --output /tmp/pregame.txt --write-out '%{http_code}' 'https://nflpredictor-maa7x7mxv-alex-olsons-projects-43241a84.vercel.app/api/pregame-intelligence' || true)
-            echo "attempt=$attempt HTTP=$code"
-            cat /tmp/pregame.txt 2>/dev/null || true
-            echo
-            if [ "$code" = "405" ]; then grep -q "Method not allowed" /tmp/pregame.txt && exit 0; fi
-            sleep 5
-          done
-          exit 1
+          bun -e '
+            import handler from "./api/pregame-intelligence.ts";
+            let status = 200; let payload = null; let allow = null;
+            const req = { method: "GET", body: {}, query: {} };
+            const res = {
+              setHeader(name, value) { if (String(name).toLowerCase() === "allow") allow = value; },
+              status(code) { status = code; return this; },
+              json(value) { payload = value; return value; }
+            };
+            await handler(req, res);
+            if (status !== 405) throw new Error(`Expected 405, got ${status}`);
+            if (payload?.error !== "Method not allowed") throw new Error(`Unexpected payload: ${JSON.stringify(payload)}`);
+            if (allow !== "POST") throw new Error(`Unexpected Allow header: ${allow}`);
+            console.log("EXP-031 self-contained GET boot passed; no OpenRouter request executed.");
+          '
