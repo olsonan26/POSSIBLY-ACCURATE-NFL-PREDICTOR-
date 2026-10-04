@@ -6,6 +6,7 @@ interface DeepSeekPregamePanelProps {
   awayTeamAbbr: string;
   gameDate: string;
   baseHomeProbability: number;
+  compact?: boolean;
 }
 
 interface DeepSeekFact {
@@ -42,38 +43,36 @@ function easternOffsetHours(dateIso: string): number {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
     hour: '2-digit'
   }).formatToParts(probe);
   const hour = Number(parts.find(part => part.type === 'hour')?.value || '12');
-  const normalizedHour = hour === 24 ? 0 : hour;
-  return 12 - normalizedHour;
+  return 12 - (hour === 24 ? 0 : hour);
 }
 
 function kickoffEasternToUtc(dateIso: string, gametime: string): string {
   const [hoursText, minutesText] = gametime.split(':');
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) throw new Error('NFL schedule kickoff time is invalid.');
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+    throw new Error('NFL schedule kickoff time is invalid.');
+  }
   const offsetHours = easternOffsetHours(dateIso);
-  return new Date(`${dateIso}T00:00:00Z`).getTime() || 0,
-    new Date(Date.UTC(
-      Number(dateIso.slice(0, 4)),
-      Number(dateIso.slice(5, 7)) - 1,
-      Number(dateIso.slice(8, 10)),
-      hours + offsetHours,
-      minutes,
-      0
-    )).toISOString();
+  return new Date(Date.UTC(
+    Number(dateIso.slice(0, 4)),
+    Number(dateIso.slice(5, 7)) - 1,
+    Number(dateIso.slice(8, 10)),
+    hours + offsetHours,
+    minutes,
+    0
+  )).toISOString();
 }
 
 const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
   homeTeamAbbr,
   awayTeamAbbr,
   gameDate,
-  baseHomeProbability
+  baseHomeProbability,
+  compact = false
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -88,8 +87,8 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
     try {
       const games = await getGamesForDate(gameDate);
       const game = games.find(item => item.homeTeam === homeTeamAbbr && item.awayTeam === awayTeamAbbr);
-      if (!game) throw new Error('DeepSeek is only available when this exact matchup exists in the verified NFL schedule.');
-      if (!game.gametime) throw new Error('Verified kickoff time is unavailable, so paid pregame research was not started.');
+      if (!game) throw new Error('This exact matchup was not found in the verified NFL schedule, so DeepSeek was not called.');
+      if (!game.gametime) throw new Error('Verified kickoff time is unavailable, so paid DeepSeek research was not started.');
 
       const kickoffUtc = kickoffEasternToUtc(game.gameday, game.gametime);
       if (Date.parse(kickoffUtc) <= Date.now()) {
@@ -112,7 +111,6 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
         const detail = body?.detail || body?.error || `DeepSeek request failed with HTTP ${apiResponse.status}.`;
         throw new Error(detail);
       }
-
       setResponse(body as DeepSeekShadowResponse);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'DeepSeek pregame analysis failed.');
@@ -126,13 +124,37 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
   const awayPct = homePct == null ? null : 100 - homePct;
   const acceptedFacts = shadow?.facts.filter(fact => fact.accepted) || [];
 
+  if (compact) {
+    return (
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={runDeepSeek}
+          disabled={loading}
+          className="rounded-lg border border-cyan-500/35 bg-cyan-950/30 hover:bg-cyan-900/40 disabled:opacity-50 px-3 py-2 text-[11px] font-black text-cyan-200"
+        >
+          {loading ? 'Running DeepSeek…' : response ? 'Run DeepSeek Again' : 'Run DeepSeek'}
+        </button>
+        <span className="ml-2 text-[10px] text-gray-600">Paid call only when pressed</span>
+        {error && <p className="mt-2 max-w-xl text-[10px] text-rose-300">{error}</p>}
+        {shadow && homePct != null && awayPct != null && (
+          <div className="mt-2 rounded-lg border border-cyan-500/25 bg-cyan-950/15 px-3 py-2 text-left">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-cyan-300">DeepSeek Shadow · EXP-031</p>
+            <p className="mt-1 text-xs font-black text-white">{shadow.homeTeam} {homePct.toFixed(1)}% · {shadow.awayTeam} {awayPct.toFixed(1)}%</p>
+            <p className="text-[10px] text-gray-500">{shadow.acceptedFactCount} verified fact{shadow.acceptedFactCount === 1 ? '' : 's'} accepted · production pick unchanged</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <section className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-950/15 p-5 sm:p-6 shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.16em] font-bold text-cyan-300">Optional AI Pregame Research · EXP-031</p>
           <h3 className="mt-1 text-xl font-black text-white">DeepSeek is OFF until you press the button</h3>
-          <p className="mt-2 max-w-3xl text-sm text-gray-400">Normal predictions do not call OpenRouter. Pressing the button below is the only action on this screen that starts the paid DeepSeek research request.</p>
+          <p className="mt-2 max-w-3xl text-sm text-gray-400">Normal predictions never call OpenRouter. This button is the only action here that starts a paid DeepSeek research request.</p>
         </div>
         <button
           type="button"
@@ -145,12 +167,10 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
       </div>
 
       <div className="mt-3 rounded-lg border border-cyan-500/20 bg-black/20 px-3 py-2 text-[11px] text-cyan-100/70">
-        COST CONTROL: no OpenRouter/DeepSeek request is made automatically on page load, Predict Winner, Predict All Games, or Full Breakdown.
+        COST CONTROL: no DeepSeek request is made on page load, Predict Winner, Predict All Games, Full Breakdown, or market-shadow calculations.
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">{error}</div>
-      )}
+      {error && <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">{error}</div>}
 
       {shadow && homePct != null && awayPct != null && (
         <div className="mt-5">
