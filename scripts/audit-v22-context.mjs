@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const raw=readFileSync(new URL('../services/validatedFootballContext.ts',import.meta.url));
+const blob=createHash('sha1').update(Buffer.from(`blob ${raw.length}\0`)).update(raw).digest('hex');
+assert.equal(blob,'abad2de24e901e7a9ba4292bff6debcc70560778','Frozen context changed; review explicitly, never auto-update the baseline');
+let js=raw.toString('utf8').replace(/(?:export )?interface \w+ \{\n[\s\S]*?\n\}\n/g,'');
+js=js.replace("import { parseGamesCsv } from './numerologyService';",'const parseGamesCsv = JSON.parse;');
+for(const t of [': Promise<GameRow[]> | null',': Promise<ValidatedFootballContext>',': Promise<GameRow[]>',': Promise<string>',': GameRow | undefined',': GameRow[]',': GameRow',': TeamForm',': number',': string',': boolean']) js=js.replaceAll(t,'');
+js=js.replaceAll('as unknown as GameRow[]','').replace("venue?: 'home' | 'away'",'venue').replaceAll('.homeScore!','.homeScore').replaceAll('.awayScore!','.awayScore');
+const fillers=Array.from({length:1000},()=>({season:2024,gameday:'2024-09-01',homeTeam:'X',awayTeam:'Y',homeScore:10,awayScore:7,location:'Home'}));
+const prior=[{season:2026,gameday:'2026-09-01',homeTeam:'H',awayTeam:'X',homeScore:21,awayScore:10,location:'Home'},{season:2026,gameday:'2026-09-02',homeTeam:'X',awayTeam:'A',homeScore:24,awayScore:17,location:'Home'}];
+const target={season:2026,gameday:'2026-09-15',homeTeam:'H',awayTeam:'A',location:'Home'};
+let seq=0; const tests=[];
+async function instance(rows,failures=0){let calls=0;globalThis.fetch=async()=>{calls++;return calls<=failures?{ok:false,status:503,statusText:'fixture error'}:{ok:true,text:async()=>JSON.stringify(rows)};};const m=await import('data:text/javascript;base64,'+Buffer.from(js+'\n//'+(++seq)).toString('base64'));return {get:(date='2026-09-15',neutral=false)=>m.getValidatedFootballContext('H','A',date,neutral),calls:()=>calls};}
+async function test(name,fn){await fn();tests.push({name,status:'PASS'});}
+let baseline;
+await test('empty-season legacy venue offset',async()=>{const c=await (await instance(fillers)).get();assert.equal(c.footballLogitAdjustment,0);assert.ok(Math.abs(c.venueLogitAdjustment+0.024)<1e-12);});
+await test('prior-game counts and clamps',async()=>{baseline=await (await instance([...fillers,...prior,target])).get();assert.equal(baseline.recentHome.games,1);assert.equal(baseline.recentAway.games,1);assert.equal(baseline.footballLogitAdjustment,0.24);assert.equal(baseline.venueLogitAdjustment,0.12);});
+await test('target future old-season and incomplete rows excluded',async()=>{const injected=[{...target,homeScore:100,awayScore:0},{...target,gameday:'2026-09-20',homeScore:100,awayScore:0},{...target,season:2025,gameday:'2025-09-01',homeScore:0,awayScore:100},{...target,gameday:'2026-09-14',homeScore:100}];assert.deepEqual(await (await instance([...fillers,...prior,...injected])).get(),baseline);});
+await test('scheduled neutral suppresses venue',async()=>{assert.equal((await (await instance([...fillers,...prior,{...target,location:'Neutral'}])).get()).venueLogitAdjustment,0);});
+await test('explicit neutral suppresses venue',async()=>{assert.equal((await (await instance([...fillers,...prior,target])).get('2026-09-15',true)).venueLogitAdjustment,0);});
+await test('neutral prior omitted from venue sample',async()=>{const c=await (await instance([...fillers,{...prior[0],location:'Neutral'}])).get();assert.equal(c.recentHome.games,1);assert.equal(c.homeVenue.games,0);});
+await test('tie half-win accounting',async()=>{const c=await (await instance([...fillers,...prior.map(g=>({...g,homeScore:10,awayScore:10}))])).get();assert.equal(c.recentHome.winPct,0.5);assert.equal(c.recentAway.ties,1);assert.equal(c.footballLogitAdjustment,0);});
+await test('January previous NFL season',async()=>{const c=await (await instance([...fillers,{...prior[0],season:2025,gameday:'2025-12-20'}])).get('2026-01-10');assert.equal(c.currentSeason,2025);assert.equal(c.recentHome.games,1);});
+await test('recent eight-game window',async()=>{const rows=Array.from({length:10},(_,i)=>({...prior[0],gameday:'2026-09-'+String(i+1).padStart(2,'0')}));const c=await (await instance([...fillers,...rows])).get();assert.equal(c.recentHome.games,8);assert.equal(c.seasonHome.games,10);});
+await test('repeat output and fetch deduplication',async()=>{const x=await instance([...fillers,...prior,target]);assert.deepEqual(await x.get(),await x.get());assert.equal(x.calls(),1);});
+await test('fresh module deterministic replay',async()=>{assert.deepEqual(await (await instance([...fillers,...prior,target])).get(),baseline);});
+await test('failed feed can retry',async()=>{const x=await instance([...fillers,...prior],2);await assert.rejects(x.get());assert.equal((await x.get()).recentHome.games,1);assert.equal(x.calls(),3);});
+const cached=await instance([...fillers,...prior]);await cached.get();globalThis.fetch=async()=>({ok:true,text:async()=>JSON.stringify([...fillers,...prior,{...prior[0],gameday:'2026-09-16'}])});const later=await cached.get('2026-09-20');
+console.log(JSON.stringify({scope:'Context component only; explicit type erasure, JSON parser stub, synthetic rows, mocked network. Not full v2.2 replay/typecheck/build.',runtime:process.version,sourceBlob:blob,tests,sourceFreshnessRiskObserved:later.recentHome.games===1,fullPredictorReplay:'NOT_RUN'},null,2));
