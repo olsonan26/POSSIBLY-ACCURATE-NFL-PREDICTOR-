@@ -58,6 +58,9 @@ jobs:
       - name: Production build
         run: bun run build
 
+      - name: Point-in-time integrity regression
+        run: bun run test:point-in-time
+
       - name: EXP-020 disagreement arbiter / meta-stacker
         run: bun run research:arbiter
 

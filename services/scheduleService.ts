@@ -1,4 +1,4 @@
-import { parseGamesCsv } from './validatedPredictionService';
+import { parseGamesCsv } from './numerologyService';
 
 const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 
