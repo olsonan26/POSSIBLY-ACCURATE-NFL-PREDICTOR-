@@ -1,8 +1,8 @@
 import {
   buildPregameShadowPrediction,
-  PREGAME_INTELLIGENCE_VERSION,
-  PregameModelPayload
+  PREGAME_INTELLIGENCE_VERSION
 } from '../services/pregameIntelligenceService';
+import type { PregameModelPayload } from '../services/pregameIntelligenceService';
 
 export const maxDuration = 120;
 
