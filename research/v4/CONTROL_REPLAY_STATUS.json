@@ -1,0 +1,18 @@
+{
+  "baselineCommit": "a5cbab8810e17ce649bd9291df031e1c579e3ea9",
+  "status": "CONTEXT_COMPONENT_LOCK_ONLY",
+  "sourcePath": "services/validatedFootballContext.ts",
+  "gitBlobSha": "abad2de24e901e7a9ba4292bff6debcc70560778",
+  "sourceBytes": 6057,
+  "runtime": "v20.20.1",
+  "checksPassed": 12,
+  "sourceMutationGuardPassed": true,
+  "runCommand": "node scripts/audit-v22-context.mjs",
+  "method": "Explicit type-only text erasure; JSON parser stub; synthetic GameRow arrays; mocked network",
+  "fullV22Replay": "NOT_RUN",
+  "actualCsvParser": "NOT_TESTED",
+  "typecheck": "NOT_RUN",
+  "productionBuild": "NOT_RUN",
+  "sourceFreshnessRiskObserved": true,
+  "productionFilesModified": false
+}
