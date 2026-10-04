@@ -73,6 +73,9 @@ jobs:
       - name: Autoresearch synthetic acceptance tests
         run: bun run research:test
 
+      - name: EXP-031 pregame intelligence evidence-gate tests
+        run: bun run research:pregame-intelligence
+
       - name: 2025 validation backtest
         run: bun run backtest
 
