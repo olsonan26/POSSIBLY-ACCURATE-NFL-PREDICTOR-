@@ -7,6 +7,7 @@ import { getMarketAwarePrediction, MarketAwarePrediction } from './services/mark
 import TeamSelector from './components/TeamSelector';
 import DatePicker from './components/DatePicker';
 import PredictionDisplay from './components/PredictionDisplay';
+import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';
 import Button from './components/Button';
 
 interface BatchPredictionRow {
@@ -37,6 +38,13 @@ const actualWinnerAbbr = (game: ScheduledGame): string | null => {
 };
 
 const moneyline = (value: number) => value > 0 ? `+${value}` : String(value);
+
+const homeProbabilityDecimal = (result: PredictionResult, homeAbbr: string): number => {
+  const finalHome = result.modelScores?.finalHomeProbability;
+  if (Number.isFinite(finalHome)) return Math.max(0.001, Math.min(0.999, Number(finalHome) / 100));
+  const pct = result.winner.abbr === homeAbbr ? result.confidence : 100 - result.confidence;
+  return Math.max(0.001, Math.min(0.999, pct / 100));
+};
 
 const App: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -229,10 +237,10 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.2 + market-aware shadow
+            Verified-data engine v2.2 + market shadow + optional DeepSeek
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Numerology Predictor</h1>
-          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen pure-football control and, when a two-sided pregame moneyline exists, a separately labeled market-aware shadow model validated as EXP-019.</p>
+          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen football control and market-aware shadow. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.</p>
         </header>
 
         <section className="bg-gray-900/80 backdrop-blur-sm p-5 sm:p-7 rounded-2xl shadow-2xl border border-indigo-500/25 mb-7">
@@ -354,6 +362,13 @@ const App: React.FC = () => {
                                   {scoredHistoricalGame && <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold ${correct ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : 'border-rose-500/30 bg-rose-950/30 text-rose-300'}`}>{correct ? 'v2.2 Correct' : `v2.2 Wrong · Actual ${actual}`}</span>}
                                   {actual === 'TIE' && <span className="text-[10px] uppercase tracking-wider text-gray-500">Actual: Tie</span>}
                                   <button onClick={() => setSelectedBatchPrediction(result)} className="rounded-lg border border-gray-600 bg-gray-900 hover:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-200">Full Breakdown</button>
+                                  <DeepSeekPregamePanel
+                                    homeTeamAbbr={game.homeTeam}
+                                    awayTeamAbbr={game.awayTeam}
+                                    gameDate={game.gameday}
+                                    baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}
+                                    compact
+                                  />
                                 </div>
                               ) : batchLoading ? <span className="text-xs text-gray-500">Queued…</span> : <span className="text-xs text-gray-600">Not predicted yet</span>}
                             </div>
@@ -397,6 +412,19 @@ const App: React.FC = () => {
 
         {isLoading && <div className="text-center mt-8" role="status" aria-live="polite"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400" /><p className="mt-3 text-sm text-gray-300">Building the pregame snapshot and checking live availability…</p></div>}
         {prediction && <PredictionDisplay result={prediction} />}
+        {prediction && (() => {
+          const home = teams.find(team => team.name === homeTeam);
+          const away = teams.find(team => team.name === awayTeam);
+          if (!home || !away) return null;
+          return (
+            <DeepSeekPregamePanel
+              homeTeamAbbr={home.abbr}
+              awayTeamAbbr={away.abbr}
+              gameDate={gameDate}
+              baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}
+            />
+          );
+        })()}
         {prediction && marketPrediction && (
           <section className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 sm:p-6 shadow-xl">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
