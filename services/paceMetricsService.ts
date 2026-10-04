@@ -1,169 +1,89 @@
 /**
  * Pace Metrics Service
  * -------------------
- * Fetches pace and game-script metrics for a team — plays per game,
- * neutral pass rate, average time of possession, and first-down rate.
- *
- * These metrics inform the model about how a team's offensive tempo
- * affects game flow (e.g. high-pace teams create more scoring
- * opportunities; low-pace teams shorten games).
- *
- * Data source: nflverse weekly stats (Rosters → Weekly → via GitHub
- * raw files). No API key required.
+ * Point-in-time-safe pace/game-flow proxies from nflverse team weekly stats.
+ * Only weeks completed before the target game's NFL week are eligible.
  */
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import {
+  getTeamStatsBeforeTarget,
+  hasRequiredTeamStatsFields,
+  TeamStatsRow,
+} from './pointInTimeTeamStats';
 
 export interface PaceMetrics {
   /** Average offensive plays per game */
   playsPerGame: number;
-  /** Pass play percentage in neutral game scripts (win prob 35–65%) */
+  /** Overall pass-play share proxy */
   neutralPassRate: number;
-  /** Average time of possession in minutes */
+  /** Estimated average time of possession in minutes */
   avgTimeOfPossession: number;
-  /** First downs per drive (proxy for offensive efficiency) */
+  /** Offensive first downs per play */
   firstDownRate: number;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const NFLVERSE_WEEKLY_URL =
-  'https://raw.githubusercontent.com/nflverse/nflverse-data/main/nfl_stats/weekly_stats.parquet';
-
-// Fallback: nflverse also publishes a CSV mirror
-const NFLVERSE_WEEKLY_CSV_URL =
-  'https://raw.githubusercontent.com/nflverse/nflverse-data/main/nfl_stats/weekly_stats.csv';
-
-// ---------------------------------------------------------------------------
-// In-memory cache (promise-based)
-// ---------------------------------------------------------------------------
-
 const cache = new Map<string, Promise<PaceMetrics | null>>();
 
-function cacheKey(teamAbbr: string, season: number): string {
-  return `${teamAbbr}|${season}`;
+function cacheKey(teamAbbr: string, targetIso: string, season: number): string {
+  return `${teamAbbr}|${season}|${targetIso}`;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Parse a CSV row into a team-stats record.
- * The nflverse weekly CSV has columns like:
- *   season, week, team, offense_snaps, defense_snaps, pass_attempts,
- *   rush_attempts, passing_first_downs, rushing_first_downs, ...
- *
- * We aggregate across all weeks of the season for the given team.
- */
-interface TeamGameStats {
-  offenseSnaps: number;
-  passAttempts: number;
-  rushAttempts: number;
-  passingFirstDowns: number;
-  rushingFirstDowns: number;
-  games: number;
+function numberFrom(row: TeamStatsRow, field: string): number {
+  const value = Number.parseFloat(row[field] ?? '');
+  return Number.isFinite(value) ? value : 0;
 }
 
-function parseCsv(csvText: string): Map<string, TeamGameStats> {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return new Map();
-
-  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
-
-  // Find column indices
-  const idx = (name: string) => headers.indexOf(name);
-  const seasonIdx = idx('season');
-  const teamIdx = idx('team') ?? idx('recent_team');
-  const offenseSnapsIdx = idx('offense_snaps');
-  const passAttemptsIdx = idx('pass_attempts');
-  const rushAttemptsIdx = idx('rush_attempts');
-  const passingFirstDownsIdx = idx('passing_first_downs');
-  const rushingFirstDownsIdx = idx('rushing_first_downs');
-
-  const teamMap = new Map<string, TeamGameStats>();
-
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
-    const team = (teamIdx >= 0 ? cols[teamIdx] : '').trim();
-    if (!team) continue;
-
-    const season = seasonIdx >= 0 ? parseInt(cols[seasonIdx], 10) : 0;
-
-    const existing = teamMap.get(team) ?? {
-      offenseSnaps: 0,
-      passAttempts: 0,
-      rushAttempts: 0,
-      passingFirstDowns: 0,
-      rushingFirstDowns: 0,
-      games: 0,
-    };
-
-    existing.offenseSnaps += parseInt(cols[offenseSnapsIdx] ?? '0', 10) || 0;
-    existing.passAttempts += parseInt(cols[passAttemptsIdx] ?? '0', 10) || 0;
-    existing.rushAttempts += parseInt(cols[rushAttemptsIdx] ?? '0', 10) || 0;
-    existing.passingFirstDowns += parseInt(cols[passingFirstDownsIdx] ?? '0', 10) || 0;
-    existing.rushingFirstDowns += parseInt(cols[rushingFirstDownsIdx] ?? '0', 10) || 0;
-    existing.games += 1;
-
-    teamMap.set(team, existing);
-  }
-
-  return teamMap;
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Fetch pace metrics for a team in a given season.
- *
- * @param teamAbbr      Team abbreviation (e.g. "BUF")
- * @param targetIso      ISO date of the target game
- * @param currentSeason  The current NFL season year
- * @returns PaceMetrics or null on error
- */
 export async function getPaceMetrics(
   teamAbbr: string,
   targetIso: string,
   currentSeason: number,
 ): Promise<PaceMetrics | null> {
-  const key = cacheKey(teamAbbr, currentSeason);
-
+  const key = cacheKey(teamAbbr, targetIso, currentSeason);
   const existing = cache.get(key);
   if (existing) return existing;
 
   const promise = (async (): Promise<PaceMetrics | null> => {
     try {
-      // Try CSV (easier to parse than parquet in a TS environment)
-      const url = `${NFLVERSE_WEEKLY_CSV_URL}`;
-      const res = await fetch(url);
+      const pointInTime = await getTeamStatsBeforeTarget(teamAbbr, targetIso, currentSeason);
+      if (!pointInTime || pointInTime.rows.length === 0) return null;
 
-      if (!res.ok) {
-        console.warn(`[paceMetrics] Fetch failed: ${res.status}`);
+      const required = [
+        'season',
+        'week',
+        'team',
+        'attempts',
+        'carries',
+        'passing_first_downs',
+        'rushing_first_downs',
+      ];
+      if (!hasRequiredTeamStatsFields(pointInTime, required)) {
+        console.warn(`[paceMetrics] Required nflverse columns are unavailable for ${teamAbbr}; feature disabled.`);
         return null;
       }
 
-      const csvText = await res.text();
-      const teamMap = parseCsv(csvText);
+      let passAttempts = 0;
+      let rushAttempts = 0;
+      let passingFirstDowns = 0;
+      let rushingFirstDowns = 0;
 
-      const stats = teamMap.get(teamAbbr);
-      if (!stats || stats.games === 0) return null;
+      for (const row of pointInTime.rows) {
+        passAttempts += numberFrom(row, 'attempts');
+        rushAttempts += numberFrom(row, 'carries');
+        passingFirstDowns += numberFrom(row, 'passing_first_downs');
+        rushingFirstDowns += numberFrom(row, 'rushing_first_downs');
+      }
 
-      const totalPlays = stats.passAttempts + stats.rushAttempts;
-      const playsPerGame = totalPlays / stats.games;
-      const neutralPassRate = stats.passAttempts / Math.max(totalPlays, 1);
-      const totalFirstDowns = stats.passingFirstDowns + stats.rushingFirstDowns;
-      const firstDownRate = totalFirstDowns / Math.max(totalPlays, 1);
+      const games = pointInTime.rows.length;
+      const totalPlays = passAttempts + rushAttempts;
+      if (games === 0 || totalPlays <= 0) return null;
 
-      // Time of possession is not directly available in weekly stats;
-      // estimate from play count (~24s per play, 2 teams sharing time)
-      const avgTimeOfPossession = Math.round((playsPerGame * 24) / 60 / 2 * 10) / 10;
+      const playsPerGame = totalPlays / games;
+      const neutralPassRate = passAttempts / totalPlays;
+      const firstDownRate = (passingFirstDowns + rushingFirstDowns) / totalPlays;
+
+      // Team weekly summary data does not expose time of possession. Retain the
+      // existing conservative play-count proxy rather than fabricate a source field.
+      const avgTimeOfPossession = Math.round(((playsPerGame * 24) / 60 / 2) * 10) / 10;
 
       return {
         playsPerGame: Math.round(playsPerGame * 10) / 10,
@@ -171,8 +91,8 @@ export async function getPaceMetrics(
         avgTimeOfPossession,
         firstDownRate: Math.round(firstDownRate * 1000) / 1000,
       };
-    } catch (err) {
-      console.warn(`[paceMetrics] Error for ${teamAbbr}:`, err);
+    } catch (error) {
+      console.warn(`[paceMetrics] Error for ${teamAbbr}:`, error);
       return null;
     }
   })();
