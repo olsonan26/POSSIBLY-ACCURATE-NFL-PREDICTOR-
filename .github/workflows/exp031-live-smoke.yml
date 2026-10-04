@@ -6,33 +6,22 @@ on:
       - smoke/exp031-live-20261004
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-runtime-import:
+  smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout fix branch
-        uses: actions/checkout@v4
-        with:
-          ref: fix/exp031-runtime-import
-          fetch-depth: 0
-
-      - name: Convert type-only import to import type
+      - name: Call production EXP-031 endpoint
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('api/pregame-intelligence.ts')
-          text = path.read_text()
-          old = """import {\n  buildPregameShadowPrediction,\n  PREGAME_INTELLIGENCE_VERSION,\n  PregameModelPayload\n} from '../services/pregameIntelligenceService';\n"""
-          new = """import {\n  buildPregameShadowPrediction,\n  PREGAME_INTELLIGENCE_VERSION\n} from '../services/pregameIntelligenceService';\nimport type { PregameModelPayload } from '../services/pregameIntelligenceService';\n"""
-          if old not in text:
-              raise SystemExit('Expected runtime/type mixed import not found')
-          path.write_text(text.replace(old, new, 1))
-          PY
-          git config user.name "olsonan26"
-          git config user.email "youwillalertme@gmail.com"
-          git add api/pregame-intelligence.ts
-          git commit -m "fix(exp031): mark payload interface as type-only import"
-          git push origin HEAD:fix/exp031-runtime-import
+          set -u
+          http_code=$(curl --silent --show-error --max-time 110 \
+            --output /tmp/exp031.json \
+            --write-out '%{http_code}' \
+            -X POST 'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' \
+            -H 'Content-Type: application/json' \
+            --data '{"homeTeam":"KC","awayTeam":"LV","kickoffUtc":"2026-10-11T20:00:00Z","baseHomeProbability":0.55}' || true)
+          echo "HTTP=$http_code"
+          cat /tmp/exp031.json 2>/dev/null || true
+          echo
