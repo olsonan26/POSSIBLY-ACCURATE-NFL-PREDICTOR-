@@ -9,6 +9,7 @@
     "build": "vite build",
     "backtest": "bun scripts/backtest.ts",
     "evaluate": "bun scripts/evaluate-model.ts --season=2025",
+    "walk-forward": "bun scripts/walk-forward-validation.ts",
     "test:point-in-time": "bun scripts/point-in-time-integrity.test.ts",
     "research:oae": "bun scripts/opponent-adjusted-efficiency.ts",
     "research:matchup": "bun scripts/matchup-efficiency.ts",
@@ -30,7 +31,7 @@
     "research:cycle": "bun scripts/research-cycle.ts",
     "research:test": "bun scripts/research-cycle.test.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run research:test && bun run backtest && bun run evaluate && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test"
+    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run research:test && bun run backtest && bun run evaluate && bun run walk-forward && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",

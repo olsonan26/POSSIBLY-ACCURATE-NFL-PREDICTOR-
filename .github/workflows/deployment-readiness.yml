@@ -79,6 +79,9 @@ jobs:
       - name: 2025 chronological evaluation with log loss, calibration, and splits
         run: bun run evaluate
 
+      - name: Frozen production v2.2 multi-season walk-forward
+        run: bun run walk-forward
+
       - name: EXP-006 opponent-adjusted efficiency challenger
         run: bun run research:oae
 
@@ -132,6 +135,7 @@ jobs:
           path: |
             research/runtime
             research/reports/latest.md
+            research/reports/production-walk-forward.md
             research/reports/exp-008.md
             research/reports/exp-009.md
             research/reports/exp-010.md
@@ -151,4 +155,5 @@ jobs:
             research/runtime/exp-021.json
             research/reports/exp-022.md
             research/runtime/exp-022.json
+            research/runtime/production-walk-forward.json
           if-no-files-found: warn
