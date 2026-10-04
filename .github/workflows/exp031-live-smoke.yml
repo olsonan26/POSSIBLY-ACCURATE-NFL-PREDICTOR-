@@ -13,14 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Diagnose production EXP-031 endpoint
+      - name: Compare production API routes
         run: |
           set -u
+          control_code=$(curl --silent --show-error --max-time 30 \
+            --output /tmp/control.txt \
+            --write-out '%{http_code}' \
+            'https://nflpredictor-pi.vercel.app/api/nfl-data?dataset=games' || true)
+          echo "CONTROL_HTTP=$control_code"
+          head -c 200 /tmp/control.txt 2>/dev/null || true
+          echo
+
           get_code=$(curl --silent --show-error --max-time 30 \
             --output /tmp/get.txt \
             --write-out '%{http_code}' \
             'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' || true)
-          echo "GET_HTTP=$get_code"
+          echo "PREGAME_GET_HTTP=$get_code"
           cat /tmp/get.txt 2>/dev/null || true
           echo
 
@@ -30,6 +38,6 @@ jobs:
             -X POST 'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' \
             -H 'Content-Type: application/json' \
             --data '{"homeTeam":"KC","awayTeam":"LV","kickoffUtc":"2026-10-11T20:00:00Z","baseHomeProbability":0.55}' || true)
-          echo "POST_HTTP=$post_code"
+          echo "PREGAME_POST_HTTP=$post_code"
           cat /tmp/post.txt 2>/dev/null || true
           echo
