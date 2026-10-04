@@ -17,7 +17,12 @@ export interface ScheduledGame {
   completed: boolean;
 }
 
+interface CbsOrderResponse {
+  games?: Array<{ awayTeam: string; homeTeam: string; order: number }>;
+}
+
 let schedulePromise: Promise<ScheduledGame[]> | null = null;
+const cbsOrderCache = new Map<string, Promise<Map<string, number> | null>>();
 
 function parseCsvLine(line: string): string[] {
   const cells: string[] = [];
@@ -134,16 +139,7 @@ function awaySortName(abbr: string): string {
   return TEAM_BY_ABBR.get(abbr)?.name || abbr;
 }
 
-/**
- * CBS-style Pick'em display order:
- * 1) game date (Thursday before Sunday before Monday),
- * 2) scheduled Eastern kickoff time,
- * 3) away-team name for simultaneous kickoff groups.
- *
- * This mirrors the public CBS Sports weekly schedule top-to-bottom layout while
- * keeping nflverse as the point-in-time schedule source.
- */
-function sortGames(games: ScheduledGame[]): ScheduledGame[] {
+function fallbackSort(games: ScheduledGame[]): ScheduledGame[] {
   return [...games].sort((a, b) =>
     a.gameday.localeCompare(b.gameday) ||
     kickoffMinutes(a.gametime) - kickoffMinutes(b.gametime) ||
@@ -152,14 +148,58 @@ function sortGames(games: ScheduledGame[]): ScheduledGame[] {
   );
 }
 
+async function getCbsOrder(season: number, week: number): Promise<Map<string, number> | null> {
+  if (!Number.isInteger(season) || !Number.isInteger(week) || week < 1 || week > 18) return null;
+  const cacheKey = `${season}-${week}`;
+  const existing = cbsOrderCache.get(cacheKey);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const response = await fetch(`/api/cbs-order?season=${season}&week=${week}`);
+      if (!response.ok) return null;
+      const payload = await response.json() as CbsOrderResponse;
+      if (!Array.isArray(payload.games) || payload.games.length === 0) return null;
+      return new Map(payload.games.map(game => [`${game.awayTeam}@${game.homeTeam}`, game.order]));
+    } catch {
+      return null;
+    }
+  })();
+
+  cbsOrderCache.set(cacheKey, promise);
+  return promise;
+}
+
+async function sortForCbsPickem(games: ScheduledGame[]): Promise<ScheduledGame[]> {
+  if (games.length === 0) return [];
+  const fallback = fallbackSort(games);
+  const season = fallback[0].season;
+  const week = fallback[0].week;
+  if (!fallback.every(game => game.season === season && game.week === week && game.gameType === 'REG')) {
+    return fallback;
+  }
+
+  const cbsOrder = await getCbsOrder(season, week);
+  if (!cbsOrder) return fallback;
+
+  return [...fallback].sort((a, b) => {
+    const aOrder = cbsOrder.get(`${a.awayTeam}@${a.homeTeam}`);
+    const bOrder = cbsOrder.get(`${b.awayTeam}@${b.homeTeam}`);
+    if (aOrder != null && bOrder != null) return aOrder - bOrder;
+    if (aOrder != null) return -1;
+    if (bOrder != null) return 1;
+    return fallback.indexOf(a) - fallback.indexOf(b);
+  });
+}
+
 export async function getGamesForDate(dateIso: string): Promise<ScheduledGame[]> {
   const games = await loadSchedule();
-  return sortGames(games.filter(game => game.gameday === dateIso));
+  return sortForCbsPickem(games.filter(game => game.gameday === dateIso));
 }
 
 export async function getRegularSeasonWeek(season: number, week: number): Promise<ScheduledGame[]> {
   const games = await loadSchedule();
-  return sortGames(games.filter(game =>
+  return sortForCbsPickem(games.filter(game =>
     game.season === season &&
     game.week === week &&
     game.gameType === 'REG'
@@ -172,7 +212,7 @@ export async function getSeasonGames(season: number, includePostseason = true): 
     ? new Set(['REG', 'WC', 'DIV', 'CON', 'SB'])
     : new Set(['REG']);
 
-  return sortGames(games.filter(game =>
+  return fallbackSort(games.filter(game =>
     game.season === season &&
     allowedTypes.has(game.gameType)
   ));
