@@ -6,38 +6,33 @@ on:
       - smoke/exp031-live-20261004
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  smoke:
+  patch-runtime-import:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Compare production API routes
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/exp031-runtime-import
+          fetch-depth: 0
+
+      - name: Convert type-only import to import type
         run: |
-          set -u
-          control_code=$(curl --silent --show-error --max-time 30 \
-            --output /tmp/control.txt \
-            --write-out '%{http_code}' \
-            'https://nflpredictor-pi.vercel.app/api/nfl-data?dataset=games' || true)
-          echo "CONTROL_HTTP=$control_code"
-          head -c 200 /tmp/control.txt 2>/dev/null || true
-          echo
-
-          get_code=$(curl --silent --show-error --max-time 30 \
-            --output /tmp/get.txt \
-            --write-out '%{http_code}' \
-            'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' || true)
-          echo "PREGAME_GET_HTTP=$get_code"
-          cat /tmp/get.txt 2>/dev/null || true
-          echo
-
-          post_code=$(curl --silent --show-error --max-time 100 \
-            --output /tmp/post.txt \
-            --write-out '%{http_code}' \
-            -X POST 'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' \
-            -H 'Content-Type: application/json' \
-            --data '{"homeTeam":"KC","awayTeam":"LV","kickoffUtc":"2026-10-11T20:00:00Z","baseHomeProbability":0.55}' || true)
-          echo "PREGAME_POST_HTTP=$post_code"
-          cat /tmp/post.txt 2>/dev/null || true
-          echo
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('api/pregame-intelligence.ts')
+          text = path.read_text()
+          old = """import {\n  buildPregameShadowPrediction,\n  PREGAME_INTELLIGENCE_VERSION,\n  PregameModelPayload\n} from '../services/pregameIntelligenceService';\n"""
+          new = """import {\n  buildPregameShadowPrediction,\n  PREGAME_INTELLIGENCE_VERSION\n} from '../services/pregameIntelligenceService';\nimport type { PregameModelPayload } from '../services/pregameIntelligenceService';\n"""
+          if old not in text:
+              raise SystemExit('Expected runtime/type mixed import not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git config user.name "olsonan26"
+          git config user.email "youwillalertme@gmail.com"
+          git add api/pregame-intelligence.ts
+          git commit -m "fix(exp031): mark payload interface as type-only import"
+          git push origin HEAD:fix/exp031-runtime-import
