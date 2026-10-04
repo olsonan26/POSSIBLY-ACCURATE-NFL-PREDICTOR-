@@ -25,72 +25,27 @@ jobs:
           from pathlib import Path
           path = Path('App.tsx')
           text = path.read_text()
-
           old_import = "import PredictionDisplay from './components/PredictionDisplay';\n"
-          new_import = old_import + "import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';\n"
-          if "DeepSeekPregamePanel" not in text:
-              if old_import not in text:
-                  raise SystemExit('PredictionDisplay import anchor not found')
-              text = text.replace(old_import, new_import, 1)
-
+          if "import DeepSeekPregamePanel" not in text:
+              text = text.replace(old_import, old_import + "import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';\n", 1)
           helper_anchor = "const moneyline = (value: number) => value > 0 ? `+${value}` : String(value);\n"
-          helper = """
-
-const homeProbabilityDecimal = (result: PredictionResult, homeAbbr: string): number => {
-  const finalHome = result.modelScores?.finalHomeProbability;
-  if (Number.isFinite(finalHome)) return Math.max(0.001, Math.min(0.999, Number(finalHome) / 100));
-  const pct = result.winner.abbr === homeAbbr ? result.confidence : 100 - result.confidence;
-  return Math.max(0.001, Math.min(0.999, pct / 100));
-};
-"""
+          helper = "\nconst homeProbabilityDecimal = (result: PredictionResult, homeAbbr: string): number => {\n  const finalHome = result.modelScores?.finalHomeProbability;\n  if (Number.isFinite(finalHome)) return Math.max(0.001, Math.min(0.999, Number(finalHome) / 100));\n  const pct = result.winner.abbr === homeAbbr ? result.confidence : 100 - result.confidence;\n  return Math.max(0.001, Math.min(0.999, pct / 100));\n};\n"
           if 'const homeProbabilityDecimal' not in text:
-              if helper_anchor not in text:
-                  raise SystemExit('moneyline helper anchor not found')
               text = text.replace(helper_anchor, helper_anchor + helper, 1)
-
           button_anchor = "<button onClick={() => setSelectedBatchPrediction(result)} className=\"rounded-lg border border-gray-600 bg-gray-900 hover:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-200\">Full Breakdown</button>"
-          button_replacement = button_anchor + """
-                                  <DeepSeekPregamePanel
-                                    homeTeamAbbr={game.homeTeam}
-                                    awayTeamAbbr={game.awayTeam}
-                                    gameDate={game.gameday}
-                                    baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}
-                                    compact
-                                  />"""
+          batch_panel = "\n                                  <DeepSeekPregamePanel\n                                    homeTeamAbbr={game.homeTeam}\n                                    awayTeamAbbr={game.awayTeam}\n                                    gameDate={game.gameday}\n                                    baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}\n                                    compact\n                                  />"
           if 'baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}' not in text:
               if button_anchor not in text:
-                  raise SystemExit('batch Full Breakdown anchor not found')
-              text = text.replace(button_anchor, button_replacement, 1)
-
+                  raise SystemExit('batch anchor missing')
+              text = text.replace(button_anchor, button_anchor + batch_panel, 1)
           manual_anchor = "{prediction && <PredictionDisplay result={prediction} />}\n"
-          manual_replacement = manual_anchor + """        {prediction && (() => {
-          const home = teams.find(team => team.name === homeTeam);
-          const away = teams.find(team => team.name === awayTeam);
-          if (!home || !away) return null;
-          return (
-            <DeepSeekPregamePanel
-              homeTeamAbbr={home.abbr}
-              awayTeamAbbr={away.abbr}
-              gameDate={gameDate}
-              baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}
-            />
-          );
-        })()}
-"""
+          manual_panel = "        {prediction && (() => {\n          const home = teams.find(team => team.name === homeTeam);\n          const away = teams.find(team => team.name === awayTeam);\n          if (!home || !away) return null;\n          return (\n            <DeepSeekPregamePanel\n              homeTeamAbbr={home.abbr}\n              awayTeamAbbr={away.abbr}\n              gameDate={gameDate}\n              baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}\n            />\n          );\n        })()}\n"
           if 'baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}' not in text:
               if manual_anchor not in text:
-                  raise SystemExit('manual PredictionDisplay anchor not found')
-              text = text.replace(manual_anchor, manual_replacement, 1)
-
-          text = text.replace(
-              'Verified-data engine v2.2 + market-aware shadow',
-              'Verified-data engine v2.2 + market shadow + optional DeepSeek'
-          )
-          text = text.replace(
-              'Run the frozen pure-football control and, when a two-sided pregame moneyline exists, a separately labeled market-aware shadow model validated as EXP-019.',
-              'Run the frozen football control and market-aware shadow. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.'
-          )
-
+                  raise SystemExit('manual anchor missing')
+              text = text.replace(manual_anchor, manual_anchor + manual_panel, 1)
+          text = text.replace('Verified-data engine v2.2 + market-aware shadow', 'Verified-data engine v2.2 + market shadow + optional DeepSeek')
+          text = text.replace('Run the frozen pure-football control and, when a two-sided pregame moneyline exists, a separately labeled market-aware shadow model validated as EXP-019.', 'Run the frozen football control and market-aware shadow. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.')
           path.write_text(text)
           PY
           git config user.name "olsonan26"
