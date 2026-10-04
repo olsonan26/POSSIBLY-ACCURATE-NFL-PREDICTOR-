@@ -9,7 +9,6 @@ export const maxDuration = 120;
 const DEFAULT_MODEL = 'deepseek/deepseek-v4-pro-0813';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MAX_LOOKAHEAD_MS = 14 * 24 * 60 * 60 * 1000;
-const RETROSPECTIVE_GRACE_MS = 15 * 60 * 1000;
 
 const NFL_TEAMS = new Set([
   'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE',
@@ -263,16 +262,16 @@ export default async function handler(req: any, res: any) {
   if (!Number.isFinite(baseHomeProbability) || baseHomeProbability <= 0 || baseHomeProbability >= 1) {
     return res.status(400).json({ error: 'baseHomeProbability must be a decimal strictly between 0 and 1.' });
   }
-  if (kickoffMs < nowMs - RETROSPECTIVE_GRACE_MS) {
+  if (kickoffMs <= nowMs) {
     return res.status(409).json({
-      error: 'EXP-031 is prospective-only. Retrospective AI research is blocked to prevent postgame leakage.'
+      error: 'EXP-031 is prospective-only. Research is blocked at and after kickoff to prevent outcome leakage.'
     });
   }
   if (kickoffMs > nowMs + MAX_LOOKAHEAD_MS) {
     return res.status(400).json({ error: 'Pregame intelligence may only be requested within 14 days of kickoff.' });
   }
 
-  const evaluatedAt = new Date(Math.min(nowMs, kickoffMs)).toISOString();
+  const evaluatedAt = new Date(nowMs).toISOString();
   const normalizedKickoff = new Date(kickoffMs).toISOString();
   const model = process.env.OPENROUTER_PREGAME_MODEL || DEFAULT_MODEL;
 
