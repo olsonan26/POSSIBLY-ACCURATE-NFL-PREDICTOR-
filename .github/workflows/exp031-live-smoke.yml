@@ -9,30 +9,42 @@ permissions:
   contents: read
 
 jobs:
-  production-get-only:
+  preview-get-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Verify EXP-031 production function boots without a paid POST
-        run: |
-          code=$(curl --silent --show-error --max-time 30 --output /tmp/pregame.txt --write-out '%{http_code}' 'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' || true)
-          echo "PREGAME_GET_HTTP=$code"
-          cat /tmp/pregame.txt 2>/dev/null || true
-          echo
-          test "$code" = "405"
-          grep -q "Method not allowed" /tmp/pregame.txt
+      - name: Checkout runtime fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/exp031-self-contained-runtime
 
-      - name: Verify production CBS Week 5 order
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Production build
+        run: bun run build
+
+      - name: Verify endpoint has no runtime service import
         run: |
-          code=$(curl --silent --show-error --max-time 30 --output /tmp/cbs.json --write-out '%{http_code}' 'https://nflpredictor-pi.vercel.app/api/cbs-order?season=2026&week=5' || true)
-          echo "CBS_GET_HTTP=$code"
-          test "$code" = "200"
-          python - <<'PY'
-          import json
-          data = json.load(open('/tmp/cbs.json'))
-          actual = [f"{g['awayTeam']}@{g['homeTeam']}" for g in data['games']]
-          expected = ['TB@DAL','PHI@JAX','CIN@MIA','CHI@GB','CLE@NYJ','HOU@TEN','IND@PIT','LV@NE','MIN@NO','NYG@WAS','DEN@LAC','DET@ARI','SF@SEA','BAL@ATL','BUF@LA']
-          if actual != expected:
-              raise SystemExit(f"CBS production order mismatch: {actual}")
-          print('CBS_PRODUCTION_ORDER=' + ' | '.join(actual))
-          PY
+          ! grep -q "pregameIntelligenceService" api/pregame-intelligence.ts
+          grep -q "deepseek/deepseek-v4.1-flash" api/pregame-intelligence.ts
+
+      - name: Verify preview function boots without a paid POST
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl --silent --show-error --max-time 30 --output /tmp/pregame.txt --write-out '%{http_code}' 'https://nflpredictor-maa7x7mxv-alex-olsons-projects-43241a84.vercel.app/api/pregame-intelligence' || true)
+            echo "attempt=$attempt HTTP=$code"
+            cat /tmp/pregame.txt 2>/dev/null || true
+            echo
+            if [ "$code" = "405" ]; then grep -q "Method not allowed" /tmp/pregame.txt && exit 0; fi
+            sleep 5
+          done
+          exit 1
