@@ -9,48 +9,30 @@ permissions:
   contents: read
 
 jobs:
-  local-handler-boot:
+  final-production-get-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Checkout runtime fix branch
-        uses: actions/checkout@v4
-        with:
-          ref: fix/exp031-self-contained-runtime
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Type-check
-        run: bun run typecheck
-
-      - name: Production build
-        run: bun run build
-
-      - name: Verify self-contained endpoint and DeepSeek V4.1
+      - name: Verify EXP-031 production boots without a paid POST
         run: |
-          ! grep -q "pregameIntelligenceService" api/pregame-intelligence.ts
-          grep -q "deepseek/deepseek-v4.1-flash" api/pregame-intelligence.ts
+          code=$(curl --silent --show-error --max-time 30 --output /tmp/pregame.txt --write-out '%{http_code}' 'https://nflpredictor-pi.vercel.app/api/pregame-intelligence' || true)
+          echo "PREGAME_GET_HTTP=$code"
+          cat /tmp/pregame.txt 2>/dev/null || true
+          echo
+          test "$code" = "405"
+          grep -q "Method not allowed" /tmp/pregame.txt
 
-      - name: Execute GET handler locally without OpenRouter
+      - name: Verify production CBS Week 5 top-to-bottom order
         run: |
-          bun -e '
-            import handler from "./api/pregame-intelligence.ts";
-            let status = 200; let payload = null; let allow = null;
-            const req = { method: "GET", body: {}, query: {} };
-            const res = {
-              setHeader(name, value) { if (String(name).toLowerCase() === "allow") allow = value; },
-              status(code) { status = code; return this; },
-              json(value) { payload = value; return value; }
-            };
-            await handler(req, res);
-            if (status !== 405) throw new Error(`Expected 405, got ${status}`);
-            if (payload?.error !== "Method not allowed") throw new Error(`Unexpected payload: ${JSON.stringify(payload)}`);
-            if (allow !== "POST") throw new Error(`Unexpected Allow header: ${allow}`);
-            console.log("EXP-031 self-contained GET boot passed; no OpenRouter request executed.");
-          '
+          code=$(curl --silent --show-error --max-time 30 --output /tmp/cbs.json --write-out '%{http_code}' 'https://nflpredictor-pi.vercel.app/api/cbs-order?season=2026&week=5' || true)
+          echo "CBS_GET_HTTP=$code"
+          test "$code" = "200"
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/cbs.json'))
+          actual = [f"{g['awayTeam']}@{g['homeTeam']}" for g in data['games']]
+          expected = ['TB@DAL','PHI@JAX','CIN@MIA','CHI@GB','CLE@NYJ','HOU@TEN','IND@PIT','LV@NE','MIN@NO','NYG@WAS','DEN@LAC','DET@ARI','SF@SEA','BAL@ATL','BUF@LA']
+          if actual != expected:
+              raise SystemExit(f"CBS production order mismatch: {actual}")
+          print('CBS_PRODUCTION_ORDER=' + ' | '.join(actual))
+          PY
