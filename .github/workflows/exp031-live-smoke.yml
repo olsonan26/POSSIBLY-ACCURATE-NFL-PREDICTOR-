@@ -6,50 +6,63 @@ on:
       - smoke/exp031-live-20261004
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-ui:
+  validate-fix-branch:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout fix branch
         uses: actions/checkout@v4
         with:
           ref: fix/exp031-runtime-import
-          fetch-depth: 0
 
-      - name: Add manual DeepSeek buttons without automatic calls
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Production build
+        run: bun run build
+
+      - name: Verify DeepSeek is manual-only in UI source
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('App.tsx')
-          text = path.read_text()
-          old_import = "import PredictionDisplay from './components/PredictionDisplay';\n"
-          if "import DeepSeekPregamePanel" not in text:
-              text = text.replace(old_import, old_import + "import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';\n", 1)
-          helper_anchor = "const moneyline = (value: number) => value > 0 ? `+${value}` : String(value);\n"
-          helper = "\nconst homeProbabilityDecimal = (result: PredictionResult, homeAbbr: string): number => {\n  const finalHome = result.modelScores?.finalHomeProbability;\n  if (Number.isFinite(finalHome)) return Math.max(0.001, Math.min(0.999, Number(finalHome) / 100));\n  const pct = result.winner.abbr === homeAbbr ? result.confidence : 100 - result.confidence;\n  return Math.max(0.001, Math.min(0.999, pct / 100));\n};\n"
-          if 'const homeProbabilityDecimal' not in text:
-              text = text.replace(helper_anchor, helper_anchor + helper, 1)
-          button_anchor = "<button onClick={() => setSelectedBatchPrediction(result)} className=\"rounded-lg border border-gray-600 bg-gray-900 hover:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-200\">Full Breakdown</button>"
-          batch_panel = "\n                                  <DeepSeekPregamePanel\n                                    homeTeamAbbr={game.homeTeam}\n                                    awayTeamAbbr={game.awayTeam}\n                                    gameDate={game.gameday}\n                                    baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}\n                                    compact\n                                  />"
-          if 'baseHomeProbability={homeProbabilityDecimal(result, game.homeTeam)}' not in text:
-              if button_anchor not in text:
-                  raise SystemExit('batch anchor missing')
-              text = text.replace(button_anchor, button_anchor + batch_panel, 1)
-          manual_anchor = "{prediction && <PredictionDisplay result={prediction} />}\n"
-          manual_panel = "        {prediction && (() => {\n          const home = teams.find(team => team.name === homeTeam);\n          const away = teams.find(team => team.name === awayTeam);\n          if (!home || !away) return null;\n          return (\n            <DeepSeekPregamePanel\n              homeTeamAbbr={home.abbr}\n              awayTeamAbbr={away.abbr}\n              gameDate={gameDate}\n              baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}\n            />\n          );\n        })()}\n"
-          if 'baseHomeProbability={homeProbabilityDecimal(prediction, home.abbr)}' not in text:
-              if manual_anchor not in text:
-                  raise SystemExit('manual anchor missing')
-              text = text.replace(manual_anchor, manual_anchor + manual_panel, 1)
-          text = text.replace('Verified-data engine v2.2 + market-aware shadow', 'Verified-data engine v2.2 + market shadow + optional DeepSeek')
-          text = text.replace('Run the frozen pure-football control and, when a two-sided pregame moneyline exists, a separately labeled market-aware shadow model validated as EXP-019.', 'Run the frozen football control and market-aware shadow. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.')
-          path.write_text(text)
-          PY
-          git config user.name "olsonan26"
-          git config user.email "youwillalertme@gmail.com"
-          git add App.tsx
-          git commit -m "feat(exp031): make DeepSeek manual opt-in in predictor UI"
-          git push origin HEAD:fix/exp031-runtime-import
+          grep -q "Run DeepSeek Pregame Analysis" components/DeepSeekPregamePanel.tsx
+          grep -q "Paid call only when pressed" components/DeepSeekPregamePanel.tsx
+          grep -q "<DeepSeekPregamePanel" App.tsx
+          ! grep -q "pregame-intelligence" App.tsx
+
+      - name: Verify live CBS Week 5 order parser
+        run: |
+          bun -e '
+            import handler from "./api/cbs-order.ts";
+            let status = 200; let payload = null;
+            const req = { method: "GET", query: { season: "2026", week: "5" } };
+            const res = {
+              setHeader() {},
+              status(code) { status = code; return this; },
+              json(value) { payload = value; return value; }
+            };
+            await handler(req, res);
+            if (status !== 200) throw new Error(`CBS parser HTTP ${status}: ${JSON.stringify(payload)}`);
+            const games = payload.games;
+            const expected = ["TB@DAL", "PHI@JAX", "CIN@MIA", "CHI@GB", "CLE@NYJ", "HOU@TEN", "IND@PIT", "LV@NE", "MIN@NO", "NYG@WAS", "DEN@LAC", "DET@ARI", "SF@SEA", "BAL@ATL", "BUF@LA"];
+            const actual = games.map(g => `${g.awayTeam}@${g.homeTeam}`);
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`CBS order mismatch: ${actual.join(", ")}`);
+            console.log(`CBS Week 5 order verified (${actual.length} games): ${actual.join(" | ")}`);
+          '
+
+      - name: Verify preview runtime boots without a paid DeepSeek POST
+        run: |
+          code=$(curl --silent --show-error --max-time 30 --output /tmp/get.txt --write-out '%{http_code}' 'https://nflpredictor-b1v65i1es-alex-olsons-projects-43241a84.vercel.app/api/pregame-intelligence' || true)
+          echo "PREGAME_GET_HTTP=$code"
+          cat /tmp/get.txt 2>/dev/null || true
+          echo
+          if [ "$code" = "500" ]; then exit 1; fi
