@@ -36,7 +36,7 @@ export function learningStorageConfigured(): boolean {
   return Boolean(process.env.NFL_LEARNING_SUPABASE_URL && process.env.NFL_LEARNING_SUPABASE_KEY);
 }
 
-async function storage<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function storage<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = process.env.NFL_LEARNING_SUPABASE_URL?.replace(/\/$/, '');
   const key = process.env.NFL_LEARNING_SUPABASE_KEY?.trim();
   if (!url || !key) throw new Error('Learning storage is not configured.');
@@ -45,7 +45,8 @@ async function storage<T>(path: string, init: RequestInit = {}): Promise<T> {
     signal: AbortSignal.timeout(8000),
     headers: { apikey: key,
       // New sb_secret_ keys are not JWTs. Supabase maps the apikey to service_role.
-      ...(key.startsWith('sb_secret_') ? {} : { Authorization: `Bearer ${key}` }),
+      ...(/^(sb_secret_|sb_publishable_)/.test(key) ? {} : { Authorization: `Bearer ${key}` }),
+      ...(process.env.NFL_LEARNING_SECRET ? { 'x-learning-secret': process.env.NFL_LEARNING_SECRET } : {}),
       'Content-Type': 'application/json', ...init.headers }
   });
   // Do not include DB responses/credentials in public errors or logs.

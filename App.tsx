@@ -8,6 +8,7 @@ import { createLedgerRunId, freezePredictionToServer, LedgerCaptureStatus, recor
 import TeamSelector from './components/TeamSelector';
 import DatePicker from './components/DatePicker';
 import PredictionDisplay from './components/PredictionDisplay';
+import PostgameLearningPanel from './components/PostgameLearningPanel';
 import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';
 import Button from './components/Button';
 
@@ -440,6 +441,8 @@ const App: React.FC = () => {
           )}
         </section>
 
+        <PostgameLearningPanel />
+
         {selectedBatchPrediction && <PredictionDisplay result={selectedBatchPrediction} />}
 
         <section className="mt-7 bg-gray-900/70 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-700/80">
@@ -474,6 +477,7 @@ const App: React.FC = () => {
           if (!home || !away) return null;
           return (
             <DeepSeekPregamePanel
+              key={`${home.abbr}-${away.abbr}-${gameDate}`}
               homeTeamAbbr={home.abbr}
               awayTeamAbbr={away.abbr}
               gameDate={gameDate}

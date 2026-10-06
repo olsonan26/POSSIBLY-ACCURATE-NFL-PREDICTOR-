@@ -15,6 +15,16 @@ No DeepSeek call happens on page load or normal football prediction. The daily o
 
 More simulations or repeated requests do not create new NFL outcomes. More independent, correctly timestamped games improve the evidence available for learning; accuracy can still worsen and must be measured.
 
+## Completed games and whole seasons
+
+The DeepSeek button checks the exact matchup in the server-fetched schedule. Upcoming games use the pregame path. Completed games use EXP-033: archived recaps and box scores explain plausible contributors to the verified result, with source links, reported/inferred labels, uncertainty, repeatability, and questions for future pregame research. In-progress games wait for verified final scores. Ties can be reviewed without inventing a winner.
+
+The learning journal loads any season from 1999 onward, with optional playoffs. It counts the actual completed games in the feed rather than assuming a season size. Loading the plan makes no paid calls. Starting the batch authorizes up to one research request per unsaved game. Requests run serially; pause takes effect after the current game. Keep the page open during processing. Reload the same season and press resume after closing the tab, a network failure, or an interrupted request. Durable reviews determine remaining work. There is no unattended paid season worker.
+
+Reviews are cached by game/model/version and immutable. An atomic, three-minute database lease prevents simultaneous requests from paying to review the same game twice. Failed requests release their lease; an interrupted function's lease expires. A crash after a provider charge but before durable storage may require another paid request after expiry; exactly-once external billing is not guaranteed. Repeated successes do not add games or make paid calls.
+
+Postgame research is descriptive evidence and testable hypotheses, not proof of what caused a win. Only bounded category/repeatability counts from up to 500 recently saved reviews enter future DeepSeek research prompts. Archived scores, narrative text, and stored instructions never enter those prompts. Current-game pre-kickoff sources still determine accepted facts. Each future frozen forecast records its memory cohort. A historical review saved today cannot affect a forecast captured yesterday, count as a successful pregame pick, train EXP-032 calibration, or enter the prospective verl export. Hosted DeepSeek weights are unchanged.
+
 ## Calibration rule
 
 The only candidate parameter is a multiplier in `{0, 0.25, 0.5, 0.75, 1}` on the existing evidence logit adjustment:
@@ -29,12 +39,12 @@ These thresholds are conservative initial engineering defaults, not proof of a s
 
 ## Activate persistent feedback
 
-1. In the intended Supabase project, run [`database/learning-schema.sql`](database/learning-schema.sql). It creates two independent append-only tables, enables RLS, and grants only server `service_role` SELECT/INSERT access. It does not alter the old prediction ledger.
-2. Add server environment variables in Vercel:
-   - `NFL_LEARNING_SUPABASE_URL`: that project's URL.
-   - `NFL_LEARNING_SUPABASE_KEY`: that project's service-role/secret key. Never put this in a `VITE_` variable or client code.
-3. Keep the existing `OPENROUTER_API_KEY` and optional `OPENROUTER_PREGAME_MODEL`. Deploy the change and run one upcoming game's DeepSeek analysis. The UI must say it was saved before kickoff. If it says not configured or failed, feedback is not active.
-4. For grading even while the site is idle, add the two learning storage values as GitHub Actions secrets with the same names. The `Grade frozen DeepSeek forecasts` workflow runs daily at 10:00 UTC and can be dispatched manually. Without those secrets it reports a configuration failure rather than silently claiming to grade games. If you use another DeepSeek model, set the matching GitHub repository variable `OPENROUTER_PREGAME_MODEL`.
+1. Apply [`database/learning-schema.sql`](database/learning-schema.sql) and then [`database/postgame-schema.sql`](database/postgame-schema.sql) in the intended NFL database. RLS and explicit grants protect the independent learning tables. Existing ledger records are untouched.
+2. Configure server environment variables in Vercel: `NFL_LEARNING_SUPABASE_URL`, `NFL_LEARNING_SUPABASE_KEY`, existing `OPENROUTER_API_KEY`, and optional `OPENROUTER_PREGAME_MODEL`. Never put private credentials in `VITE_` variables.
+3. Storage supports a project service-role/secret key. The activated deployment instead uses a publishable API key **plus a dedicated private server secret** in `NFL_LEARNING_SECRET`, limiting access to these NFL tables. Apply [`database/learning-scoped-access.sql`](database/learning-scoped-access.sql) with its placeholder replaced by SHA-256 of that secret. The secret goes only in Vercel; its hash gates every database request through RLS. An ordinary publishable key alone cannot read or write learning records. These invoker RPCs inherit the same RLS boundary.
+4. Configure `CRON_SECRET` and deploy. `/api/learning-status` must return healthy storage and research configuration. The Vercel production cron calls `/api/learning-sync` daily at 10:00 UTC, authorized by that secret, without model calls. Pregame research also syncs outcomes on demand.
+5. For an optional independent GitHub worker, configure the learning storage secrets there too, including `NFL_LEARNING_SECRET` when using scoped access. Without them the workflow explicitly skips grading; production cron remains the primary idle-site worker. Use the matching `OPENROUTER_PREGAME_MODEL` repository variable for metrics.
+6. Request an upcoming game's DeepSeek research. The UI must report a saved pre-kickoff forecast. Request a completed game's review and repeat it to confirm reuse. Load a season to verify its actual completed/remaining counts before starting paid bulk research.
 
 For a local worker, load server environment variables securely and run:
 

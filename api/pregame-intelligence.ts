@@ -1,7 +1,10 @@
 import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback';
 import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore';
 import { predictControlProbability } from '../services/validatedPredictionService';
+import { preparePostgameMemory } from '../server/postgameResearch';
 import { TEAM_BY_ABBR } from '../data/teamRegistry';
+
+export const config = { maxDuration: 150 };
 
 const PREGAME_INTELLIGENCE_VERSION = 'EXP-031-shadow-v1';
 const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
@@ -524,6 +527,8 @@ export default async function handler(req: any, res: any) {
     const { feedback, storageStatus } = await prepareLearningFeedback(games, model);
     if (Date.now() >= kickoffMs) return res.status(409).json({ error: 'Kickoff passed before research could start.' });
     const evaluatedAt = new Date().toISOString();
+    const postgameMemory = await preparePostgameMemory(model, evaluatedAt);
+    if (Date.now() >= kickoffMs) return res.status(409).json({ error: 'Kickoff passed before research could start.' });
     const research = await callOpenRouter({
       apiKey,
       model,
@@ -531,7 +536,7 @@ export default async function handler(req: any, res: any) {
       awayTeam,
       kickoffUtc: normalizedKickoff,
       evaluatedAt,
-      feedbackPrompt: feedback.prompt
+      feedbackPrompt: [feedback.prompt, postgameMemory.prompt].filter(Boolean).join("\n\n")
     });
 
     const shadow = buildPregameShadowPrediction({
@@ -555,7 +560,7 @@ export default async function handler(req: any, res: any) {
       completed_at: new Date().toISOString(), kickoff_at: normalizedKickoff, home_team: homeTeam, away_team: awayTeam,
       base_home_probability: baseHomeProbability, raw_home_probability: shadow.shadowHomeProbability,
       learned_home_probability: learnedHomeProbability, facts: shadow.facts,
-      feedback: { ...feedbackSummary, providerModel: research.model, controlSource: 'server-v2.2', gitSha: process.env.VERCEL_GIT_COMMIT_SHA || null }
+      feedback: { ...feedbackSummary, postgameMemory: { games: postgameMemory.games, categories: postgameMemory.categories, status: postgameMemory.status }, providerModel: research.model, controlSource: 'server-v2.2', gitSha: process.env.VERCEL_GIT_COMMIT_SHA || null }
     });
     return res.status(200).json({
       experiment: PREGAME_INTELLIGENCE_VERSION,
@@ -565,7 +570,7 @@ export default async function handler(req: any, res: any) {
       generatedAt: evaluatedAt,
       payload: research.payload,
       shadow,
-      learning: { ...feedbackSummary, storageStatus, capture, homeWinProbability: learnedHomeProbability, modelWeightsChanged: false },
+      learning: { ...feedbackSummary, storageStatus, capture, postgameReviews: postgameMemory.games, memoryStatus: postgameMemory.status, homeWinProbability: learnedHomeProbability, modelWeightsChanged: false },
       usage: research.usage ?? null
     });
   } catch (error) {

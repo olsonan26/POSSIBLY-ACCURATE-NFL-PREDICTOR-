@@ -15,6 +15,7 @@ jobs:
     env:
       NFL_LEARNING_SUPABASE_URL: ${{ secrets.NFL_LEARNING_SUPABASE_URL }}
       NFL_LEARNING_SUPABASE_KEY: ${{ secrets.NFL_LEARNING_SUPABASE_KEY }}
+      NFL_LEARNING_SECRET: ${{ secrets.NFL_LEARNING_SECRET }}
       OPENROUTER_PREGAME_MODEL: ${{ vars.OPENROUTER_PREGAME_MODEL || 'deepseek/deepseek-v4.1-flash' }}
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +27,7 @@ jobs:
       - name: Grade outcomes without paid model calls
         run: |
           if [ -z "$NFL_LEARNING_SUPABASE_URL" ] || [ -z "$NFL_LEARNING_SUPABASE_KEY" ]; then
-            echo 'Learning storage secrets are missing; grading is not configured.'
-            exit 1
+            echo '::notice::Optional GitHub grading worker is not configured. Production grading uses the Vercel cron; no games were graded by this workflow.'
+            exit 0
           fi
           bun run learning:sync
