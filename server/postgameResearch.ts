@@ -1,3 +1,4 @@
+import { structuredResearch } from './structuredResearch.js';
 import { randomUUID } from 'node:crypto';
 import { easternKickoffIso } from '../api/prediction-ledger.js';
 import type { ScheduledGame } from '../services/scheduleService.js';
@@ -53,7 +54,8 @@ export async function reviewCompletedGame(game: ScheduledGame) {
     const result = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST', signal: AbortSignal.timeout(95_000), headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json',
         'HTTP-Referer': process.env.OPENROUTER_SITE_URL || 'https://nflpredictor-pi.vercel.app', 'X-Title': 'NFL Predictor Postgame Learning' },
-      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 5000,
+      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 6000, reasoning: { effort: 'low' },
+        provider: { require_parameters: true }, plugins: [{ id: 'response-healing' }],
         tools: [{ type: 'openrouter:web_search', parameters: { max_results: 6, max_total_results: 18 } },
           { type: 'openrouter:web_fetch', parameters: { engine: 'openrouter', max_content_tokens: 12000 } }],
         response_format: { type: 'json_schema', json_schema: { name: 'nfl_postgame_review', strict: true, schema } },
@@ -65,8 +67,7 @@ Explain the mechanisms that plausibly contributed to this result: QB play/health
     if (!result.ok) throw new Error(`DeepSeek postgame request failed (HTTP ${result.status}).`);
     const data = await result.json();
     const content = data.choices?.[0]?.message?.content;
-    const raw = typeof content === 'string' ? content : Array.isArray(content) ? content.map((p: any) => p.text || '').join('') : '';
-    const review = normalizePostgameReview(JSON.parse(raw));
+    const review = normalizePostgameReview(structuredResearch(content, ['summary', 'factors', 'questionsForNextPregame', 'uncertainties']));
     const row = { game_id: game.gameId, research_model: model, version: POSTGAME_VERSION, season: game.season,
       home_team: game.homeTeam, away_team: game.awayTeam, home_score: game.homeScore, away_score: game.awayScore,
       kickoff_at: kickoff, outcome_source: NFL_SCHEDULE_URL, review, provider_model: data.model || model };

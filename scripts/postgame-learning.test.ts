@@ -1,3 +1,4 @@
+import { structuredResearch } from '../server/structuredResearch';
 import assert from 'node:assert/strict';
 import handler from '../api/postgame-intelligence';
 import syncHandler from '../api/learning-sync';
@@ -23,7 +24,8 @@ globalThis.fetch = async (url: any, init?: RequestInit) => {
     assert.match(body.messages[0].content, /Verified final: DEN 17, KC 28/);
     assert.doesNotMatch(body.messages[0].content, /99/);
     if (fail) return json({}, 503);
-    return json({ choices: [{ message: { content: JSON.stringify(review) } }] });
+    assert.equal(body.provider.require_parameters, true);
+    return json({ choices: [{ message: { content: "I'll research this completed game.\n```json\n" + JSON.stringify(review) + '\n```' } }] });
   }
   if (s.startsWith('https://postgame.test/rest/v1/')) {
     const u = new URL(s), p = u.pathname;
@@ -42,6 +44,8 @@ try {
   process.env.NFL_LEARNING_SUPABASE_KEY = 'sb_publishable_offline';
   process.env.NFL_LEARNING_SECRET = 'offline-scoped-secret';
   process.env.OPENROUTER_API_KEY = 'offline';
+  assert.deepEqual(structuredResearch('Preface ' + JSON.stringify({ summary: 'text with { braces } and escaped \"quotes\"', factors: [] }), ['summary', 'factors']).factors, []);
+  assert.throws(() => structuredResearch("I'll research it later", ['summary']));
   assert.equal((await request('POST', { gameId: 'next' })).status, 400);
   assert.equal((await request('POST', { gameId: 'fabricated' })).status, 400);
   assert.equal(calls, 0);

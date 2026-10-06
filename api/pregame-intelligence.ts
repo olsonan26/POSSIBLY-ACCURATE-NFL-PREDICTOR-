@@ -1,3 +1,4 @@
+import { structuredResearch } from '../server/structuredResearch.js';
 import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback.js';
 import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore.js';
 import { predictControlProbability } from '../services/validatedPredictionService.js';
@@ -428,6 +429,9 @@ async function callOpenRouter(input: {
       },
       body: JSON.stringify({
         model: input.model,
+        provider: { require_parameters: true },
+        plugins: [{ id: 'response-healing' }],
+        reasoning: { effort: 'low' },
         temperature: 0.1,
         max_tokens: 5000,
         tools: [
@@ -462,7 +466,7 @@ async function callOpenRouter(input: {
 
     let payload: PregameModelPayload;
     try {
-      payload = JSON.parse(content) as PregameModelPayload;
+      payload = structuredResearch(content, ['facts', 'noMaterialUpdate', 'notes']) as PregameModelPayload;
     } catch {
       throw new Error(`OpenRouter returned non-JSON content: ${content.slice(0, 500)}`);
     }
