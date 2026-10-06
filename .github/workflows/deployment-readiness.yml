@@ -61,6 +61,9 @@ jobs:
       - name: Point-in-time integrity regression
         run: bun run test:point-in-time
 
+      - name: Immutable prediction-ledger regression
+        run: bun run test:ledger
+
       - name: EXP-020 disagreement arbiter / meta-stacker
         run: bun run research:arbiter
 

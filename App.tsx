@@ -4,6 +4,7 @@ import { PredictionResult, Team } from './types';
 import { parseTeamData, predictWinner } from './services/validatedPredictionService';
 import { getGamesForDate, getRegularSeasonWeek, ScheduledGame } from './services/scheduleService';
 import { getMarketAwarePrediction, MarketAwarePrediction } from './services/marketAwareService';
+import { createLedgerRunId, freezePredictionToServer, LedgerCaptureStatus, recordPredictionOutcomeToServer } from './services/serverPredictionLedger';
 import TeamSelector from './components/TeamSelector';
 import DatePicker from './components/DatePicker';
 import PredictionDisplay from './components/PredictionDisplay';
@@ -14,6 +15,7 @@ interface BatchPredictionRow {
   game: ScheduledGame;
   result?: PredictionResult;
   marketAware?: MarketAwarePrediction;
+  ledger?: LedgerCaptureStatus;
   error?: string;
 }
 
@@ -54,6 +56,7 @@ const App: React.FC = () => {
   const [neutralSite, setNeutralSite] = useState(false);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [marketPrediction, setMarketPrediction] = useState<MarketAwarePrediction | null>(null);
+  const [manualLedger, setManualLedger] = useState<LedgerCaptureStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -158,6 +161,7 @@ const App: React.FC = () => {
     setScheduleError('');
     setSelectedBatchPrediction(null);
     setBatchRows(scheduleGames.map(game => ({ game })));
+    const ledgerRunId = createLedgerRunId('batch');
 
     try {
       const completedRows: BatchPredictionRow[] = [];
@@ -176,7 +180,20 @@ const App: React.FC = () => {
             } catch (marketError) {
               console.warn('Market-aware shadow unavailable for game', game.gameId, marketError);
             }
-            return { game, result, marketAware } as BatchPredictionRow;
+
+            let ledger: LedgerCaptureStatus | undefined;
+            try {
+              ledger = game.completed
+                ? await recordPredictionOutcomeToServer(game)
+                : await freezePredictionToServer({ game, result, marketAware, runId: ledgerRunId });
+            } catch (ledgerError) {
+              console.warn('Server prediction ledger unavailable for game', game.gameId, ledgerError);
+              ledger = {
+                state: 'failed',
+                message: ledgerError instanceof Error ? ledgerError.message : 'Server ledger unavailable.'
+              };
+            }
+            return { game, result, marketAware, ledger } as BatchPredictionRow;
           } catch (err) {
             console.error(err);
             return { game, error: err instanceof Error ? err.message : 'Prediction failed.' } as BatchPredictionRow;
@@ -209,19 +226,49 @@ const App: React.FC = () => {
     setError('');
     setPrediction(null);
     setMarketPrediction(null);
+    setManualLedger(null);
     setIsLoading(true);
     try {
       const result = await predictWinner(home, away, new Date(`${gameDate}T12:00:00Z`), true, { neutralSite });
       setPrediction(result);
+      let manualMarket: MarketAwarePrediction | null = null;
       try {
-        setMarketPrediction(await getMarketAwarePrediction({
+        manualMarket = await getMarketAwarePrediction({
           gameday: gameDate,
           homeTeam: home.abbr,
           awayTeam: away.abbr,
           completed: false
-        }, result));
+        }, result);
+        setMarketPrediction(manualMarket);
       } catch (marketError) {
         console.warn('Market-aware shadow unavailable for manual matchup', marketError);
+      }
+
+      try {
+        const exactGames = await getGamesForDate(gameDate);
+        const scheduled = exactGames.find(game => game.homeTeam === home.abbr && game.awayTeam === away.abbr);
+        if (scheduled) {
+          const ledger = scheduled.completed
+            ? await recordPredictionOutcomeToServer(scheduled)
+            : await freezePredictionToServer({
+                game: scheduled,
+                result,
+                marketAware: manualMarket || undefined,
+                runId: createLedgerRunId('manual')
+              });
+          setManualLedger(ledger);
+        } else {
+          setManualLedger({
+            state: 'skipped',
+            message: 'No exact NFL schedule match was found, so this manual prediction was not prospectively frozen.'
+          });
+        }
+      } catch (ledgerError) {
+        console.warn('Manual prediction ledger unavailable', ledgerError);
+        setManualLedger({
+          state: 'failed',
+          message: ledgerError instanceof Error ? ledgerError.message : 'Server ledger unavailable.'
+        });
       }
     } catch (err) {
       console.error(err);
@@ -237,10 +284,10 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.2 + market shadow + optional DeepSeek
+            Verified-data engine v2.2 + immutable ledger + market shadow + optional DeepSeek
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Numerology Predictor</h1>
-          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen football control and market-aware shadow. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.</p>
+          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen football control and market-aware shadow. Upcoming scheduled predictions are timestamped to an append-only server ledger before kickoff. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.</p>
         </header>
 
         <section className="bg-gray-900/80 backdrop-blur-sm p-5 sm:p-7 rounded-2xl shadow-2xl border border-indigo-500/25 mb-7">
@@ -282,6 +329,7 @@ const App: React.FC = () => {
                 <div>
                   <h3 className="font-bold text-white">{scheduleLabel || 'Loaded schedule'}</h3>
                   <p className="text-xs text-gray-500">{scheduleGames.length} game{scheduleGames.length === 1 ? '' : 's'} matched from the NFL schedule feed.</p>
+                  <p className="mt-1 text-[10px] text-emerald-300/80">Pregame runs are frozen server-side; after kickoff the ledger refuses new prospective snapshots.</p>
                 </div>
                 <button onClick={handlePredictAll} disabled={batchLoading || !teams.length} className="rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900/50 disabled:cursor-not-allowed px-5 py-3 font-black text-sm transition-colors">{batchLoading ? `Predicting ${batchCompleted}/${scheduleGames.length}…` : 'Predict All Games'}</button>
               </div>
@@ -337,6 +385,9 @@ const App: React.FC = () => {
                                 <span className="text-sm font-black text-white">{awayName} @ {homeName}</span>
                                 {game.neutralSite && <span className="rounded-full border border-gray-600 px-2 py-0.5 text-[10px] text-gray-400">Neutral</span>}
                                 <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] text-gray-500">{game.gameday}</span>
+                                {row?.ledger?.state === 'frozen' && <span title={row.ledger.message} className="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">Server Frozen</span>}
+                                {row?.ledger?.state === 'outcome_recorded' && <span title={row.ledger.message} className="rounded-full border border-cyan-500/30 bg-cyan-950/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">Outcome Logged</span>}
+                                {(row?.ledger?.state === 'rejected' || row?.ledger?.state === 'failed') && <span title={row.ledger.message} className="rounded-full border border-rose-500/30 bg-rose-950/30 px-2 py-0.5 text-[10px] font-bold text-rose-300">Not Frozen</span>}
                               </div>
                               {game.completed && <p className="mt-1 text-xs text-gray-500">Final: {game.awayTeam} {game.awayScore} · {game.homeTeam} {game.homeScore}</p>}
                             </div>
@@ -402,11 +453,16 @@ const App: React.FC = () => {
             <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-700 bg-gray-950/40 cursor-pointer select-none min-h-[46px]"><input type="checkbox" checked={neutralSite} onChange={event => setNeutralSite(event.target.checked)} className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-500 focus:ring-indigo-500" /><span className="text-sm text-gray-300">Neutral site</span></label>
           </div>
           <Button onClick={handlePredict} disabled={!homeTeam || !awayTeam || !gameDate || isLoading}>{isLoading ? 'Loading verified pregame data…' : 'Predict Winner'}</Button>
+          {manualLedger && manualLedger.state !== 'skipped' && (
+            <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${manualLedger.state === 'frozen' || manualLedger.state === 'outcome_recorded' ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-rose-500/30 bg-rose-950/20 text-rose-300'}`}>
+              <strong>{manualLedger.state === 'frozen' ? 'Server Frozen: ' : manualLedger.state === 'outcome_recorded' ? 'Outcome Logged: ' : 'Not Frozen: '}</strong>{manualLedger.message}
+            </div>
+          )}
           {error && <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-center text-sm text-rose-300">{error}</div>}
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-400">
             <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Pure + shadow lanes</strong>v2.2 stays frozen. The market-aware shadow appears only when a verified two-sided moneyline is available.</div>
             <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">No future leakage</strong>Historical predictions only use information available before the selected game date.</div>
-            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Timestamped market snapshot</strong>The shadow records the exact moneyline snapshot used locally for audit instead of silently changing v2.2.</div>
+            <div className="rounded-lg bg-black/20 border border-gray-800 p-3"><strong className="block text-gray-200 mb-1">Immutable pregame record</strong>Scheduled future picks are written to the server before kickoff with model probabilities, feature snapshot, market context, Git SHA, and a SHA-256 payload fingerprint.</div>
           </div>
         </section>
 
