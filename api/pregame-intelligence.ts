@@ -1,8 +1,8 @@
-import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback';
-import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore';
-import { predictControlProbability } from '../services/validatedPredictionService';
-import { preparePostgameMemory } from '../server/postgameResearch';
-import { TEAM_BY_ABBR } from '../data/teamRegistry';
+import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback.js';
+import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore.js';
+import { predictControlProbability } from '../services/validatedPredictionService.js';
+import { preparePostgameMemory } from '../server/postgameResearch.js';
+import { TEAM_BY_ABBR } from '../data/teamRegistry.js';
 
 export const config = { maxDuration: 150 };
 

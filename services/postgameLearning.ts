@@ -1,4 +1,4 @@
-import type { ScheduledGame } from './scheduleService';
+import type { ScheduledGame } from './scheduleService.js';
 
 export const POSTGAME_VERSION = 'EXP-033-postgame-v1';
 export const POSTGAME_CATEGORIES = ['qb', 'injury', 'offensive_line', 'weather', 'roster', 'coaching', 'efficiency', 'turnovers', 'special_teams'] as const;

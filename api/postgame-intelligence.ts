@@ -1,6 +1,6 @@
-import { learningStorageConfigured, verifiedSchedule } from '../server/learningStore';
-import { completedSeason, POSTGAME_VERSION } from '../services/postgameLearning';
-import { findReview, researchModel, reviewCompletedGame, ReviewBusyError, seasonReviews } from '../server/postgameResearch';
+import { learningStorageConfigured, verifiedSchedule } from '../server/learningStore.js';
+import { completedSeason, POSTGAME_VERSION } from '../services/postgameLearning.js';
+import { findReview, researchModel, reviewCompletedGame, ReviewBusyError, seasonReviews } from '../server/postgameResearch.js';
 
 export const config = { maxDuration: 150 };
 export default async function handler(req: any, res: any) {

@@ -1,4 +1,4 @@
-import { getSeasonGames } from './scheduleService';
+import { getSeasonGames } from './scheduleService.js';
 
 export type TeamStatsRow = Record<string, string>;
 

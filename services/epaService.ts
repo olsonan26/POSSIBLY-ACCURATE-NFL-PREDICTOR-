@@ -1,4 +1,4 @@
-import { normalizeTeamAbbr } from '../data/teamRegistry';
+import { normalizeTeamAbbr } from '../data/teamRegistry.js';
 
 /**
  * EPA Service

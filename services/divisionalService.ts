@@ -10,8 +10,8 @@
  * adjustments).
  */
 
-import { isDivisionalGame } from '../data/divisionMap';
-import { normalizeTeamAbbr } from '../data/teamRegistry';
+import { isDivisionalGame } from '../data/divisionMap.js';
+import { normalizeTeamAbbr } from '../data/teamRegistry.js';
 
 // ---------------------------------------------------------------------------
 // Types

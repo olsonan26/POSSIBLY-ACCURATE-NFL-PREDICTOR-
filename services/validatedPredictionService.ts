@@ -1,32 +1,32 @@
-import { DecisionFactor, PredictionResult, Team, AccuracyFeatures } from '../types';
+import { DecisionFactor, PredictionResult, Team, AccuracyFeatures } from '../types.js';
 import {
   calculateAllPatterns,
   parseGamesCsv,
   parseTeamData,
   predictWinner as runResearchModel,
   PredictionOptions
-} from './numerologyService';
+} from './numerologyService.js';
 import {
   applyProvisionalDailyFormula,
   buildLettrologyResearchFactor
-} from './lettrologyResearchService';
+} from './lettrologyResearchService.js';
 import {
   getValidatedFootballContext,
   ValidatedFootballContext
-} from './validatedFootballContext';
+} from './validatedFootballContext.js';
 import {
   getPureAstrologyPrediction,
   resolveFootballAndPure
-} from './pureAstrologyService';
-import { getMatchupEpaContext } from './epaService';
-import { getWeatherForGame } from './weatherService';
-import { getTravelContext } from './travelService';
-import { getDivisionalContext } from './divisionalService';
-import { getDynamicHfa } from './dynamicHfaService';
-import { getPreseasonPrior } from './preseasonPriorsService';
-import { getPaceMetrics } from './paceMetricsService';
-import { getSpecialTeamsStats } from './specialTeamsService';
-import { getTurnoverExpectation } from './turnoverExpectationService';
+} from './pureAstrologyService.js';
+import { getMatchupEpaContext } from './epaService.js';
+import { getWeatherForGame } from './weatherService.js';
+import { getTravelContext } from './travelService.js';
+import { getDivisionalContext } from './divisionalService.js';
+import { getDynamicHfa } from './dynamicHfaService.js';
+import { getPreseasonPrior } from './preseasonPriorsService.js';
+import { getPaceMetrics } from './paceMetricsService.js';
+import { getSpecialTeamsStats } from './specialTeamsService.js';
+import { getTurnoverExpectation } from './turnoverExpectationService.js';
 
 export { calculateAllPatterns, parseGamesCsv, parseTeamData };
 export type { PredictionOptions };

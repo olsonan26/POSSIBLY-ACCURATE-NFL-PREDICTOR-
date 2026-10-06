@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { buildLearningFeedback, LEARNING_VERSION, type LearningExample } from '../services/learningFeedback';
-import { parseScheduleCsv, type ScheduledGame } from '../services/scheduleService';
-import { easternKickoffIso } from '../api/prediction-ledger';
+import { buildLearningFeedback, LEARNING_VERSION, type LearningExample } from '../services/learningFeedback.js';
+import { parseScheduleCsv, type ScheduledGame } from '../services/scheduleService.js';
+import { easternKickoffIso } from '../api/prediction-ledger.js';
 
 export const NFL_SCHEDULE_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 export interface LearningForecast {

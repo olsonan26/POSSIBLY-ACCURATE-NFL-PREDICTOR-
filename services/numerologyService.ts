@@ -12,8 +12,8 @@ import {
   PredictionResult,
   Role,
   Team
-} from '../types';
-import { TEAM_BY_ABBR, TEAM_REGISTRY, normalizeTeamAbbr } from '../data/teamRegistry';
+} from '../types.js';
+import { TEAM_BY_ABBR, TEAM_REGISTRY, normalizeTeamAbbr } from '../data/teamRegistry.js';
 
 const MODEL_VERSION = 'v2.0-verified-pregame';
 const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';

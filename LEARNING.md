@@ -98,6 +98,7 @@ Before serving a trained checkpoint, compare its probabilities to the control an
 
 ```bash
 bun run test:learning
+bun run test:node-api
 bun run research:pregame-intelligence
 bun run test:ledger
 bun run test:point-in-time
@@ -106,4 +107,4 @@ bun run typecheck
 bun run build
 ```
 
-The learning API tests mock all network calls; they spend no model credits. `scripts/learning-schema.test.mjs` additionally checks the SQL with an isolated `@electric-sql/pglite` install; set `NFL_TEST_PGLITE_MODULE` to its absolute module path when it is installed outside this repo. A successful local schema test does not mean the intended production database has been configured.
+The native Node check compiles the API and loads each server entry point, catching ESM resolution errors that Bun/Vite can hide. Server dependency imports explicitly use their emitted `.js` names. The learning API tests mock all network calls; they spend no model credits. `scripts/learning-schema.test.mjs` additionally checks the SQL with an isolated `@electric-sql/pglite` install; set `NFL_TEST_PGLITE_MODULE` to its absolute module path when it is installed outside this repo. A successful local schema test does not mean the intended production database has been configured.

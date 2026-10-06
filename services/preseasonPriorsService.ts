@@ -9,7 +9,7 @@
  * the model's final prediction.
  */
 
-import { preseasonWinTotals } from '../data/preseasonWinTotals';
+import { preseasonWinTotals } from '../data/preseasonWinTotals.js';
 
 export interface PriorContext {
   expectedWinPct: number;

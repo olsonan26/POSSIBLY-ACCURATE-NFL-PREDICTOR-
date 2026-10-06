@@ -1,4 +1,4 @@
-import { Team } from '../types';
+import { Team } from '../types.js';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00Z`);
 

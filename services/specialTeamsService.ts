@@ -11,7 +11,7 @@ import {
   getTeamStatsBeforeTarget,
   hasRequiredTeamStatsFields,
   TeamStatsRow,
-} from './pointInTimeTeamStats';
+} from './pointInTimeTeamStats.js';
 
 export interface SpecialTeamsStats {
   /** EPA from field-goal and extra-point kicking */

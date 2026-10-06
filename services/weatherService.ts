@@ -6,7 +6,7 @@
  * small logit-space adjustments that the model can consume.
  */
 
-import { stadiumCoordinates, type StadiumInfo } from '../data/stadiumCoordinates';
+import { stadiumCoordinates, type StadiumInfo } from '../data/stadiumCoordinates.js';
 
 export interface WeatherData {
   temperatureF: number;

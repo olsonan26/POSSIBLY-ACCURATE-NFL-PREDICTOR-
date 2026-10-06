@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { easternKickoffIso } from '../api/prediction-ledger';
-import type { ScheduledGame } from '../services/scheduleService';
-import { POSTGAME_VERSION, POSTGAME_CATEGORIES, normalizePostgameReview, postgameMemoryPrompt, type StoredPostgameReview } from '../services/postgameLearning';
-import { storage, NFL_SCHEDULE_URL } from './learningStore';
+import { easternKickoffIso } from '../api/prediction-ledger.js';
+import type { ScheduledGame } from '../services/scheduleService.js';
+import { POSTGAME_VERSION, POSTGAME_CATEGORIES, normalizePostgameReview, postgameMemoryPrompt, type StoredPostgameReview } from '../services/postgameLearning.js';
+import { storage, NFL_SCHEDULE_URL } from './learningStore.js';
 
 export const researchModel = () => process.env.OPENROUTER_PREGAME_MODEL || 'deepseek/deepseek-v4.1-flash';
 export async function findReview(gameId: string, model: string) {

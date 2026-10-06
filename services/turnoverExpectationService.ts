@@ -9,7 +9,7 @@ import {
   getTeamStatsBeforeTarget,
   hasRequiredTeamStatsFields,
   TeamStatsRow,
-} from './pointInTimeTeamStats';
+} from './pointInTimeTeamStats.js';
 
 export interface TurnoverExpectation {
   /** Expected interceptions thrown per game */

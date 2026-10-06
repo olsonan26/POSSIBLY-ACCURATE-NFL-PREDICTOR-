@@ -1,4 +1,4 @@
-import { TEAM_BY_ABBR, normalizeTeamAbbr } from '../data/teamRegistry';
+import { TEAM_BY_ABBR, normalizeTeamAbbr } from '../data/teamRegistry.js';
 
 const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 

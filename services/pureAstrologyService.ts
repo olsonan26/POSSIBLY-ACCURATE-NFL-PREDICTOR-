@@ -4,7 +4,7 @@ import {
   PersonnelSnapshot,
   PureAstrologyResult,
   Team
-} from '../types';
+} from '../types.js';
 
 export interface PureAstrologyRequestOptions {
   neutralSite?: boolean;

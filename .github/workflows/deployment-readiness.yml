@@ -52,8 +52,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Type-check
         run: bun run typecheck
+
+      - name: Native Node server-module loading
+        run: bun run test:node-api
 
       - name: Production build
         run: bun run build

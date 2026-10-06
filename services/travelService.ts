@@ -1,7 +1,7 @@
 // Travel service: calculates great-circle distance and timezone change
 // between the away team's home city and the game city.
 
-import { stadiumCoordinates } from '../data/stadiumCoordinates';
+import { stadiumCoordinates } from '../data/stadiumCoordinates.js';
 
 const EARTH_RADIUS_MILES = 3958.8;
 

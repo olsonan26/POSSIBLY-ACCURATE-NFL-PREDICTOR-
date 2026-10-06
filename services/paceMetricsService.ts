@@ -9,7 +9,7 @@ import {
   getTeamStatsBeforeTarget,
   hasRequiredTeamStatsFields,
   TeamStatsRow,
-} from './pointInTimeTeamStats';
+} from './pointInTimeTeamStats.js';
 
 export interface PaceMetrics {
   /** Average offensive plays per game */

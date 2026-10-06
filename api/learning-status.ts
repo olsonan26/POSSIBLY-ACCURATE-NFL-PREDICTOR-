@@ -1,4 +1,4 @@
-import { learningStorageConfigured, storage, verifiedSchedule, syncLearningOutcomes } from '../server/learningStore';
+import { learningStorageConfigured, storage, verifiedSchedule, syncLearningOutcomes } from '../server/learningStore.js';
 export const config = { maxDuration: 60 };
 export default async function handler(req: any, res: any) {
   res.setHeader('Cache-Control', 'no-store');
