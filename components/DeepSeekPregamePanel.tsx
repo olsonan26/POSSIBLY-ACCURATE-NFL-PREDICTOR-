@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { PostgameReviewDisplay, requestPostgame } from './PostgameLearningPanel';
+import type { StoredPostgameReview } from '../services/postgameLearning';
 import { getGamesForDate } from '../services/scheduleService';
 
 interface DeepSeekPregamePanelProps {
@@ -25,6 +27,16 @@ interface DeepSeekShadowResponse {
   mode: string;
   researchModel: string;
   generatedAt: string;
+  learning?: {
+    games: number;
+    postgameReviews?: number;
+    status: string;
+    scale: number;
+    homeWinProbability: number;
+    capture: { status: string; message: string };
+    raw: { games: number; accuracy: number; brier: number; logLoss: number } | null;
+    forward: { games: number };
+  };
   shadow: {
     homeTeam: string;
     awayTeam: string;
@@ -76,7 +88,15 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [postgame, setPostgame] = useState<StoredPostgameReview | null>(null);
+  const [past, setPast] = useState(false);
   const [response, setResponse] = useState<DeepSeekShadowResponse | null>(null);
+  useEffect(() => {
+    setResponse(null); setPostgame(null); setError('');
+    let alive = true;
+    getGamesForDate(gameDate).then(games => { if (alive) setPast(Boolean(games.find(g => g.homeTeam === homeTeamAbbr && g.awayTeam === awayTeamAbbr)?.completed)); }).catch(() => {});
+    return () => { alive = false; };
+  }, [gameDate, homeTeamAbbr, awayTeamAbbr]);
 
   const runDeepSeek = async () => {
     if (loading) return;
@@ -88,17 +108,23 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
       const games = await getGamesForDate(gameDate);
       const game = games.find(item => item.homeTeam === homeTeamAbbr && item.awayTeam === awayTeamAbbr);
       if (!game) throw new Error('This exact matchup was not found in the verified NFL schedule, so DeepSeek was not called.');
+      if (game.completed) {
+        const result = await requestPostgame(game.gameId);
+        setPostgame(result.review); setPast(true);
+        return;
+      }
       if (!game.gametime) throw new Error('Verified kickoff time is unavailable, so paid DeepSeek research was not started.');
 
       const kickoffUtc = kickoffEasternToUtc(game.gameday, game.gametime);
       if (Date.parse(kickoffUtc) <= Date.now()) {
-        throw new Error('Kickoff has already passed. DeepSeek was not called, protecting the prospective-only experiment.');
+        throw new Error('This game has started but a verified final score is not available yet. Review it after the result is confirmed.');
       }
 
       const apiResponse = await fetch('/api/pregame-intelligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          gameId: game.gameId,
           homeTeam: homeTeamAbbr,
           awayTeam: awayTeamAbbr,
           kickoffUtc,
@@ -123,6 +149,8 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
   const homePct = shadow ? shadow.shadowHomeProbability * 100 : null;
   const awayPct = homePct == null ? null : 100 - homePct;
   const acceptedFacts = shadow?.facts.filter(fact => fact.accepted) || [];
+  const learning = response?.learning;
+  const learningSummary = learning ? `${learning.games} scored forecasts · ${learning.postgameReviews || 0} postgame reviews in research memory · ${learning.forward.games} walk-forward checks` : '';
 
   if (compact) {
     return (
@@ -133,15 +161,17 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
           disabled={loading}
           className="rounded-lg border border-cyan-500/35 bg-cyan-950/30 hover:bg-cyan-900/40 disabled:opacity-50 px-3 py-2 text-[11px] font-black text-cyan-200"
         >
-          {loading ? 'Running DeepSeek…' : response ? 'Run DeepSeek Again' : 'Run DeepSeek'}
+          {loading ? 'Running DeepSeek…' : past ? 'Review completed game' : response ? 'Run DeepSeek Again' : 'Run DeepSeek'}
         </button>
-        <span className="ml-2 text-[10px] text-gray-600">Paid call only when pressed</span>
+        <span className="ml-2 text-[10px] text-gray-600">Research on request · saved reviews reused</span>
+        {postgame && <PostgameReviewDisplay row={postgame} />}
         {error && <p className="mt-2 max-w-xl text-[10px] text-rose-300">{error}</p>}
         {shadow && homePct != null && awayPct != null && (
           <div className="mt-2 rounded-lg border border-cyan-500/25 bg-cyan-950/15 px-3 py-2 text-left">
             <p className="text-[10px] uppercase tracking-wider font-bold text-cyan-300">DeepSeek Shadow · EXP-031</p>
             <p className="mt-1 text-xs font-black text-white">{shadow.homeTeam} {homePct.toFixed(1)}% · {shadow.awayTeam} {awayPct.toFixed(1)}%</p>
             <p className="text-[10px] text-gray-500">{shadow.acceptedFactCount} verified fact{shadow.acceptedFactCount === 1 ? '' : 's'} accepted · production pick unchanged</p>
+            {learning && <p className="mt-1 text-[10px] text-cyan-200">{learningSummary}. {learning.capture.message}</p>}
           </div>
         )}
       </div>
@@ -152,9 +182,9 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
     <section className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-950/15 p-5 sm:p-6 shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.16em] font-bold text-cyan-300">Optional AI Pregame Research · EXP-031</p>
+          <p className="text-xs uppercase tracking-[0.16em] font-bold text-cyan-300">{past ? 'Postgame research memory' : 'Optional AI Pregame Research · EXP-031'}</p>
           <h3 className="mt-1 text-xl font-black text-white">DeepSeek is OFF until you press the button</h3>
-          <p className="mt-2 max-w-3xl text-sm text-gray-400">Normal predictions never call OpenRouter. This button is the only action here that starts a paid DeepSeek research request.</p>
+          <p className="mt-2 max-w-3xl text-sm text-gray-400">Normal predictions never call OpenRouter. This button researches upcoming games or reviews verified completed games. Saved postgame reviews are reused.</p>
         </div>
         <button
           type="button"
@@ -162,7 +192,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
           disabled={loading}
           className="shrink-0 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-900/60 disabled:cursor-not-allowed px-5 py-3 text-sm font-black text-white transition-colors"
         >
-          {loading ? 'Running DeepSeek…' : response ? 'Run DeepSeek Again' : 'Run DeepSeek Pregame Analysis'}
+          {loading ? 'Running DeepSeek…' : past ? 'Review completed game' : response ? 'Run DeepSeek Again' : 'Run DeepSeek Pregame Analysis'}
         </button>
       </div>
 
@@ -170,6 +200,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
         COST CONTROL: no DeepSeek request is made on page load, Predict Winner, Predict All Games, Full Breakdown, or market-shadow calculations.
       </div>
 
+      {postgame && <PostgameReviewDisplay row={postgame} />}
       {error && <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">{error}</div>}
 
       {shadow && homePct != null && awayPct != null && (
@@ -192,6 +223,17 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
           </div>
 
           <p className="mt-3 text-[11px] text-gray-500">Model: {response?.researchModel} · generated {response?.generatedAt ? new Date(response.generatedAt).toLocaleString() : ''}</p>
+
+          {learning && (
+            <div className="mt-4 rounded-xl border border-cyan-500/25 bg-black/20 p-4">
+              <p className="text-xs font-bold text-cyan-200">Learning from completed games</p>
+              <p className="mt-1 text-sm text-gray-300">{learningSummary}</p>
+              <p className="mt-1 text-sm font-bold text-white">Learning shadow: {shadow.homeTeam} {(learning.homeWinProbability * 100).toFixed(1)}% · {shadow.awayTeam} {((1 - learning.homeWinProbability) * 100).toFixed(1)}%</p>
+              <p className="mt-1 text-xs text-gray-400">{learning.status === 'calibrated-shadow' ? `News adjustment scaled to ${(learning.scale * 100).toFixed(0)}% after chronological checks.` : 'Collecting evidence before changing the news adjustment.'}</p>
+              <p className={`mt-2 text-xs ${['frozen', 'already-frozen'].includes(learning.capture.status) ? 'text-emerald-300' : 'text-amber-300'}`}>{learning.capture.message}</p>
+              {learning.raw && <p className="mt-2 text-xs text-gray-400">Saved DeepSeek forecasts: {(learning.raw.accuracy * 100).toFixed(1)}% correct · Brier {learning.raw.brier.toFixed(4)} · log loss {learning.raw.logLoss.toFixed(4)}</p>}
+            </div>
+          )}
 
           {acceptedFacts.length > 0 && (
             <div className="mt-4 space-y-2">

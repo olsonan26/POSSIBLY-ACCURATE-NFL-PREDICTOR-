@@ -32,8 +32,11 @@
     "research:test": "bun scripts/research-cycle.test.ts",
     "research:pregame-intelligence": "bun scripts/pregame-intelligence.test.ts",
     "research:pregame-score": "bun scripts/score-pregame-shadow.ts",
+    "learning:sync": "bun scripts/learning-worker.ts --sync",
+    "learning:export": "bun scripts/learning-worker.ts --sync --export=training/exports/frozen-forecasts.jsonl",
+    "test:learning": "bun scripts/learning-feedback.test.ts && bun scripts/learning-api.test.ts && bun scripts/postgame-learning.test.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run test:ledger && bun run research:test && bun run research:pregame-intelligence && bun run backtest && bun run evaluate && bun run walk-forward && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test",
+    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run test:ledger && bun run test:learning && bun run research:test && bun run research:pregame-intelligence && bun run backtest && bun run evaluate && bun run walk-forward && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test",
     "test:ledger": "bun scripts/prediction-ledger.test.ts"
   },
   "dependencies": {

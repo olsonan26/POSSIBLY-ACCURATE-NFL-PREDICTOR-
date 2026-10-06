@@ -79,6 +79,12 @@ jobs:
       - name: EXP-031 pregame intelligence evidence-gate tests
         run: bun run research:pregame-intelligence
 
+      - name: DeepSeek outcome feedback and API integrity
+        run: bun run test:learning
+
+      - name: NFL training reward and dataset integrity
+        run: python3 -m unittest discover -s training -p 'test_*.py'
+
       - name: 2025 validation backtest
         run: bun run backtest
 

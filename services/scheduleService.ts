@@ -54,7 +54,7 @@ function optionalNumber(value: string): number | undefined {
   return Number.isFinite(number) ? number : undefined;
 }
 
-function parseScheduleCsv(text: string): ScheduledGame[] {
+export function parseScheduleCsv(text: string): ScheduledGame[] {
   const lines = text.split(/\r?\n/).filter(Boolean);
   if (lines.length < 2) return [];
   const headers = parseCsvLine(lines[0]);

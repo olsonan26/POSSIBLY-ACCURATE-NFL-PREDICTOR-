@@ -1,0 +1,3 @@
+[submodule "training/vendor/verl"]
+	path = training/vendor/verl
+	url = https://github.com/XiaomiMiMo/verl.git

@@ -1,0 +1,33 @@
+name: Grade frozen DeepSeek forecasts
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 10 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: nfl-learning-outcomes
+  cancel-in-progress: false
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NFL_LEARNING_SUPABASE_URL: ${{ secrets.NFL_LEARNING_SUPABASE_URL }}
+      NFL_LEARNING_SUPABASE_KEY: ${{ secrets.NFL_LEARNING_SUPABASE_KEY }}
+      NFL_LEARNING_SECRET: ${{ secrets.NFL_LEARNING_SECRET }}
+      OPENROUTER_PREGAME_MODEL: ${{ vars.OPENROUTER_PREGAME_MODEL || 'deepseek/deepseek-v4.1-flash' }}
+    steps:
+      - uses: actions/checkout@v4
+        # GPU training submodule is intentionally not fetched by this worker.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Grade outcomes without paid model calls
+        run: |
+          if [ -z "$NFL_LEARNING_SUPABASE_URL" ] || [ -z "$NFL_LEARNING_SUPABASE_KEY" ]; then
+            echo '::notice::Optional GitHub grading worker is not configured. Production grading uses the Vercel cron; no games were graded by this workflow.'
+            exit 0
+          fi
+          bun run learning:sync

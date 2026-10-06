@@ -41,6 +41,17 @@ const logit = (probability: number) => {
   return Math.log(p / (1 - p));
 };
 
+/** Server-side control probability without UI/research layers or paid model calls. */
+export async function predictControlProbability(homeTeam: Team, awayTeam: Team, gameDate: Date, options: PredictionOptions = {}): Promise<number> {
+  const raw = await runResearchModel(homeTeam, awayTeam, gameDate, true, options);
+  if (!raw.modelScores) throw new Error('Football control scores are unavailable.');
+  const targetIso = gameDate.toISOString().slice(0, 10);
+  const context = await getValidatedFootballContext(homeTeam.abbr, awayTeam.abbr, targetIso, Boolean(options.neutralSite));
+  const personnel = targetIso < new Date().toISOString().slice(0, 10) ? 0 : raw.modelScores.personnelLogitAdjustment;
+  return logistic(logit(raw.modelScores.baseHomeProbability / 100) + context.footballLogitAdjustment
+    + context.venueLogitAdjustment + personnel + raw.modelScores.h2hLogitAdjustment);
+}
+
 function advantageForHomeEdge(homeEdge: number, winnerIsHome: boolean): DecisionFactor['advantage'] {
   if (Math.abs(homeEdge) < 0.002) return 'neutral';
   return (homeEdge > 0) === winnerIsHome ? 'winner' : 'loser';
