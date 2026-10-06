@@ -33,7 +33,8 @@
     "research:pregame-intelligence": "bun scripts/pregame-intelligence.test.ts",
     "research:pregame-score": "bun scripts/score-pregame-shadow.ts",
     "forward-test": "bun scripts/forward-test-2026.ts",
-    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run research:test && bun run research:pregame-intelligence && bun run backtest && bun run evaluate && bun run walk-forward && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test"
+    "verify": "bun run typecheck && bun run build && bun run test:point-in-time && bun run test:ledger && bun run research:test && bun run research:pregame-intelligence && bun run backtest && bun run evaluate && bun run walk-forward && bun run research:margin && bun run research:ridge-epa && bun run research:qb && bun run research:priors && bun run research:wepa && bun run research:snap-continuity && bun run research:explosives && bun run research:ol-pass-rush && bun run research:architecture && bun run research:market && bun run research:arbiter && bun run research:early-market && bun run research:structural-market && bun run research:residual-veto && bun run research:meta-stacker && bun run forward-test",
+    "test:ledger": "bun scripts/prediction-ledger.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
