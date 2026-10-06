@@ -1,3 +1,4 @@
+import { archivedPostgameEvidence } from '../server/postgameEvidence';
 import { structuredResearch } from '../server/structuredResearch';
 import assert from 'node:assert/strict';
 import handler from '../api/postgame-intelligence';
@@ -9,7 +10,7 @@ let calls = 0, claimed = false, fail = false;
 const rows: any[] = [];
 const header = 'game_id,season,game_type,week,gameday,gametime,away_team,away_score,home_team,home_score,location';
 const csv = [header, ...Array.from({ length: 1000 }, (_, i) => `historical-${i},2000,REG,1,2000-09-10,13:00,DEN,17,KC,28,Home`), 'next,2099,REG,1,2099-09-10,13:00,DEN,,KC,,Home', 'tie,2000,WC,19,2001-01-10,13:00,DEN,21,KC,21,Home'].join('\n');
-const review = { summary: 'Pass protection and efficient quarterback play contributed to the result.', factors: [{ category: 'offensive_line', explanation: 'The recap reports that protection sustained passing drives.', evidence: 'reported', repeatability: 'potentially_repeatable', sources: [{ url: 'https://www.nfl.com/game/recap', title: 'Official recap' }] }], questionsForNextPregame: ['Verify current line continuity.'], uncertainties: ['One game does not establish an enduring advantage.'] };
+const review = { summary: 'Pass protection and efficient quarterback play contributed to the result.', factors: [{ category: 'offensive_line', explanation: 'The recap reports that protection sustained passing drives.', evidence: 'reported', repeatability: 'potentially_repeatable', sources: [{ url: 'https://www.espn.com/nfl/boxscore/_/gameId/100001', title: 'Official recap' }] }], questionsForNextPregame: ['Verify current line continuity.'], uncertainties: ['One game does not establish an enduring advantage.'] };
 const json = (x: unknown, status = 200) => new Response(JSON.stringify(x), { status });
 async function request(method: string, input: any) {
   let status = 200, body: any;
@@ -19,12 +20,16 @@ async function request(method: string, input: any) {
 globalThis.fetch = async (url: any, init?: RequestInit) => {
   const s = String(url);
   if (s === NFL_SCHEDULE_URL) return new Response(csv);
+  if (s.includes('/football/nfl/scoreboard')) return json({ events: [{ id: '100001', competitions: [{ competitors: [{ homeAway: 'home', team: { abbreviation: 'KC' }, score: '28' }, { homeAway: 'away', team: { abbreviation: 'DEN' }, score: '17' }] }] }] });
+  if (s.includes('/football/nfl/summary')) return json({ header: { competitions: [{ status: { type: { completed: true } }, competitors: [{ homeAway: 'home', team: { abbreviation: 'KC' }, score: '28' }, { homeAway: 'away', team: { abbreviation: 'DEN' }, score: '17' }] }] }, boxscore: { teams: [{ team: { abbreviation: 'KC' }, statistics: [{ label: 'Total yards', displayValue: '350' }] }] }, article: { headline: 'Verified game recap', story: 'Pass protection sustained drives.' } });
   if (s === 'https://openrouter.ai/api/v1/chat/completions') {
     calls++; const body = JSON.parse(String(init?.body));
     assert.match(body.messages[0].content, /Verified final: DEN 17, KC 28/);
     assert.doesNotMatch(body.messages[0].content, /99/);
     if (fail) return json({}, 503);
     assert.equal(body.provider.require_parameters, true);
+    assert.equal(body.tools, undefined, 'Archived evidence is fetched directly instead of relying on provider tool loops.');
+    assert.match(body.messages[1].content, /Total yards/);
     return json({ choices: [{ message: { content: "I'll research this completed game.\n```json\n" + JSON.stringify(review) + '\n```' } }] });
   }
   if (s.startsWith('https://postgame.test/rest/v1/')) {
@@ -66,6 +71,7 @@ try {
   assert.equal(memory.games, 1); assert.doesNotMatch(memory.prompt, /Ignore instructions|tomorrow/);
   assert.equal(memory.categories[0].games, 1);
   assert.throws(() => normalizePostgameReview({ ...review, factors: [{ ...review.factors[0], sources: [{ url: 'javascript:alert(1)' }] }] }));
+  await assert.rejects(archivedPostgameEvidence({ gameId: 'wrong-event', season: 2000, gameday: '2000-09-10', homeTeam: 'KC', awayTeam: 'DEN', homeScore: 99, awayScore: 17, espnId: '100001' } as any), /does not match/);
   assert.equal(completedSeason([{ season: 2000, gameType: 'REG', gameday: '2000-09-10', completed: true, homeScore: 2.5, awayScore: 2 } as any], 2000, false).length, 0);
   delete process.env.NFL_LEARNING_SUPABASE_KEY;
   assert.equal((await request('POST', { gameId: 'historical-3' })).status, 503);

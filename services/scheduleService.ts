@@ -4,6 +4,7 @@ const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/m
 
 export interface ScheduledGame {
   gameId: string;
+  espnId?: string;
   season: number;
   gameType: string;
   week: number;
@@ -61,6 +62,7 @@ export function parseScheduleCsv(text: string): ScheduledGame[] {
   const idx = (name: string) => headers.indexOf(name);
   const column = {
     gameId: idx('game_id'),
+    espnId: idx('espn'),
     season: idx('season'),
     gameType: idx('game_type'),
     week: idx('week'),
@@ -80,6 +82,7 @@ export function parseScheduleCsv(text: string): ScheduledGame[] {
     const homeScore = optionalNumber(get(column.homeScore));
     return {
       gameId: get(column.gameId),
+      espnId: get(column.espnId) || undefined,
       season: Number(get(column.season) || 0),
       gameType: get(column.gameType),
       week: Number(get(column.week) || 0),
