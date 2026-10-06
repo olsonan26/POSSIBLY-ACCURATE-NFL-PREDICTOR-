@@ -18,6 +18,12 @@ dist-ssr
 # Vercel local metadata
 .vercel
 
+# Private training exports and GPU artifacts
+training/exports/
+training/datasets/
+training/checkpoints/
+training/__pycache__/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

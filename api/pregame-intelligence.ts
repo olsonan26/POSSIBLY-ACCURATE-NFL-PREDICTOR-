@@ -1,3 +1,8 @@
+import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback';
+import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore';
+import { predictControlProbability } from '../services/validatedPredictionService';
+import { TEAM_BY_ABBR } from '../data/teamRegistry';
+
 const PREGAME_INTELLIGENCE_VERSION = 'EXP-031-shadow-v1';
 const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -360,7 +365,7 @@ function jsonSchema(homeTeam: string, awayTeam: string) {
   };
 }
 
-function buildSystemPrompt(input: { homeTeam: string; awayTeam: string; kickoffUtc: string; evaluatedAt: string }): string {
+function buildSystemPrompt(input: { homeTeam: string; awayTeam: string; kickoffUtc: string; evaluatedAt: string; feedbackPrompt?: string }): string {
   return `You are EXP-031, a forensic NFL pregame evidence collector. You are NOT the prediction model and you do not choose a winner.
 
 MATCHUP
@@ -390,7 +395,11 @@ RULES
 - severity = football materiality from 0 to 1; confidence = evidence confidence from 0 to 1.
 - Keep severity conservative and return noMaterialUpdate=true when trustworthy evidence is not material enough.
 
-The application independently gates evidence and hard-caps the total adjustment.`;
+The application independently gates evidence and hard-caps the total adjustment.
+
+${input.feedbackPrompt || ''}
+
+Before returning the final object, audit each claim for duplicate evidence, conflicting sources, uncertain availability and stale reports. Resolve the audit in the final JSON. This is one bounded research request, not an unlimited self-calling loop.`;
 }
 
 async function callOpenRouter(input: {
@@ -400,6 +409,7 @@ async function callOpenRouter(input: {
   awayTeam: string;
   kickoffUtc: string;
   evaluatedAt: string;
+  feedbackPrompt?: string;
 }): Promise<{ payload: PregameModelPayload; model: string; usage?: unknown }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -479,7 +489,7 @@ export default async function handler(req: any, res: any) {
   const homeTeam = normalizeTeam(req.body?.homeTeam);
   const awayTeam = normalizeTeam(req.body?.awayTeam);
   const kickoffUtc = asString(req.body?.kickoffUtc).trim();
-  const baseHomeProbability = Number(req.body?.baseHomeProbability);
+  const clientBaseHomeProbability = Number(req.body?.baseHomeProbability);
   const kickoffMs = Date.parse(kickoffUtc);
   const nowMs = Date.now();
 
@@ -487,7 +497,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Invalid NFL matchup.' });
   }
   if (!Number.isFinite(kickoffMs)) return res.status(400).json({ error: 'kickoffUtc must be a valid timestamp.' });
-  if (!Number.isFinite(baseHomeProbability) || baseHomeProbability <= 0 || baseHomeProbability >= 1) {
+  if (!Number.isFinite(clientBaseHomeProbability) || clientBaseHomeProbability <= 0 || clientBaseHomeProbability >= 1) {
     return res.status(400).json({ error: 'baseHomeProbability must be a decimal strictly between 0 and 1.' });
   }
   if (kickoffMs <= nowMs) {
@@ -497,18 +507,31 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Pregame intelligence may only be requested within 14 days of kickoff.' });
   }
 
-  const evaluatedAt = new Date(nowMs).toISOString();
   const normalizedKickoff = new Date(kickoffMs).toISOString();
   const model = process.env.OPENROUTER_PREGAME_MODEL || DEFAULT_MODEL;
 
   try {
+    const games = await verifiedSchedule();
+    let game;
+    try {
+      game = verifyLearningMatchup(games, { gameId: asString(req.body?.gameId) || undefined, homeTeam, awayTeam, kickoffUtc: normalizedKickoff });
+    } catch (error) {
+      return res.status(400).json({ error: error instanceof Error ? error.message : 'Unverified matchup.' });
+    }
+    // The browser's probability cannot poison persistent feedback.
+    const baseHomeProbability = await predictControlProbability(TEAM_BY_ABBR.get(homeTeam)!, TEAM_BY_ABBR.get(awayTeam)!,
+      new Date(`${game.gameday}T12:00:00Z`), { neutralSite: game.neutralSite });
+    const { feedback, storageStatus } = await prepareLearningFeedback(games, model);
+    if (Date.now() >= kickoffMs) return res.status(409).json({ error: 'Kickoff passed before research could start.' });
+    const evaluatedAt = new Date().toISOString();
     const research = await callOpenRouter({
       apiKey,
       model,
       homeTeam,
       awayTeam,
       kickoffUtc: normalizedKickoff,
-      evaluatedAt
+      evaluatedAt,
+      feedbackPrompt: feedback.prompt
     });
 
     const shadow = buildPregameShadowPrediction({
@@ -520,6 +543,20 @@ export default async function handler(req: any, res: any) {
       payload: research.payload
     });
 
+    const learnedHomeProbability = scaledEvidenceProbability(baseHomeProbability, shadow.shadowHomeProbability, feedback.scale);
+    const feedbackSummary = {
+      version: feedback.version, asOf: feedback.asOf, games: feedback.games, scale: feedback.scale,
+      suggestedScale: feedback.suggestedScale, gatePassed: feedback.gatePassed, status: feedback.status,
+      base: feedback.base, raw: feedback.raw, deployedLearningShadow: feedback.deployedLearningShadow,
+      forward: feedback.forward, categories: feedback.categories
+    };
+    const capture = await freezeLearningForecast({
+      game_id: game.gameId, experiment_version: LEARNING_VERSION, research_model: model,
+      completed_at: new Date().toISOString(), kickoff_at: normalizedKickoff, home_team: homeTeam, away_team: awayTeam,
+      base_home_probability: baseHomeProbability, raw_home_probability: shadow.shadowHomeProbability,
+      learned_home_probability: learnedHomeProbability, facts: shadow.facts,
+      feedback: { ...feedbackSummary, providerModel: research.model, controlSource: 'server-v2.2', gitSha: process.env.VERCEL_GIT_COMMIT_SHA || null }
+    });
     return res.status(200).json({
       experiment: PREGAME_INTELLIGENCE_VERSION,
       mode: 'shadow-only',
@@ -528,6 +565,7 @@ export default async function handler(req: any, res: any) {
       generatedAt: evaluatedAt,
       payload: research.payload,
       shadow,
+      learning: { ...feedbackSummary, storageStatus, capture, homeWinProbability: learnedHomeProbability, modelWeightsChanged: false },
       usage: research.usage ?? null
     });
   } catch (error) {

@@ -25,6 +25,15 @@ interface DeepSeekShadowResponse {
   mode: string;
   researchModel: string;
   generatedAt: string;
+  learning?: {
+    games: number;
+    status: string;
+    scale: number;
+    homeWinProbability: number;
+    capture: { status: string; message: string };
+    raw: { games: number; accuracy: number; brier: number; logLoss: number } | null;
+    forward: { games: number };
+  };
   shadow: {
     homeTeam: string;
     awayTeam: string;
@@ -99,6 +108,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          gameId: game.gameId,
           homeTeam: homeTeamAbbr,
           awayTeam: awayTeamAbbr,
           kickoffUtc,
@@ -123,6 +133,8 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
   const homePct = shadow ? shadow.shadowHomeProbability * 100 : null;
   const awayPct = homePct == null ? null : 100 - homePct;
   const acceptedFacts = shadow?.facts.filter(fact => fact.accepted) || [];
+  const learning = response?.learning;
+  const learningSummary = learning ? `${learning.games} completed games in memory · ${learning.forward.games} walk-forward checks` : '';
 
   if (compact) {
     return (
@@ -142,6 +154,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
             <p className="text-[10px] uppercase tracking-wider font-bold text-cyan-300">DeepSeek Shadow · EXP-031</p>
             <p className="mt-1 text-xs font-black text-white">{shadow.homeTeam} {homePct.toFixed(1)}% · {shadow.awayTeam} {awayPct.toFixed(1)}%</p>
             <p className="text-[10px] text-gray-500">{shadow.acceptedFactCount} verified fact{shadow.acceptedFactCount === 1 ? '' : 's'} accepted · production pick unchanged</p>
+            {learning && <p className="mt-1 text-[10px] text-cyan-200">{learningSummary}. {learning.capture.message}</p>}
           </div>
         )}
       </div>
@@ -192,6 +205,17 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
           </div>
 
           <p className="mt-3 text-[11px] text-gray-500">Model: {response?.researchModel} · generated {response?.generatedAt ? new Date(response.generatedAt).toLocaleString() : ''}</p>
+
+          {learning && (
+            <div className="mt-4 rounded-xl border border-cyan-500/25 bg-black/20 p-4">
+              <p className="text-xs font-bold text-cyan-200">Learning from completed games</p>
+              <p className="mt-1 text-sm text-gray-300">{learningSummary}</p>
+              <p className="mt-1 text-sm font-bold text-white">Learning shadow: {shadow.homeTeam} {(learning.homeWinProbability * 100).toFixed(1)}% · {shadow.awayTeam} {((1 - learning.homeWinProbability) * 100).toFixed(1)}%</p>
+              <p className="mt-1 text-xs text-gray-400">{learning.status === 'calibrated-shadow' ? `News adjustment scaled to ${(learning.scale * 100).toFixed(0)}% after chronological checks.` : 'Collecting evidence before changing the news adjustment.'}</p>
+              <p className={`mt-2 text-xs ${['frozen', 'already-frozen'].includes(learning.capture.status) ? 'text-emerald-300' : 'text-amber-300'}`}>{learning.capture.message}</p>
+              {learning.raw && <p className="mt-2 text-xs text-gray-400">Saved DeepSeek forecasts: {(learning.raw.accuracy * 100).toFixed(1)}% correct · Brier {learning.raw.brier.toFixed(4)} · log loss {learning.raw.logLoss.toFixed(4)}</p>}
+            </div>
+          )}
 
           {acceptedFacts.length > 0 && (
             <div className="mt-4 space-y-2">
