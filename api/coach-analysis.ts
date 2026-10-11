@@ -22,7 +22,7 @@ async function modelRequest(model: string, system: string, input: unknown, schem
     body:JSON.stringify({model,temperature:0.1,max_tokens:search?12000:10000,reasoning:{effort:'low'},plugins:[{id:'response-healing'}],provider:{require_parameters:true},
       ...(search?{max_tool_calls:3,tools:[{type:'openrouter:web_search',parameters:{max_results:6,max_total_results:12,max_uses:2,max_characters:2500}},{type:'openrouter:web_fetch',parameters:{engine:'openrouter',max_content_tokens:4000}}]}:{}),
       response_format:{type:'json_schema',json_schema:{name:search?'coach_sources':'coach_report',strict:true,schema}},
-      messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(input)}]})
+      messages:[{role:'system',content:`${system}\nReturn ONLY one complete JSON object matching this schema: ${JSON.stringify(schema)}. ${search?'If no qualifying evidence can be found, return {"candidates":[]}.':''}`},{role:'user',content:JSON.stringify(input)}]})
   });
   if(!response.ok) throw new Error(`Research provider failed (HTTP ${response.status}).`);
   const result=await response.json();
