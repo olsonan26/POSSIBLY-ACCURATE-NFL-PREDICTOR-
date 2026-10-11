@@ -19,14 +19,19 @@ const reportSchema = {type:'object',additionalProperties:false,required:['sectio
 async function modelRequest(model: string, system: string, input: unknown, schema: unknown, search: boolean) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions',{
     method:'POST',signal:AbortSignal.timeout(90_000),headers:{Authorization:`Bearer ${process.env.OPENROUTER_API_KEY}`,'Content-Type':'application/json'},
-    body:JSON.stringify({model,temperature:0.1,max_tokens:search?4500:7000,reasoning:{effort:'low'},plugins:[{id:'response-healing'}],provider:{require_parameters:true},
-      ...(search?{tools:[{type:'openrouter:web_search',parameters:{max_results:6,max_total_results:18}},{type:'openrouter:web_fetch',parameters:{engine:'openrouter',max_content_tokens:12000}}]}:{}),
+    body:JSON.stringify({model,temperature:0.1,max_tokens:search?12000:10000,reasoning:{effort:'low'},plugins:[{id:'response-healing'}],provider:{require_parameters:true},
+      ...(search?{max_tool_calls:3,tools:[{type:'openrouter:web_search',parameters:{max_results:6,max_total_results:12,max_uses:2,max_characters:2500}},{type:'openrouter:web_fetch',parameters:{engine:'openrouter',max_content_tokens:4000}}]}:{}),
       response_format:{type:'json_schema',json_schema:{name:search?'coach_sources':'coach_report',strict:true,schema}},
       messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(input)}]})
   });
   if(!response.ok) throw new Error(`Research provider failed (HTTP ${response.status}).`);
   const result=await response.json();
-  return structuredResearch(result.choices?.[0]?.message?.content,search?['candidates']:['sections','prediction']);
+  const choice=result.choices?.[0];
+  try { return structuredResearch(choice?.message?.content,search?['candidates']:['sections','prediction']); }
+  catch {
+    const finish=['length','stop','tool_calls','error','content_filter'].includes(choice?.finish_reason)?choice.finish_reason:'unknown';
+    throw new Error(`invalid-structured-response:${finish}`);
+  }
 }
 export default async function handler(req:any,res:any) {
   res.setHeader('Cache-Control','no-store');
@@ -84,7 +89,7 @@ export default async function handler(req:any,res:any) {
     return res.status(200).json(durable);
   } catch(error) {
     const message=error instanceof Error?error.message:'';
-    const reason=/HTTP \d{3}/.exec(message)?.[0] || (error instanceof Error && error.name==='TimeoutError'?'timeout':message.includes('structured research')?'invalid-structured-response':'failed');
+    const reason=/HTTP \d{3}/.exec(message)?.[0] || /invalid-structured-response:(length|stop|tool_calls|error|content_filter|unknown)/.exec(message)?.[0] || (error instanceof Error && error.name==='TimeoutError'?'timeout':'failed');
     console.error('Coach research failed',{stage,reason});
     return res.status(502).json({error:`Matchup research could not complete at ${stage} (${reason}). The ordinary football prediction remains available.`});
   }
