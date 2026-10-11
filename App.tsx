@@ -1,3 +1,4 @@
+import CoachAnalysisPanel from './components/CoachAnalysisPanel';
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { PredictionResult, Team } from './types';
@@ -287,10 +288,10 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-4">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Verified-data engine v2.2 + immutable ledger + market shadow + optional DeepSeek
+            Coach matchup analysis + v2.2 comparison + sourced DeepSeek research
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Numerology Predictor</h1>
-          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen football control and market-aware shadow. Upcoming scheduled predictions are timestamped to an append-only server ledger before kickoff. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.</p>
+          <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Choose a matchup, analyze schemes and player matchups, then get a sourced coach-style pick. Past games use pregame reconstruction. The frozen football control remains available for comparison. Paid research runs only when you press its analysis button.</p>
         </header>
 
         <div role="tablist" aria-label="Prediction tools" className="mb-6 flex gap-2">
@@ -441,6 +442,7 @@ const App: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      <CoachAnalysisPanel key={`coach-${game.gameId}`} homeTeam={game.homeTeam} awayTeam={game.awayTeam} gameDate={game.gameday} compact />
                     </div>
                   );
                 })}
@@ -478,6 +480,10 @@ const App: React.FC = () => {
         </section>
 
         {isLoading && <div className="text-center mt-8" role="status" aria-live="polite"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400" /><p className="mt-3 text-sm text-gray-300">Building the pregame snapshot and checking live availability…</p></div>}
+        {homeTeam && awayTeam && homeTeam !== awayTeam && gameDate && (() => {
+          const home = teams.find(team => team.name === homeTeam), away = teams.find(team => team.name === awayTeam);
+          return home && away ? <CoachAnalysisPanel key={`coach-${home.abbr}-${away.abbr}-${gameDate}`} homeTeam={home.abbr} awayTeam={away.abbr} gameDate={gameDate} /> : null;
+        })()}
         {prediction && <PredictionDisplay result={prediction} />}
         {prediction && (() => {
           const home = teams.find(team => team.name === homeTeam);

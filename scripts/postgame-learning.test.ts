@@ -15,7 +15,7 @@ const json = (x: unknown, status = 200) => new Response(JSON.stringify(x), { sta
 async function request(method: string, input: any) {
   let status = 200, body: any;
   const res = { setHeader() {}, status(n: number) { status = n; return this; }, json(x: unknown) { body = x; return this; } };
-  await handler({ method, body: input, query: input }, res); return { status, body };
+  await handler({ method, headers: { 'x-research-key': 'offline-access' }, body: input, query: input }, res); return { status, body };
 }
 globalThis.fetch = async (url: any, init?: RequestInit) => {
   const s = String(url);
@@ -45,6 +45,7 @@ globalThis.fetch = async (url: any, init?: RequestInit) => {
   throw new Error(`Unexpected network: ${s}`);
 };
 try {
+  process.env.NFL_RESEARCH_ACCESS_KEY = 'offline-access';
   process.env.NFL_LEARNING_SUPABASE_URL = 'https://postgame.test';
   process.env.NFL_LEARNING_SUPABASE_KEY = 'sb_publishable_offline';
   process.env.NFL_LEARNING_SECRET = 'offline-scoped-secret';

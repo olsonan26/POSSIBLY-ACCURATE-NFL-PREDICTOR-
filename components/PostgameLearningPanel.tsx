@@ -1,3 +1,5 @@
+import ResearchAccessField from './ResearchAccessField';
+import { researchHeaders, resetResearchAccess } from '../services/researchAccess';
 import React, { useEffect, useRef, useState } from 'react';
 import type { StoredPostgameReview } from '../services/postgameLearning';
 interface Plan { season: number; total: number; completed: number; games: { gameId: string; homeTeam: string; awayTeam: string; gameday: string; cached: boolean }[]; }
@@ -16,8 +18,9 @@ export function PostgameReviewDisplay({ row }: { row: StoredPostgameReview }) {
   </div>;
 }
 export async function requestPostgame(gameId: string) {
-  const r = await fetch('/api/postgame-intelligence', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameId }) });
+  const r = await fetch('/api/postgame-intelligence', { method: 'POST', headers: researchHeaders(), body: JSON.stringify({ gameId }) });
   const body = await r.json().catch(() => null);
+  if (r.status === 401) resetResearchAccess();
   if (!r.ok) throw new Error(body?.error || `Game review failed (HTTP ${r.status}).`);
   return body as { review: StoredPostgameReview; cached: boolean };
 }
@@ -37,7 +40,8 @@ const PostgameLearningPanel: React.FC = () => {
     try {
       const r = await fetch(`/api/postgame-intelligence?season=${season}&includePostseason=${postseason ? '1' : '0'}`);
       const body = await r.json();
-      if (!r.ok) throw new Error(body.error || 'Could not load completed games.');
+      if (r.status === 401) resetResearchAccess();
+  if (!r.ok) throw new Error(body.error || 'Could not load completed games.');
       setPlan(body);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load season.'); }
     finally { setChecking(false); }
@@ -57,6 +61,7 @@ const PostgameLearningPanel: React.FC = () => {
     finally { setBusy(false); setCurrent(''); }
   };
   return <section className="mb-7 rounded-2xl border border-cyan-500/30 bg-gray-900/80 p-5 sm:p-7">
+      <ResearchAccessField />
     <p className="text-xs uppercase tracking-widest font-bold text-cyan-300">DeepSeek learning journal</p>
     <h2 className="mt-1 text-2xl font-black text-white">Learn from a completed NFL season</h2>
     <p className="mt-2 text-sm text-gray-400">Research what happened and what to check in future games. Individual past games use the same review from their DeepSeek button.</p>

@@ -1,3 +1,6 @@
+import { easternKickoffIso } from '../services/kickoff.js';
+export { easternKickoffIso } from '../services/kickoff.js';
+import { parseScheduleCsv } from '../services/scheduleService.js';
 import { createHash } from 'node:crypto';
 
 const MAX_PAYLOAD_BYTES = 96_000;
@@ -27,57 +30,6 @@ function parseJsonBody(req: any): JsonRecord {
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as JsonRecord;
   }
   throw new Error('JSON object body required.');
-}
-
-function datePartsInZone(date: Date, timeZone: string): Record<string, number> {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23'
-  }).formatToParts(date);
-
-  const out: Record<string, number> = {};
-  for (const part of parts) {
-    if (part.type === 'literal') continue;
-    const n = Number(part.value);
-    if (Number.isFinite(n)) out[part.type] = n;
-  }
-  return out;
-}
-
-export function easternKickoffIso(gameday: string, gametime: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(gameday) || !/^\d{1,2}:\d{2}$/.test(gametime)) return null;
-  const [year, month, day] = gameday.split('-').map(Number);
-  const [hour, minute] = gametime.split(':').map(Number);
-  if (
-    !Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day) ||
-    !Number.isInteger(hour) || !Number.isInteger(minute) ||
-    month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || minute < 0 || minute > 59
-  ) return null;
-
-  const targetLocalMs = Date.UTC(year, month - 1, day, hour, minute, 0);
-  let guessMs = targetLocalMs;
-  for (let i = 0; i < 3; i++) {
-    const parts = datePartsInZone(new Date(guessMs), 'America/New_York');
-    if (!parts.year || !parts.month || !parts.day || parts.hour == null || parts.minute == null) return null;
-    const representedLocalMs = Date.UTC(
-      parts.year,
-      parts.month - 1,
-      parts.day,
-      parts.hour,
-      parts.minute,
-      parts.second || 0
-    );
-    guessMs += targetLocalMs - representedLocalMs;
-  }
-
-  const resolved = new Date(guessMs);
-  return Number.isFinite(resolved.getTime()) ? resolved.toISOString() : null;
 }
 
 export function payloadSha256(value: unknown): string {
@@ -176,16 +128,33 @@ function validateGame(game: ReturnType<typeof buildGame>): string | null {
   return null;
 }
 
+async function officialGame(body: JsonRecord) {
+  const supplied = buildGame(body);
+  const error = validateGame(supplied);
+  if (error) throw new Error(error);
+  const response = await fetch('https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv', { signal: AbortSignal.timeout(10_000), cache: 'no-store' });
+  if (!response.ok) throw new Error('Official NFL schedule is unavailable.');
+  const games = parseScheduleCsv(await response.text());
+  if (games.length < 1000) throw new Error('Official NFL schedule is incomplete.');
+  const game = games.find(row => row.gameId === supplied.gameId);
+  if (!game || game.homeTeam !== supplied.homeTeam || game.awayTeam !== supplied.awayTeam
+    || game.gameday !== supplied.gameday || game.season !== supplied.season || game.week !== supplied.week) {
+    throw new Error('Game metadata does not match the official NFL schedule.');
+  }
+  return game;
+}
+
 async function recordSnapshot(body: JsonRecord, res: any) {
-  const game = buildGame(body);
-  const gameError = validateGame(game);
-  if (gameError) return res.status(400).json({ error: gameError });
+  let game;
+  try { game = await officialGame(body); } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : "Official game verification failed." });
+  }
   if (!game.gametime) return res.status(400).json({ error: 'Official kickoff time is required before a prediction can be frozen.' });
 
   const kickoffAt = easternKickoffIso(game.gameday, game.gametime);
   if (!kickoffAt) return res.status(400).json({ error: 'Kickoff time could not be resolved.' });
   const window = snapshotWindowStatus(kickoffAt);
-  if (window !== 'eligible') {
+  if (game.completed || window !== 'eligible') {
     return res.status(409).json({
       code: 'KICKOFF_PASSED',
       error: 'Prediction was not frozen because the official kickoff has already passed.',
@@ -321,10 +290,11 @@ async function recordSnapshot(body: JsonRecord, res: any) {
 }
 
 async function recordOutcome(body: JsonRecord, res: any) {
-  const game = buildGame(body);
-  const gameError = validateGame(game);
-  if (gameError) return res.status(400).json({ error: gameError });
-  if (!game.completed || game.homeScore == null || game.awayScore == null || game.homeScore < 0 || game.awayScore < 0) {
+  let game;
+  try { game = await officialGame(body); } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : "Official game verification failed." });
+  }
+  if (!game.completed || game.homeScore == null || game.awayScore == null || !Number.isInteger(game.homeScore) || !Number.isInteger(game.awayScore) || game.homeScore < 0 || game.awayScore < 0) {
     return res.status(400).json({ error: 'Completed final scores are required.' });
   }
 

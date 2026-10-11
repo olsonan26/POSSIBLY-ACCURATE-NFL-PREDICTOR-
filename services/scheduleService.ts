@@ -23,6 +23,7 @@ interface CbsOrderResponse {
 }
 
 let schedulePromise: Promise<ScheduledGame[]> | null = null;
+let gamesExpiresAt = 0;
 const cbsOrderCache = new Map<string, Promise<Map<string, number> | null>>();
 
 function parseCsvLine(line: string): string[] {
@@ -100,19 +101,20 @@ export function parseScheduleCsv(text: string): ScheduledGame[] {
 
 async function fetchTextWithFallback(primary: string, fallback: string): Promise<string> {
   try {
-    const response = await fetch(primary);
+    const response = await fetch(primary, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (response.ok) return response.text();
   } catch {
     // Direct-source fallback below.
   }
 
-  const response = await fetch(fallback);
+  const response = await fetch(fallback, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.text();
 }
 
 async function loadSchedule(): Promise<ScheduledGame[]> {
-  if (!schedulePromise) {
+  if (!schedulePromise || Date.now() >= gamesExpiresAt) {
+    gamesExpiresAt = Date.now() + 60_000;
     schedulePromise = fetchTextWithFallback('/api/nfl-data?dataset=games', NFLVERSE_GAMES_URL)
       .then(parseScheduleCsv)
       .then(games => {

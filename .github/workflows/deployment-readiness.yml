@@ -68,6 +68,17 @@ jobs:
       - name: Point-in-time integrity regression
         run: bun run test:point-in-time
 
+      - name: Coach-report database integrity
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/nfl-pglite" --no-audit --no-fund @electric-sql/pglite@0.5.8
+          NFL_TEST_PGLITE_MODULE="file://${RUNNER_TEMP}/nfl-pglite/node_modules/@electric-sql/pglite/dist/index.js" node scripts/coach-schema.test.mjs
+
+      - name: Coach-style historical analysis regression
+        run: bun run test:coach
+
+      - name: Reliability and research access regression
+        run: bun run test:reliability
+
       - name: Immutable prediction-ledger regression
         run: bun run test:ledger
 

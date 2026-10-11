@@ -1,3 +1,5 @@
+import { getGamesForDate } from './scheduleService.js';
+import { easternKickoffIso } from './kickoff.js';
 import { DecisionFactor, PredictionResult, Team, AccuracyFeatures } from '../types.js';
 import {
   calculateAllPatterns,
@@ -41,13 +43,25 @@ const logit = (probability: number) => {
   return Math.log(p / (1 - p));
 };
 
+export async function isRetrospectiveMatchup(home: string, away: string, targetIso: string): Promise<boolean> {
+  const today = new Date().toISOString().slice(0, 10);
+  if (targetIso < today) return true;
+  if (targetIso > today) return false;
+  try {
+    const game = (await getGamesForDate(targetIso)).find(g => g.homeTeam === home && g.awayTeam === away);
+    if (!game) return true;
+    const kickoff = easternKickoffIso(game.gameday, game.gametime || '');
+    return game.completed || !kickoff || Date.parse(kickoff) <= Date.now();
+  } catch { return true; }
+}
+
 /** Server-side control probability without UI/research layers or paid model calls. */
 export async function predictControlProbability(homeTeam: Team, awayTeam: Team, gameDate: Date, options: PredictionOptions = {}): Promise<number> {
   const raw = await runResearchModel(homeTeam, awayTeam, gameDate, true, options);
   if (!raw.modelScores) throw new Error('Football control scores are unavailable.');
   const targetIso = gameDate.toISOString().slice(0, 10);
   const context = await getValidatedFootballContext(homeTeam.abbr, awayTeam.abbr, targetIso, Boolean(options.neutralSite));
-  const personnel = targetIso < new Date().toISOString().slice(0, 10) ? 0 : raw.modelScores.personnelLogitAdjustment;
+  const personnel = await isRetrospectiveMatchup(homeTeam.abbr, awayTeam.abbr, targetIso) ? 0 : raw.modelScores.personnelLogitAdjustment;
   return logistic(logit(raw.modelScores.baseHomeProbability / 100) + context.footballLogitAdjustment
     + context.venueLogitAdjustment + personnel + raw.modelScores.h2hLogitAdjustment);
 }
@@ -166,7 +180,7 @@ export async function predictWinner(
 
   const targetIso = gameDate.toISOString().slice(0, 10);
   const todayIso = new Date().toISOString().slice(0, 10);
-  const retrospective = targetIso < todayIso;
+  const retrospective = await isRetrospectiveMatchup(homeTeam.abbr, awayTeam.abbr, targetIso);
   const validatedContext = await getValidatedFootballContext(
     homeTeam.abbr,
     awayTeam.abbr,

@@ -1,3 +1,5 @@
+import ResearchAccessField from './ResearchAccessField';
+import { researchHeaders, resetResearchAccess } from '../services/researchAccess';
 import React, { useEffect, useState } from 'react';
 import { PostgameReviewDisplay, requestPostgame } from './PostgameLearningPanel';
 import type { StoredPostgameReview } from '../services/postgameLearning';
@@ -122,7 +124,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
 
       const apiResponse = await fetch('/api/pregame-intelligence', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: researchHeaders(),
         body: JSON.stringify({
           gameId: game.gameId,
           homeTeam: homeTeamAbbr,
@@ -134,6 +136,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
 
       const body = await apiResponse.json().catch(() => null);
       if (!apiResponse.ok) {
+        if (apiResponse.status === 401) resetResearchAccess();
         const detail = body?.detail || body?.error || `DeepSeek request failed with HTTP ${apiResponse.status}.`;
         throw new Error(detail);
       }
@@ -155,6 +158,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
   if (compact) {
     return (
       <div className="mt-2">
+        <ResearchAccessField />
         <button
           type="button"
           onClick={runDeepSeek}
@@ -180,6 +184,7 @@ const DeepSeekPregamePanel: React.FC<DeepSeekPregamePanelProps> = ({
 
   return (
     <section className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-950/15 p-5 sm:p-6 shadow-xl">
+      <ResearchAccessField />
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.16em] font-bold text-cyan-300">{past ? 'Postgame research memory' : 'Optional AI Pregame Research · EXP-031'}</p>
