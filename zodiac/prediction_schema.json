@@ -1,0 +1,1456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sports-zodiac:prediction-schema:0.1.0",
+  "title": "Sports Zodiac Prediction Record",
+  "description": "Structured predictions and research reports that distinguish model outputs from symbolic interpretation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "mode",
+    "status",
+    "event",
+    "timing",
+    "target",
+    "model_metadata",
+    "prediction",
+    "sports_factors",
+    "symbolic_observations",
+    "evaluation",
+    "data_quality",
+    "sources",
+    "limitations",
+    "explanation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "record_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "mode": {
+      "enum": [
+        "research",
+        "validated_prediction",
+        "historical_audit"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial",
+        "unavailable"
+      ]
+    },
+    "event": {
+      "$ref": "#/$defs/event"
+    },
+    "timing": {
+      "$ref": "#/$defs/timing"
+    },
+    "target": {
+      "$ref": "#/$defs/target"
+    },
+    "model_metadata": {
+      "$ref": "#/$defs/modelMetadata"
+    },
+    "prediction": {
+      "$ref": "#/$defs/prediction"
+    },
+    "sports_factors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sportsFactor"
+      }
+    },
+    "symbolic_observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/symbolicObservation"
+      }
+    },
+    "evaluation": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evaluationSummary"
+      }
+    },
+    "betting_analysis": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/bettingAnalysis"
+        }
+      ]
+    },
+    "historical_audit": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/historicalAudit"
+        }
+      ]
+    },
+    "data_quality": {
+      "$ref": "#/$defs/dataQuality"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "explanation": {
+      "$ref": "#/$defs/explanation"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "research"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "prediction": {
+            "properties": {
+              "published_probability": {
+                "type": "null"
+              },
+              "published_model": {
+                "type": "null"
+              }
+            }
+          },
+          "symbolic_observations": {
+            "items": {
+              "properties": {
+                "used_in_published_probability": {
+                  "const": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "prediction": {
+            "properties": {
+              "published_probability": {
+                "type": "null"
+              },
+              "published_model": {
+                "type": "null"
+              }
+            }
+          },
+          "limitations": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "prediction": {
+            "properties": {
+              "published_model": {
+                "const": "sports_baseline"
+              }
+            },
+            "required": [
+              "published_model"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model_metadata": {
+            "properties": {
+              "baseline": {
+                "$ref": "#/$defs/approvedModelMetadata"
+              }
+            }
+          },
+          "symbolic_observations": {
+            "items": {
+              "properties": {
+                "used_in_published_probability": {
+                  "const": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "prediction": {
+            "properties": {
+              "published_model": {
+                "const": "approved_hybrid"
+              }
+            },
+            "required": [
+              "published_model"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model_metadata": {
+            "properties": {
+              "baseline": {
+                "$ref": "#/$defs/approvedModelMetadata"
+              },
+              "hybrid": {
+                "$ref": "#/$defs/approvedModelMetadata"
+              }
+            }
+          },
+          "prediction": {
+            "properties": {
+              "baseline_probability": {
+                "$ref": "#/$defs/probability"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "historical_audit"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "historical_audit"
+        ],
+        "properties": {
+          "historical_audit": {
+            "$ref": "#/$defs/historicalAudit"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "historical_audit": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "nullableTimestamp": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "nullableProbability": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/probability"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sourceIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "zodiacSign": {
+      "enum": [
+        "Rat",
+        "Ox",
+        "Tiger",
+        "Rabbit",
+        "Dragon",
+        "Snake",
+        "Horse",
+        "Goat",
+        "Monkey",
+        "Rooster",
+        "Dog",
+        "Pig"
+      ]
+    },
+    "validationStatus": {
+      "enum": [
+        "untested",
+        "under_evaluation",
+        "failed_validation",
+        "approved_for_prediction",
+        "retired"
+      ]
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "participant_id",
+        "name",
+        "role"
+      ],
+      "properties": {
+        "participant_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "enum": [
+            "home",
+            "away",
+            "competitor"
+          ]
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "sport",
+        "league",
+        "participants",
+        "scheduled_start_utc",
+        "venue_timezone",
+        "source_ids"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sport": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "league": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "participants": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/participant"
+          }
+        },
+        "scheduled_start_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "venue_timezone": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "venue_name": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/sourceIds"
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_created_utc",
+        "prediction_as_of_utc",
+        "information_cutoff_utc",
+        "forecast_stage"
+      ],
+      "properties": {
+        "record_created_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "prediction_as_of_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "information_cutoff_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "forecast_stage": {
+          "const": "pregame"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_id",
+        "type",
+        "selection",
+        "line",
+        "overtime_treatment",
+        "tie_draw_treatment",
+        "push_treatment",
+        "settlement_rules"
+      ],
+      "properties": {
+        "target_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "enum": [
+            "win",
+            "spread",
+            "total",
+            "other"
+          ]
+        },
+        "selection": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "line": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "overtime_treatment": {
+          "enum": [
+            "included",
+            "excluded",
+            "not_applicable"
+          ]
+        },
+        "tie_draw_treatment": {
+          "enum": [
+            "selection_failure",
+            "separate_outcome",
+            "excluded",
+            "push",
+            "not_applicable"
+          ]
+        },
+        "push_treatment": {
+          "enum": [
+            "excluded",
+            "refund",
+            "separate_outcome",
+            "not_applicable"
+          ]
+        },
+        "settlement_rules": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "spread",
+                  "total"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "line": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "win"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "line": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "modelMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_registry_version",
+        "calendar_rules_version",
+        "baseline",
+        "hybrid"
+      ],
+      "properties": {
+        "feature_registry_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "calendar_rules_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "baseline": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/modelInstance"
+            }
+          ]
+        },
+        "hybrid": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/modelInstance"
+            }
+          ]
+        }
+      }
+    },
+    "modelInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "model_version",
+        "manifest_version",
+        "approval_status",
+        "training_data_cutoff_utc",
+        "calibration_version",
+        "inference_id"
+      ],
+      "properties": {
+        "model_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "model_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "manifest_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "approval_status": {
+          "enum": [
+            "unapproved",
+            "approved_for_prediction",
+            "retired"
+          ]
+        },
+        "training_data_cutoff_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "calibration_version": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "inference_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "approvedModelMetadata": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/modelInstance"
+        },
+        {
+          "properties": {
+            "approval_status": {
+              "const": "approved_for_prediction"
+            },
+            "calibration_version": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          }
+        }
+      ]
+    },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "probability_definition",
+        "published_probability",
+        "published_model",
+        "baseline_probability",
+        "approved_hybrid_probability",
+        "probability_origin",
+        "recommendation"
+      ],
+      "properties": {
+        "probability_definition": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "published_probability": {
+          "$ref": "#/$defs/nullableProbability"
+        },
+        "published_model": {
+          "enum": [
+            null,
+            "sports_baseline",
+            "approved_hybrid"
+          ]
+        },
+        "baseline_probability": {
+          "$ref": "#/$defs/nullableProbability"
+        },
+        "approved_hybrid_probability": {
+          "$ref": "#/$defs/nullableProbability"
+        },
+        "probability_origin": {
+          "enum": [
+            "backend_model",
+            "unavailable"
+          ]
+        },
+        "recommendation": {
+          "enum": [
+            "research_only",
+            "no_prediction",
+            "publish_probability",
+            "abstain"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "published_probability": {
+                "type": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "published_model": {
+                "enum": [
+                  "sports_baseline",
+                  "approved_hybrid"
+                ]
+              },
+              "probability_origin": {
+                "const": "backend_model"
+              },
+              "recommendation": {
+                "enum": [
+                  "publish_probability",
+                  "abstain"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "published_model": {
+                "type": "null"
+              },
+              "recommendation": {
+                "enum": [
+                  "research_only",
+                  "no_prediction",
+                  "abstain"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "published_model": {
+                "const": "sports_baseline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "published_probability": {
+                "$ref": "#/$defs/probability"
+              },
+              "baseline_probability": {
+                "$ref": "#/$defs/probability"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "published_model": {
+                "const": "approved_hybrid"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "published_probability": {
+                "$ref": "#/$defs/probability"
+              },
+              "approved_hybrid_probability": {
+                "$ref": "#/$defs/probability"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "probability_origin": {
+                "const": "unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "published_probability": {
+                "type": "null"
+              },
+              "baseline_probability": {
+                "type": "null"
+              },
+              "approved_hybrid_probability": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "sportsFactor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "description",
+        "value",
+        "available_at_utc",
+        "source_ids",
+        "used_in_published_probability"
+      ],
+      "properties": {
+        "feature_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "available_at_utc": {
+          "$ref": "#/$defs/nullableTimestamp"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/sourceIds"
+        },
+        "used_in_published_probability": {
+          "type": "boolean"
+        }
+      }
+    },
+    "symbolicObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "rule_id",
+        "rule_version",
+        "subject_ids",
+        "category",
+        "value",
+        "availability",
+        "unavailable_reason",
+        "provenance_category",
+        "attribution_confidence",
+        "validation_status",
+        "used_in_published_probability",
+        "source_ids",
+        "calculation",
+        "interpretation",
+        "limitations"
+      ],
+      "properties": {
+        "feature_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "rule_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "rule_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "subject_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "category": {
+          "enum": [
+            "zodiac",
+            "numerology",
+            "historical_parallel",
+            "organization_timing",
+            "draft_timing",
+            "other"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "availability": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "unavailable_reason": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "provenance_category": {
+          "enum": [
+            "direct_primary_statement",
+            "branded_public_description",
+            "third_party_attribution",
+            "experimental_extension"
+          ]
+        },
+        "attribution_confidence": {
+          "enum": [
+            "verified_direct_statement",
+            "supported_public_description",
+            "uncertain",
+            "not_attributed_to_GG33"
+          ]
+        },
+        "validation_status": {
+          "$ref": "#/$defs/validationStatus"
+        },
+        "used_in_published_probability": {
+          "type": "boolean"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/sourceIds"
+        },
+        "calculation": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/calculation"
+            }
+          ]
+        },
+        "interpretation": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "used_in_published_probability": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "validation_status": {
+                "const": "approved_for_prediction"
+              },
+              "availability": {
+                "const": "available"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "availability": {
+                "const": "unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              },
+              "calculation": {
+                "type": "null"
+              },
+              "used_in_published_probability": {
+                "const": false
+              },
+              "unavailable_reason": {
+                "$ref": "#/$defs/nonEmptyString"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "string",
+                  "boolean"
+                ]
+              },
+              "unavailable_reason": {
+                "type": "null"
+              },
+              "calculation": {
+                "$ref": "#/$defs/calculation"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provenance_category": {
+                "const": "experimental_extension"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_confidence": {
+                "const": "not_attributed_to_GG33"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "provenance_category": {
+                "enum": [
+                  "direct_primary_statement",
+                  "branded_public_description",
+                  "third_party_attribution"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "source_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "calculation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend_calculation_id",
+        "method_id",
+        "method_version",
+        "input_snapshot_id",
+        "available_at_utc",
+        "calendar_convention"
+      ],
+      "properties": {
+        "backend_calculation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "method_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "method_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "input_snapshot_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "available_at_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "calendar_convention": {
+          "enum": [
+            "lunar_new_year",
+            "li_chun",
+            "not_applicable"
+          ]
+        },
+        "canonical_zodiac_signs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/zodiacSign"
+          }
+        },
+        "original_digit_sum": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "reduced_number": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "master_number_convention": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "evaluationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_id",
+        "model_id",
+        "model_version",
+        "target_id",
+        "method",
+        "period_start",
+        "period_end",
+        "sample_size",
+        "metrics",
+        "report_source_id",
+        "limitations"
+      ],
+      "properties": {
+        "evaluation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "model_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "model_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "method": {
+          "enum": [
+            "walk_forward",
+            "untouched_holdout",
+            "prospective_paper",
+            "other"
+          ]
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date"
+        },
+        "sample_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/metric"
+          }
+        },
+        "report_source_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value",
+        "definition"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "accuracy",
+            "log_loss",
+            "brier_score",
+            "calibration_error",
+            "betting_roi",
+            "other"
+          ]
+        },
+        "value": {
+          "type": "number"
+        },
+        "definition": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "bettingAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "market_id",
+        "target_id",
+        "bookmaker",
+        "price_timestamp_utc",
+        "decimal_odds",
+        "probability_used",
+        "settlement_rules",
+        "expected_net_return_per_unit",
+        "expected_value_method",
+        "source_ids",
+        "action"
+      ],
+      "properties": {
+        "market_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "bookmaker": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "price_timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "decimal_odds": {
+          "type": "number",
+          "exclusiveMinimum": 1
+        },
+        "probability_used": {
+          "$ref": "#/$defs/probability"
+        },
+        "settlement_rules": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expected_net_return_per_unit": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "expected_value_method": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/sourceIds",
+          "minItems": 1
+        },
+        "action": {
+          "const": "analysis_only"
+        }
+      }
+    },
+    "historicalAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_record_id",
+        "original_record_available",
+        "original_prediction_timestamp_utc",
+        "original_information_cutoff_utc",
+        "outcome",
+        "post_prediction_information",
+        "retrospective_explanation"
+      ],
+      "properties": {
+        "original_record_id": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "original_record_available": {
+          "type": "boolean"
+        },
+        "original_prediction_timestamp_utc": {
+          "$ref": "#/$defs/nullableTimestamp"
+        },
+        "original_information_cutoff_utc": {
+          "$ref": "#/$defs/nullableTimestamp"
+        },
+        "outcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "settlement",
+            "observed_at_utc",
+            "source_ids"
+          ],
+          "properties": {
+            "settlement": {
+              "enum": [
+                "success",
+                "failure",
+                "push",
+                "void",
+                "unknown"
+              ]
+            },
+            "observed_at_utc": {
+              "$ref": "#/$defs/nullableTimestamp"
+            },
+            "source_ids": {
+              "$ref": "#/$defs/sourceIds"
+            }
+          }
+        },
+        "post_prediction_information": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "description",
+              "available_at_utc",
+              "source_ids"
+            ],
+            "properties": {
+              "description": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "available_at_utc": {
+                "$ref": "#/$defs/timestamp"
+              },
+              "source_ids": {
+                "$ref": "#/$defs/sourceIds"
+              }
+            }
+          }
+        },
+        "retrospective_explanation": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "dataQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "missing_fields",
+        "warnings",
+        "cutoff_check_status",
+        "identity_check_status",
+        "calendar_check_status"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "cutoff_check_status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_checked"
+          ]
+        },
+        "identity_check_status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_checked"
+          ]
+        },
+        "calendar_check_status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_checked",
+            "not_applicable"
+          ]
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "type",
+        "title",
+        "locator",
+        "retrieved_at_utc"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "enum": [
+            "primary_statement",
+            "public_description",
+            "sports_data",
+            "market_data",
+            "historical_record",
+            "evaluation_report",
+            "internal_registry",
+            "other"
+          ]
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "locator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "retrieved_at_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "excerpt": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "timestamp_reference": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "explanation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "sports_reasoning",
+        "symbolic_reasoning",
+        "validation_note"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sports_reasoning": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "symbolic_reasoning": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "validation_note": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    }
+  }
+}

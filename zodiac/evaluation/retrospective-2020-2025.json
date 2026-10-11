@@ -1,0 +1,280 @@
+{
+  "experiment_id": "nfl-zodiac-retrospective-v0.1.0",
+  "validation_status": "under_evaluation",
+  "created_at_utc": "2026-10-11T07:51:14.539600Z",
+  "calendar_convention": "lunar_new_year",
+  "target": "Home outright win including overtime, conditional on a non-tied regular-season game",
+  "sources": [
+    "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2020.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2021.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2022.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2023.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2024.csv",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2025.csv"
+  ],
+  "eligible_games": 1345,
+  "skipped_games": {
+    "no_prior_week_roster": 95,
+    "ties": 5,
+    "missing_birthdays_or_roster": 170
+  },
+  "method": "walk_forward",
+  "folds": [
+    {
+      "test_season": 2023,
+      "train_seasons": [
+        2020,
+        2021,
+        2022
+      ],
+      "train_cutoff": "2023-01-08",
+      "test_start": "2023-09-14",
+      "final_reserved_season": false,
+      "models": {
+        "sports_only": {
+          "sample_size": 229,
+          "accuracy": 0.6375545851528385,
+          "log_loss": 0.6532230304778742,
+          "brier_score": 0.22983630219409792,
+          "calibration_error": 0.06548815284914829,
+          "brier_difference_vs_sports": 0.0,
+          "log_loss_difference_vs_sports": 0.0
+        },
+        "zodiac_only": {
+          "sample_size": 229,
+          "accuracy": 0.5021834061135371,
+          "log_loss": 0.7216480005607817,
+          "brier_score": 0.26346075593650964,
+          "calibration_error": 0.1437001203926666,
+          "brier_difference_vs_sports": 0.033624453742411714,
+          "log_loss_difference_vs_sports": 0.06842497008290749
+        },
+        "sports_plus_zodiac": {
+          "sample_size": 229,
+          "accuracy": 0.5982532751091703,
+          "log_loss": 0.6655461326469113,
+          "brier_score": 0.23612988941799484,
+          "calibration_error": 0.06264486171334983,
+          "brier_difference_vs_sports": 0.006293587223896918,
+          "log_loss_difference_vs_sports": 0.012323102169037092
+        },
+        "sports_plus_controls": {
+          "sample_size": 229,
+          "accuracy": 0.62882096069869,
+          "log_loss": 0.6542654697972226,
+          "brier_score": 0.23050750483092924,
+          "calibration_error": 0.046774824246270025,
+          "brier_difference_vs_sports": 0.0006712026368313195,
+          "log_loss_difference_vs_sports": 0.0010424393193483317
+        },
+        "controlled_zodiac": {
+          "sample_size": 229,
+          "accuracy": 0.5938864628820961,
+          "log_loss": 0.6705707922080647,
+          "brier_score": 0.2386844464377837,
+          "calibration_error": 0.06257537385961469,
+          "brier_difference_vs_sports": 0.008848144243685768,
+          "log_loss_difference_vs_sports": 0.01734776173019048
+        },
+        "randomized_control": {
+          "sample_size": 229,
+          "accuracy": 0.5895196506550219,
+          "log_loss": 0.6796349308244395,
+          "brier_score": 0.24207066401447885,
+          "calibration_error": 0.06525299222925263,
+          "brier_difference_vs_sports": 0.012234361820380929,
+          "log_loss_difference_vs_sports": 0.026411900346565265
+        },
+        "zodiac_plus_numerology": {
+          "sample_size": 229,
+          "accuracy": 0.5982532751091703,
+          "log_loss": 0.6739119455078799,
+          "brier_score": 0.24030311858022985,
+          "calibration_error": 0.10204679838613274,
+          "brier_difference_vs_sports": 0.010466816386131922,
+          "log_loss_difference_vs_sports": 0.020688915030005695
+        }
+      }
+    },
+    {
+      "test_season": 2024,
+      "train_seasons": [
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "train_cutoff": "2024-01-07",
+      "test_start": "2024-09-12",
+      "final_reserved_season": false,
+      "models": {
+        "sports_only": {
+          "sample_size": 226,
+          "accuracy": 0.6548672566371682,
+          "log_loss": 0.6267061254372186,
+          "brier_score": 0.2183590002587639,
+          "calibration_error": 0.04641878009313841,
+          "brier_difference_vs_sports": 0.0,
+          "log_loss_difference_vs_sports": 0.0
+        },
+        "zodiac_only": {
+          "sample_size": 226,
+          "accuracy": 0.5353982300884956,
+          "log_loss": 0.6911783468816912,
+          "brier_score": 0.24896021434348822,
+          "calibration_error": 0.039815619298360826,
+          "brier_difference_vs_sports": 0.030601214084724326,
+          "log_loss_difference_vs_sports": 0.06447222144447262
+        },
+        "sports_plus_zodiac": {
+          "sample_size": 226,
+          "accuracy": 0.668141592920354,
+          "log_loss": 0.6270615944194684,
+          "brier_score": 0.21841563141648054,
+          "calibration_error": 0.04131221747768237,
+          "brier_difference_vs_sports": 5.663115771664673e-05,
+          "log_loss_difference_vs_sports": 0.00035546898224980694
+        },
+        "sports_plus_controls": {
+          "sample_size": 226,
+          "accuracy": 0.668141592920354,
+          "log_loss": 0.6252316538974961,
+          "brier_score": 0.21773482576583308,
+          "calibration_error": 0.07594286136980329,
+          "brier_difference_vs_sports": -0.0006241744929308124,
+          "log_loss_difference_vs_sports": -0.0014744715397224661
+        },
+        "controlled_zodiac": {
+          "sample_size": 226,
+          "accuracy": 0.6504424778761062,
+          "log_loss": 0.6297931011388448,
+          "brier_score": 0.2197606898371581,
+          "calibration_error": 0.03453039618553114,
+          "brier_difference_vs_sports": 0.0014016895783942052,
+          "log_loss_difference_vs_sports": 0.0030869757016261934
+        },
+        "randomized_control": {
+          "sample_size": 226,
+          "accuracy": 0.5398230088495575,
+          "log_loss": 0.6768858471049803,
+          "brier_score": 0.24253109604413642,
+          "calibration_error": 0.0866932898611716,
+          "brier_difference_vs_sports": 0.02417209578537252,
+          "log_loss_difference_vs_sports": 0.050179721667761745
+        },
+        "zodiac_plus_numerology": {
+          "sample_size": 226,
+          "accuracy": 0.6415929203539823,
+          "log_loss": 0.6435805956961631,
+          "brier_score": 0.2266198689324267,
+          "calibration_error": 0.04735083109843832,
+          "brier_difference_vs_sports": 0.008260868673662797,
+          "log_loss_difference_vs_sports": 0.016874470258944507
+        }
+      }
+    },
+    {
+      "test_season": 2025,
+      "train_seasons": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "train_cutoff": "2025-01-05",
+      "test_start": "2025-09-11",
+      "final_reserved_season": true,
+      "models": {
+        "sports_only": {
+          "sample_size": 226,
+          "accuracy": 0.6238938053097345,
+          "log_loss": 0.6531930309136843,
+          "brier_score": 0.23040450217084762,
+          "calibration_error": 0.019154188967084554,
+          "brier_difference_vs_sports": 0.0,
+          "log_loss_difference_vs_sports": 0.0
+        },
+        "zodiac_only": {
+          "sample_size": 226,
+          "accuracy": 0.47345132743362833,
+          "log_loss": 0.7208059982189088,
+          "brier_score": 0.26301141274748985,
+          "calibration_error": 0.10208422948134023,
+          "brier_difference_vs_sports": 0.03260691057664222,
+          "log_loss_difference_vs_sports": 0.06761296730522448
+        },
+        "sports_plus_zodiac": {
+          "sample_size": 226,
+          "accuracy": 0.6194690265486725,
+          "log_loss": 0.6675582734567743,
+          "brier_score": 0.23537193274915894,
+          "calibration_error": 0.065285876810069,
+          "brier_difference_vs_sports": 0.00496743057831131,
+          "log_loss_difference_vs_sports": 0.014365242543090018
+        },
+        "sports_plus_controls": {
+          "sample_size": 226,
+          "accuracy": 0.6415929203539823,
+          "log_loss": 0.6550334581768901,
+          "brier_score": 0.2307630439791003,
+          "calibration_error": 0.07941941615150896,
+          "brier_difference_vs_sports": 0.000358541808252677,
+          "log_loss_difference_vs_sports": 0.0018404272632057683
+        },
+        "controlled_zodiac": {
+          "sample_size": 226,
+          "accuracy": 0.6371681415929203,
+          "log_loss": 0.6721296447295895,
+          "brier_score": 0.23710786534273626,
+          "calibration_error": 0.06270518528756377,
+          "brier_difference_vs_sports": 0.006703363171888632,
+          "log_loss_difference_vs_sports": 0.018936613815905168
+        },
+        "randomized_control": {
+          "sample_size": 226,
+          "accuracy": 0.5929203539823009,
+          "log_loss": 0.6805526847327681,
+          "brier_score": 0.24226221066678202,
+          "calibration_error": 0.10131139457161471,
+          "brier_difference_vs_sports": 0.0118577084959344,
+          "log_loss_difference_vs_sports": 0.027359653819083785
+        },
+        "zodiac_plus_numerology": {
+          "sample_size": 226,
+          "accuracy": 0.6327433628318584,
+          "log_loss": 0.6709526134731962,
+          "brier_score": 0.23607077674212606,
+          "calibration_error": 0.09170996270321655,
+          "brier_difference_vs_sports": 0.00566627457127844,
+          "log_loss_difference_vs_sports": 0.017759582559511933
+        }
+      }
+    }
+  ],
+  "metric_definitions": {
+    "accuracy": "Fraction of threshold-0.5 home/away selections correct",
+    "log_loss": "Mean binary negative log likelihood",
+    "brier_score": "Mean squared probability error",
+    "calibration_error": "Ten equal-width-bin expected calibration error"
+  },
+  "limitations": [
+    "Reconstructed weekly roster files have no verified historical publication timestamps; this is not a certified point-in-time backtest.",
+    "Uses prior-week unweighted roster composition, not confirmed starters or projected snaps; week 1 excluded.",
+    "Elo is an isolated research baseline, not the existing production football model.",
+    "Ridge strength fixed at 10; scaling fitted on training data only. No calibrated or approved deployment artifact produced.",
+    "Last season reserved in code and evaluated once; this remains retrospective, not prospective evidence.",
+    "No automatic promotion, probability publication, betting ROI, or GG33 proprietary-method claim."
+  ],
+  "source_data_sha256": {
+    "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv": "9421bba4fc8ce7e2df1a03d0444d802485a2c37f886fc99aa94af051fbdc0a15",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2020.csv": "0b948cca8735a2417cbda14464f4532aeee58d871e2fcd8464a23e969e45789e",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2021.csv": "88adfe0fba5cbedd260d7928ad373476d4fb168d0213cb52ef1163ed5d3056b7",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2022.csv": "bd6a50de334473c10f8058afa948fd0c6adc8a8b081da41c500cc0aa069c5312",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2023.csv": "1433f1f239784dde7fcb35349d211a9b83abfc0156337b72ec4f923abf715bd3",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2024.csv": "074ecaeb9325de943c11f7bbc941425626985090ef8386f90cd837fa5cb5d4b3",
+    "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2025.csv": "c2f7a1ffebe06058400af1989d1cd2900cc5c9659f084623708a06d4e28de35b"
+  },
+  "conclusion": "No consistent probability-metric improvement from adding Zodiac features across the three chronological test seasons. No promotion."
+}

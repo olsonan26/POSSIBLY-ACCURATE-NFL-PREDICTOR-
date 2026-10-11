@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "year_boundary": "lunar_new_year",
+  "date_only_reference_timezone": "Asia/Hong_Kong",
+  "conversion": "ICU Chinese calendar relatedYear; date-only inputs interpreted as their written Gregorian calendar date",
+  "supported_gregorian_years": [
+    1901,
+    2100
+  ],
+  "python_boundary_table": "lunar_new_years.json",
+  "li_chun_supported": false,
+  "unknown_birth_time": "No hour pillars calculated",
+  "personal_year_boundary": "january_1_experimental",
+  "checked_boundaries": {
+    "1997": "1997-02-07",
+    "2024": "2024-02-10",
+    "2026": "2026-02-17"
+  },
+  "reference_urls": [
+    "https://www.hko.gov.hk/en/gts/time/calendar/pdf/files/1997e.pdf",
+    "https://www.hko.gov.hk/en/gts/time/calendar/pdf/files/2024e.pdf",
+    "https://www.hko.gov.hk/en/gts/time/calendar/pdf/files/2026e.pdf"
+  ]
+}

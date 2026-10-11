@@ -1,0 +1,160 @@
+{
+  "version": "0.1.0",
+  "note": "Implements hypotheses from the supplied documents. Their bracketed source labels are not retrievable citations; no entry claims independently verified GG33 attribution.",
+  "rules": [
+    {
+      "rule_id": "year_sign",
+      "version": "0.1.0",
+      "method_id": "lunar_year_ganzhi",
+      "category": "zodiac",
+      "description": "Birth or event sign using Lunar New Year, never January 1.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "year_element",
+      "version": "0.1.0",
+      "method_id": "lunar_year_ganzhi",
+      "category": "zodiac",
+      "description": "Five-element heavenly-stem phase.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "year_ganzhi",
+      "version": "0.1.0",
+      "method_id": "lunar_year_ganzhi",
+      "category": "zodiac",
+      "description": "Sexagenary year stem and branch.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "year_relationship",
+      "version": "0.1.0",
+      "method_id": "five_relationship_classes",
+      "category": "zodiac",
+      "description": "Subject versus event year; enemy and own-year remain separate.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "opponent_relationship",
+      "version": "0.1.0",
+      "method_id": "five_relationship_classes",
+      "category": "zodiac",
+      "description": "Reciprocal matchup relationship; cannot select a winner.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "organization_relationship",
+      "version": "0.1.0",
+      "method_id": "five_relationship_classes",
+      "category": "organization_timing",
+      "description": "Player versus fixed organization milestone; unavailable until milestone audited.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "life_path",
+      "version": "0.1.0",
+      "method_id": "digit_sum_master_preservation",
+      "category": "numerology",
+      "description": "Full ISO birth-date digit sum; preserve 11, 22, 33 at every reduction.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "birth_day_raw",
+      "version": "0.1.0",
+      "method_id": "day_of_month",
+      "category": "numerology",
+      "description": "Unreduced birthday, separate from life path.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "birth_day_reduced",
+      "version": "0.1.0",
+      "method_id": "single_digit_reduction",
+      "category": "numerology",
+      "description": "Birthday reduced to one digit.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "personal_year",
+      "version": "0.1.0",
+      "method_id": "month_day_gregorian_year_single_digit",
+      "category": "numerology",
+      "description": "January 1 boundary chosen as experimental convention, not verified GG33 timing.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "game_date_number",
+      "version": "0.1.0",
+      "method_id": "digit_sum_master_preservation",
+      "category": "numerology",
+      "description": "Venue-local game-date number, experimental extension.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "jersey_alignment",
+      "version": "0.1.0",
+      "method_id": "unresolved_birthday_digit_format",
+      "category": "numerology",
+      "description": "Unavailable: source does not establish month width and leading-zero rules.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "draft_timing",
+      "version": "0.1.0",
+      "method_id": "unresolved_draft_rule",
+      "category": "draft_timing",
+      "description": "Unavailable: never replace birth sign with a draft sign.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    },
+    {
+      "rule_id": "historical_parallel",
+      "version": "0.1.0",
+      "method_id": "unregistered_selection_procedure",
+      "category": "historical_parallel",
+      "description": "Unavailable until complete eligible set and selection procedure are registered.",
+      "provenance_category": "experimental_extension",
+      "attribution_confidence": "not_attributed_to_GG33",
+      "validation_status": "untested",
+      "approved_model_weight": null
+    }
+  ]
+}

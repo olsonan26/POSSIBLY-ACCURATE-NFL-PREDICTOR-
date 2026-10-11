@@ -1,0 +1,17 @@
+{
+  "manifest_version": "0.1.0",
+  "model_id": "nfl-zodiac-retrospective-v0.1.0",
+  "approval_status": "unapproved",
+  "production_model_changed": false,
+  "target": "NFL regular-season home outright win, overtime included, ties excluded",
+  "symbolic_features": ["12 birth-sign shares", "5 birth-element shares", "own-year share", "enemy-year share"],
+  "numerology_extension": ["life-path 11 share", "life-path 22 share", "life-path 33 share", "reduced birth-day average", "January-1 personal-year average"],
+  "controls": ["mean player age", "birth cohort", "birthday coverage", "month sine", "month cosine"],
+  "roster_convention": "Unweighted prior-week roster, stable player identifiers, no actual same-game snaps. Week 1 excluded.",
+  "estimator": "Training-standardized ridge logistic regression, fixed penalty 10, no test-period tuning",
+  "evaluation": "Earlier-seasons-only walk-forward; final selected season reserved in code. Retrospective source timestamps remain unverified.",
+  "randomized_control": "Stable SHA-256 player-ID assignment independent of actual birth sign",
+  "unavailable_features": ["audited franchise milestones", "verified historical coaches", "jersey lucky-number formatting", "draft timing", "registered historical-parallel selection", "pregame projected participation"],
+  "calibration_version": null,
+  "publication_allowed": false
+}

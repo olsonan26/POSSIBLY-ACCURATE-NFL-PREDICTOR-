@@ -11,6 +11,7 @@ import PredictionDisplay from './components/PredictionDisplay';
 import PostgameLearningPanel from './components/PostgameLearningPanel';
 import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';
 import Button from './components/Button';
+import ChineseZodiacPanel from './components/ChineseZodiacPanel';
 
 interface BatchPredictionRow {
   game: ScheduledGame;
@@ -50,6 +51,7 @@ const homeProbabilityDecimal = (result: PredictionResult, homeAbbr: string): num
 };
 
 const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'football' | 'zodiac'>('football');
   const [teams, setTeams] = useState<Team[]>([]);
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
@@ -291,6 +293,12 @@ const App: React.FC = () => {
           <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Run the frozen football control and market-aware shadow. Upcoming scheduled predictions are timestamped to an append-only server ledger before kickoff. DeepSeek EXP-031 stays off unless you explicitly press its button, so normal predictions never spend OpenRouter credits.</p>
         </header>
 
+        <div role="tablist" aria-label="Prediction tools" className="mb-6 flex gap-2">
+          <button id="football-tab" role="tab" aria-selected={activeTab === 'football'} aria-controls="football-panel" onClick={() => setActiveTab('football')} className={`rounded-xl border px-5 py-3 text-sm font-bold ${activeTab === 'football' ? 'border-indigo-400 bg-indigo-950 text-indigo-200' : 'border-gray-700 text-gray-400'}`}>Football Predictor</button>
+          <button id="zodiac-tab" role="tab" aria-selected={activeTab === 'zodiac'} aria-controls="chinese-zodiac-panel" onClick={() => setActiveTab('zodiac')} className={`rounded-xl border px-5 py-3 text-sm font-bold ${activeTab === 'zodiac' ? 'border-indigo-400 bg-indigo-950 text-indigo-200' : 'border-gray-700 text-gray-400'}`}>Chinese Zodiac</button>
+        </div>
+        {activeTab === 'zodiac' && <ChineseZodiacPanel />}
+        <div id="football-panel" role="tabpanel" aria-labelledby="football-tab" hidden={activeTab !== 'football'}>
         <section className="bg-gray-900/80 backdrop-blur-sm p-5 sm:p-7 rounded-2xl shadow-2xl border border-indigo-500/25 mb-7">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
@@ -501,6 +509,7 @@ const App: React.FC = () => {
             </div>
           </section>
         )}
+        </div>
       </main>
     </div>
   );
