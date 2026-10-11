@@ -39,6 +39,7 @@ export default async function handler(req:any,res:any) {
   if(!authorizeResearch(req,res)) return;
   if(!process.env.OPENROUTER_API_KEY) return res.status(503).json({error:'DeepSeek research is not configured.'});
   let release:(()=>Promise<unknown>)|undefined;
+  const finishLease=async()=>{if(release){const current=release;release=undefined;await current().catch(()=>undefined);}};
   let stage='schedule';
   try {
     const games=await verifiedSchedule();
@@ -58,7 +59,7 @@ export default async function handler(req:any,res:any) {
     const token=randomUUID(), claim={p_game:reportKey,p_model:model,p_version:COACH_ANALYSIS_VERSION,p_token:token};
     if(!await storage<boolean>('rpc/nfl_claim_coach',{method:'POST',body:JSON.stringify(claim)})) return res.status(409).json({error:'This matchup report is already being researched. No extra paid request was started.'});
     release=()=>storage('rpc/nfl_release_coach',{method:'POST',body:JSON.stringify(claim)});
-    const afterClaim=await saved(); if(afterClaim) return res.status(200).json({...afterClaim,cached:true});
+    const afterClaim=await saved(); if(afterClaim) {await finishLease();return res.status(200).json({...afterClaim,cached:true});}
     const home=TEAM_BY_ABBR.get(game.homeTeam),away=TEAM_BY_ABBR.get(game.awayTeam);
     if(!home||!away) throw new Error('Team registry does not cover this matchup.');
     // Never send target-game scores, recaps, completed status, or subsequent games to either model call.
@@ -86,12 +87,14 @@ export default async function handler(req:any,res:any) {
     const rows=await storage<{report:CoachReport}[]>('nfl_coach_reports?on_conflict=report_key',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify({report_key:reportKey,game_id:game.gameId,version:COACH_ANALYSIS_VERSION,research_model:model,kickoff_at:kickoff,cutoff_at:cutoff,mode,report})});
     const durable=rows[0]?.report||await saved();
     if(!durable) throw new Error('Report was not durably saved.');
+    await finishLease();
     return res.status(200).json(durable);
   } catch(error) {
     const message=error instanceof Error?error.message:'';
     const reason=/HTTP \d{3}/.exec(message)?.[0] || /invalid-structured-response:(length|stop|tool_calls|error|content_filter|unknown)/.exec(message)?.[0] || (error instanceof Error && error.name==='TimeoutError'?'timeout':'failed');
     console.error('Coach research failed',{stage,reason});
+    await finishLease();
     return res.status(502).json({error:`Matchup research could not complete at ${stage} (${reason}). The ordinary football prediction remains available.`});
   }
-  finally {if(release) await release().catch(()=>undefined);}
+  finally {await finishLease();}
 }
