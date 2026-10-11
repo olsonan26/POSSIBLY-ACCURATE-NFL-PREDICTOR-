@@ -30,6 +30,7 @@ async function modelRequest(model: string, system: string, input: unknown, schem
   try { return structuredResearch(choice?.message?.content,search?['candidates']:['sections','prediction']); }
   catch {
     const finish=['length','stop','tool_calls','error','content_filter'].includes(choice?.finish_reason)?choice.finish_reason:'unknown';
+    console.error('Coach provider returned no expected JSON',{finish,phase:search?'discovery':'reasoning',content:typeof choice?.message?.content==='string'?choice.message.content.slice(0,1000):'non-text'});
     throw new Error(`invalid-structured-response:${finish}`);
   }
 }

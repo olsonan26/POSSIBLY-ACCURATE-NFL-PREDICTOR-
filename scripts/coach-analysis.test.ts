@@ -12,7 +12,7 @@ assert.equal(verifyCoachExcerpt(html,candidate,'2020-09-10T17:00:00Z','E1')?.id,
 assert.equal(verifyCoachExcerpt(html.replace('2020-09-09','2020-09-11'),candidate,'2020-09-10T17:00:00Z','E1'),null);
 assert.equal(verifyCoachExcerpt(html.replace('</script>',',"dateModified":"2020-09-12T12:00:00Z"</script>'),candidate,'2020-09-10T17:00:00Z','E1'),null);
 assert.equal(verifyCoachExcerpt(html,{...candidate,quote:'Invented quotation that is never found in the actual source page.'},'2020-09-10T17:00:00Z','E1'),null);
-let paid=0, saved:any=null, claimed=false, outage=false, missing=false, live=false;
+let paid=0, saved:any=null, claimed=false, outage=false, missing=false, live=false, invalidProvider=false;
 const liveDate=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
 const csv=()=>['game_id,season,game_type,week,gameday,gametime,away_team,away_score,home_team,home_score,location',
  ...Array.from({length:1000},(_,i)=>`h-${i},2019,REG,1,2019-09-01,13:00,DEN,10,KC,20,Home`),
@@ -31,6 +31,9 @@ globalThis.fetch=async(input:any,init?:RequestInit)=>{
  }
  if(url==='https://openrouter.ai/api/v1/chat/completions') {
   paid++;const body=JSON.parse(String(init?.body));
+  assert.equal(body.reasoning.effort,'low');
+  if(body.tools) {assert.equal(body.max_tool_calls,3);assert.ok(body.max_tokens>=12000);}
+  if(invalidProvider) return Response.json({choices:[{finish_reason:'length',message:{content:''}}]});
   assert.doesNotMatch(JSON.stringify(body.messages),/987|986|"completed"|homeScore|awayScore/,'Target finals must never reach research.');
   assert.doesNotMatch(JSON.stringify(body.messages),/Current live personnel|2026.*roster/);
   const result=body.tools?{candidates:[candidate]}:raw;
@@ -39,7 +42,7 @@ globalThis.fetch=async(input:any,init?:RequestInit)=>{
  throw new Error(`Unexpected fetch ${url}`);
 };
 async function request(headers:any={'x-research-key':'coach-key'},body:any={gameId:'target',baseHomeProbability:.99}){
- let status=200,result:any;const res={setHeader(){},status(n:number){status=n;return this;},json(x:any){result=x;return this;}};
+ let status=200,result:any;const res={setHeader(){},status(n:number){status=n;return this;},json(x:any){if(status===200||status===502)assert.equal(claimed,false,'Release the lease before sending a serverless response.');result=x;return this;}};
  await handler({method:'POST',headers,body},res);return{status,body:result};
 }
 try{
@@ -55,6 +58,7 @@ try{
  claimed=true;assert.equal((await request()).status,409);assert.equal(paid,2,'Concurrent request cannot pay.');claimed=false;
  missing=true;const empty=await request();assert.equal(empty.status,200);assert.equal(paid,3,'No valid evidence means no second model request.');assert.equal(empty.body.prediction.method,'football-control-fallback');
  saved=null;missing=false;live=true;const upcoming=await request();assert.equal(upcoming.status,200);assert.equal(upcoming.body.mode,'pregame');assert.equal(upcoming.body.historicalComparison,undefined);assert.equal(upcoming.body.capture,'Saved before kickoff');assert.equal(paid,5);
+ saved=null;invalidProvider=true;const failed=await request();assert.equal(failed.status,502);assert.match(failed.body.error,/source-discovery.*invalid-structured-response:length/);assert.equal(saved,null);invalidProvider=false;
  const unsupported=buildCoachReport({sections:[],prediction:{winner:'away',rationale:'I know the result.',decisiveSections:['protection']}},[],{version:COACH_ANALYSIS_VERSION,gameId:'x',homeTeam:'KC',awayTeam:'HOU',gameday:'2020-09-10',cutoff:'2020-09-10T16:00:00Z',mode:'historical-reconstruction',generatedAt:new Date().toISOString(),capture:'historical',controlHomeProbability:.6});
  assert.equal(unsupported.prediction.winner,'KC');assert.equal(unsupported.prediction.method,'football-control-fallback');
 }finally{globalThis.fetch=originalFetch;for(const key of ['NFL_RESEARCH_ACCESS_KEY','OPENROUTER_API_KEY','NFL_LEARNING_SUPABASE_URL','NFL_LEARNING_SUPABASE_KEY']){if(env[key]==null)delete process.env[key];else process.env[key]=env[key];}}
