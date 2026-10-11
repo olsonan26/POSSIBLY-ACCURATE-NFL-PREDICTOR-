@@ -1,3 +1,4 @@
+import ResearchAccessField from './ResearchAccessField';
 import { researchHeaders, resetResearchAccess } from '../services/researchAccess';
 import React, { useEffect, useRef, useState } from 'react';
 import type { StoredPostgameReview } from '../services/postgameLearning';
@@ -60,6 +61,7 @@ const PostgameLearningPanel: React.FC = () => {
     finally { setBusy(false); setCurrent(''); }
   };
   return <section className="mb-7 rounded-2xl border border-cyan-500/30 bg-gray-900/80 p-5 sm:p-7">
+      <ResearchAccessField />
     <p className="text-xs uppercase tracking-widest font-bold text-cyan-300">DeepSeek learning journal</p>
     <h2 className="mt-1 text-2xl font-black text-white">Learn from a completed NFL season</h2>
     <p className="mt-2 text-sm text-gray-400">Research what happened and what to check in future games. Individual past games use the same review from their DeepSeek button.</p>
