@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
+import { authorizeResearch } from '../server/researchAccess.js';
 import { structuredResearch } from '../server/structuredResearch.js';
 import { LEARNING_VERSION, scaledEvidenceProbability } from '../services/learningFeedback.js';
-import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup } from '../server/learningStore.js';
+import { freezeLearningForecast, prepareLearningFeedback, verifiedSchedule, verifyLearningMatchup, storage, type LearningForecast } from '../server/learningStore.js';
 import { predictControlProbability } from '../services/validatedPredictionService.js';
 import { preparePostgameMemory } from '../server/postgameResearch.js';
 import { TEAM_BY_ABBR } from '../data/teamRegistry.js';
@@ -485,6 +487,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (!authorizeResearch(req, res)) return;
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
@@ -517,6 +520,7 @@ export default async function handler(req: any, res: any) {
   const normalizedKickoff = new Date(kickoffMs).toISOString();
   const model = process.env.OPENROUTER_PREGAME_MODEL || DEFAULT_MODEL;
 
+  let releaseClaim: (() => Promise<unknown>) | undefined;
   try {
     const games = await verifiedSchedule();
     let game;
@@ -525,6 +529,32 @@ export default async function handler(req: any, res: any) {
     } catch (error) {
       return res.status(400).json({ error: error instanceof Error ? error.message : 'Unverified matchup.' });
     }
+    const savedForecast = async () => {
+      const rows = await storage<LearningForecast[]>(`nfl_learning_forecasts?game_id=eq.${encodeURIComponent(game.gameId)}&select=*&limit=1`);
+      return rows[0];
+    };
+    const cachedResponse = (saved: LearningForecast) => res.status(200).json({
+      experiment: PREGAME_INTELLIGENCE_VERSION, mode: 'shadow-only', productionPickChanged: false,
+      researchModel: saved.research_model, generatedAt: saved.completed_at, cached: true,
+      shadow: { homeTeam: saved.home_team, awayTeam: saved.away_team, kickoffUtc: saved.kickoff_at,
+        baseHomeProbability: saved.base_home_probability, shadowHomeProbability: saved.raw_home_probability,
+        totalLogitAdjustment: Math.log(saved.raw_home_probability / (1 - saved.raw_home_probability)) - Math.log(saved.base_home_probability / (1 - saved.base_home_probability)), facts: saved.facts,
+        acceptedFactCount: saved.facts.filter(f => f.accepted).length,
+        rejectedFactCount: saved.facts.filter(f => !f.accepted).length },
+      learning: { ...saved.feedback, storageStatus: 'ready', homeWinProbability: saved.learned_home_probability,
+        postgameReviews: (saved.feedback.postgameMemory as any)?.games || 0,
+        capture: { status: 'already-frozen', message: 'Reused the first saved forecast. No additional model call was made.' } }
+    });
+    const existing = await savedForecast();
+    if (existing) return cachedResponse(existing);
+    const token = randomUUID();
+    const claim = { p_game: game.gameId, p_model: model, p_version: LEARNING_VERSION, p_token: token };
+    const claimed = await storage<boolean>('rpc/nfl_claim_postgame', { method: 'POST', body: JSON.stringify(claim) });
+    if (!claimed) return res.status(409).json({ error: 'Research for this game is already running. No extra paid call was made.' });
+    releaseClaim = () => storage('rpc/nfl_release_postgame', { method: 'POST', body: JSON.stringify(claim) });
+    // Recheck after acquiring the durable lease to close the concurrent completion race.
+    const completedRequest = await savedForecast();
+    if (completedRequest) return cachedResponse(completedRequest);
     // The browser's probability cannot poison persistent feedback.
     const baseHomeProbability = await predictControlProbability(TEAM_BY_ABBR.get(homeTeam)!, TEAM_BY_ABBR.get(awayTeam)!,
       new Date(`${game.gameday}T12:00:00Z`), { neutralSite: game.neutralSite });
@@ -585,5 +615,7 @@ export default async function handler(req: any, res: any) {
       detail: message.slice(0, 1200),
       productionPickChanged: false
     });
+  } finally {
+    if (releaseClaim) await releaseClaim().catch(() => undefined);
   }
 }

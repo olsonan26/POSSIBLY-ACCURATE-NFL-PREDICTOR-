@@ -34,24 +34,26 @@ export interface ValidatedFootballContext {
 }
 
 let gamesPromise: Promise<GameRow[]> | null = null;
+let gamesExpiresAt = 0;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const completed = (game: GameRow) => Number.isFinite(game.homeScore) && Number.isFinite(game.awayScore);
 
 async function fetchTextWithFallback(primary: string, fallback: string): Promise<string> {
   try {
-    const response = await fetch(primary);
+    const response = await fetch(primary, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (response.ok) return response.text();
   } catch {
     // Direct source fallback below.
   }
-  const response = await fetch(fallback);
+  const response = await fetch(fallback, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.text();
 }
 
 async function loadGames(): Promise<GameRow[]> {
-  if (!gamesPromise) {
+  if (!gamesPromise || Date.now() >= gamesExpiresAt) {
+    gamesExpiresAt = Date.now() + 60_000;
     gamesPromise = fetchTextWithFallback('/api/nfl-data?dataset=games', NFLVERSE_GAMES_URL)
       .then(text => parseGamesCsv(text) as unknown as GameRow[])
       .then(games => {

@@ -1,3 +1,4 @@
+import { researchHeaders, resetResearchAccess } from '../services/researchAccess';
 import React, { useEffect, useRef, useState } from 'react';
 import type { StoredPostgameReview } from '../services/postgameLearning';
 interface Plan { season: number; total: number; completed: number; games: { gameId: string; homeTeam: string; awayTeam: string; gameday: string; cached: boolean }[]; }
@@ -16,8 +17,9 @@ export function PostgameReviewDisplay({ row }: { row: StoredPostgameReview }) {
   </div>;
 }
 export async function requestPostgame(gameId: string) {
-  const r = await fetch('/api/postgame-intelligence', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameId }) });
+  const r = await fetch('/api/postgame-intelligence', { method: 'POST', headers: researchHeaders(), body: JSON.stringify({ gameId }) });
   const body = await r.json().catch(() => null);
+  if (r.status === 401) resetResearchAccess();
   if (!r.ok) throw new Error(body?.error || `Game review failed (HTTP ${r.status}).`);
   return body as { review: StoredPostgameReview; cached: boolean };
 }
@@ -37,7 +39,8 @@ const PostgameLearningPanel: React.FC = () => {
     try {
       const r = await fetch(`/api/postgame-intelligence?season=${season}&includePostseason=${postseason ? '1' : '0'}`);
       const body = await r.json();
-      if (!r.ok) throw new Error(body.error || 'Could not load completed games.');
+      if (r.status === 401) resetResearchAccess();
+  if (!r.ok) throw new Error(body.error || 'Could not load completed games.');
       setPlan(body);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load season.'); }
     finally { setChecking(false); }

@@ -32,6 +32,8 @@ globalThis.fetch = async (input: any, init?: RequestInit) => {
     if (unavailable) return json({ error: 'test outage' }, 503);
     const parsed = new URL(url);
     if (parsed.pathname.endsWith('/nfl_learning_outcomes')) return json([]);
+    if (parsed.pathname.includes('/rpc/nfl_claim_postgame')) return json(true);
+    if (parsed.pathname.includes('/rpc/nfl_release_postgame')) return json(true);
     if (init?.method === 'POST') {
       databaseWrites++;
       const row = JSON.parse(String(init.body));
@@ -61,12 +63,13 @@ globalThis.fetch = async (input: any, init?: RequestInit) => {
 async function request(changes: Record<string, unknown> = {}) {
   let status = 200, response: any;
   const res = { setHeader() {}, status(code: number) { status = code; return this; }, json(body: unknown) { response = body; return this; } };
-  await handler({ method: 'POST', body: { gameId, homeTeam: 'KC', awayTeam: 'DEN', kickoffUtc, baseHomeProbability: 0.01,
+  await handler({ method: 'POST', headers: { 'x-research-key': 'offline-access' }, body: { gameId, homeTeam: 'KC', awayTeam: 'DEN', kickoffUtc, baseHomeProbability: 0.01,
     homeScore: 99, awayScore: 0, ...changes } }, res);
   return { status, body: response };
 }
 
 try {
+  process.env.NFL_RESEARCH_ACCESS_KEY = 'offline-access';
   process.env.OPENROUTER_API_KEY = 'offline-test-key';
   process.env.OPENROUTER_PREGAME_MODEL = 'deepseek/deepseek-v4.1-flash';
   process.env.NFL_LEARNING_SUPABASE_URL = 'https://learning.test';
@@ -88,14 +91,15 @@ try {
   assert.equal(saved.feedback.controlSource, 'server-v2.2');
   const rerun = await request();
   assert.equal(rerun.body.learning.capture.status, 'already-frozen');
+  assert.equal(paidCalls, 1, 'Saved pregame reruns must not spend credits.');
   assert.equal(forecasts.size, 1);
   assert.equal(forecasts.get(gameId), saved, 'Rerun must leave first frozen forecast intact.');
   unavailable = true;
   const failedStorage = await request();
-  assert.equal(failedStorage.status, 200, 'Optional learning outage must not remove research.');
-  assert.equal(failedStorage.body.learning.storageStatus, 'unavailable');
-  assert.equal(failedStorage.body.learning.capture.status, 'failed');
+  assert.equal(failedStorage.status, 502, 'Storage outage must block paid research.');
+  assert.equal(paidCalls, 1);
   unavailable = false;
+  forecasts.clear();
   forceLate = true;
   const writesBeforeLate = databaseWrites;
   const late = await request();
@@ -104,7 +108,7 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
   Date.now = originalNow;
-  for (const key of ['OPENROUTER_API_KEY', 'OPENROUTER_PREGAME_MODEL', 'NFL_LEARNING_SUPABASE_URL', 'NFL_LEARNING_SUPABASE_KEY']) {
+  for (const key of ['NFL_RESEARCH_ACCESS_KEY', 'OPENROUTER_API_KEY', 'OPENROUTER_PREGAME_MODEL', 'NFL_LEARNING_SUPABASE_URL', 'NFL_LEARNING_SUPABASE_KEY']) {
     if (originalEnv[key] == null) delete process.env[key]; else process.env[key] = originalEnv[key];
   }
 }

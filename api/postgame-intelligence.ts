@@ -1,3 +1,4 @@
+import { authorizeResearch } from '../server/researchAccess.js';
 import { learningStorageConfigured, verifiedSchedule } from '../server/learningStore.js';
 import { completedSeason, POSTGAME_VERSION } from '../services/postgameLearning.js';
 import { findReview, researchModel, reviewCompletedGame, ReviewBusyError, seasonReviews } from '../server/postgameResearch.js';
@@ -9,6 +10,7 @@ export default async function handler(req: any, res: any) {
     res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed.' });
   }
+  if (req.method === 'POST' && !authorizeResearch(req, res)) return;
   if (!learningStorageConfigured()) return res.status(503).json({ error: 'Learning storage is not configured. No paid research was started.' });
   try {
     const games = await verifiedSchedule();

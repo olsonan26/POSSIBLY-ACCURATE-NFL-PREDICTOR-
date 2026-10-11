@@ -68,6 +68,9 @@ jobs:
       - name: Point-in-time integrity regression
         run: bun run test:point-in-time
 
+      - name: Reliability and research access regression
+        run: bun run test:reliability
+
       - name: Immutable prediction-ledger regression
         run: bun run test:ledger
 

@@ -1,3 +1,4 @@
+import { easternKickoffIso } from './kickoff.js';
 import {
   Breakdown,
   DataFreshness,
@@ -28,6 +29,7 @@ interface NflGameRow {
   gameType: string;
   week: number;
   gameday: string;
+  gametime?: string;
   awayTeam: string;
   awayScore?: number;
   homeTeam: string;
@@ -87,6 +89,8 @@ interface EloSnapshot {
 }
 
 let gamesPromise: Promise<NflGameRow[]> | null = null;
+let gamesExpiresAt = 0;
+const liveContextExpiresAt = new Map<string, number>();
 const liveContextCache = new Map<string, Promise<LiveTeamContext>>();
 
 export function parseTeamData(): Team[] {
@@ -236,7 +240,7 @@ export function parseGamesCsv(text: string): NflGameRow[] {
 
   const column = {
     gameId: idx('game_id'), season: idx('season'), gameType: idx('game_type'), week: idx('week'),
-    gameday: idx('gameday'), awayTeam: idx('away_team'), awayScore: idx('away_score'),
+    gameday: idx('gameday'), gametime: idx('gametime'), awayTeam: idx('away_team'), awayScore: idx('away_score'),
     homeTeam: idx('home_team'), homeScore: idx('home_score'), location: idx('location'),
     awayRest: idx('away_rest'), homeRest: idx('home_rest'), awayQbName: idx('away_qb_name'),
     homeQbName: idx('home_qb_name'), awayCoach: idx('away_coach'), homeCoach: idx('home_coach'),
@@ -252,6 +256,7 @@ export function parseGamesCsv(text: string): NflGameRow[] {
       gameType: get(column.gameType),
       week: Number(get(column.week) || 0),
       gameday: get(column.gameday),
+      gametime: get(column.gametime) || undefined,
       awayTeam: normalizeTeamAbbr(get(column.awayTeam)),
       awayScore: parseOptionalNumber(get(column.awayScore)),
       homeTeam: normalizeTeamAbbr(get(column.homeTeam)),
@@ -271,7 +276,7 @@ export function parseGamesCsv(text: string): NflGameRow[] {
 async function fetchTextWithFallback(primary: string, fallback: string): Promise<string> {
   let firstError: unknown;
   try {
-    const response = await fetch(primary);
+    const response = await fetch(primary, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (response.ok) return response.text();
     firstError = new Error(`${response.status} ${response.statusText}`);
   } catch (error) {
@@ -279,7 +284,7 @@ async function fetchTextWithFallback(primary: string, fallback: string): Promise
   }
 
   try {
-    const response = await fetch(fallback);
+    const response = await fetch(fallback, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (response.ok) return response.text();
     throw new Error(`${response.status} ${response.statusText}`);
   } catch (error) {
@@ -288,7 +293,8 @@ async function fetchTextWithFallback(primary: string, fallback: string): Promise
 }
 
 async function loadGames(): Promise<NflGameRow[]> {
-  if (!gamesPromise) {
+  if (!gamesPromise || Date.now() >= gamesExpiresAt) {
+    gamesExpiresAt = Date.now() + 60_000;
     gamesPromise = fetchTextWithFallback('/api/nfl-data?dataset=games', NFLVERSE_GAMES_URL)
       .then(parseGamesCsv)
       .then(games => {
@@ -305,12 +311,12 @@ async function loadGames(): Promise<NflGameRow[]> {
 
 async function fetchJson(primary: string, fallback: string): Promise<any> {
   try {
-    const response = await fetch(primary);
+    const response = await fetch(primary, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     if (response.ok) return response.json();
   } catch {
     // Direct source fallback below.
   }
-  const response = await fetch(fallback);
+  const response = await fetch(fallback, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
 }
@@ -443,7 +449,7 @@ function pickRankOne(players: LiveAthlete[], positions: string[]): LiveAthlete |
 
 async function loadLiveTeamContext(teamAbbr: string): Promise<LiveTeamContext> {
   const team = normalizeTeamAbbr(teamAbbr);
-  if (liveContextCache.has(team)) return liveContextCache.get(team)!;
+  if (Date.now() < (liveContextExpiresAt.get(team) || 0) && liveContextCache.has(team)) return liveContextCache.get(team)!;
 
   const promise = (async () => {
     const base = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
@@ -491,7 +497,9 @@ async function loadLiveTeamContext(teamAbbr: string): Promise<LiveTeamContext> {
     };
   })();
 
+  liveContextExpiresAt.set(team, Date.now() + 60_000);
   liveContextCache.set(team, promise);
+  promise.then(context => { if (!context.rosterLoaded || !context.depthLoaded || !context.injuriesLoaded) liveContextExpiresAt.set(team, Date.now() + 10_000); }, () => undefined);
   promise.catch(() => liveContextCache.delete(team));
   return promise;
 }
@@ -848,7 +856,7 @@ export async function predictWinner(
   let homeLive: LiveTeamContext | undefined;
   let awayLive: LiveTeamContext | undefined;
   const warnings: string[] = [];
-  if (isLiveDate(gameDate)) {
+  if (isLiveDate(gameDate) && !completed(scheduled || {} as NflGameRow) && (!scheduled || Boolean(scheduled.gametime && Date.parse(easternKickoffIso(scheduled.gameday, scheduled.gametime) || '') > Date.now()))) {
     const [homeLiveResult, awayLiveResult] = await Promise.allSettled([
       loadLiveTeamContext(homeTeam.abbr),
       loadLiveTeamContext(awayTeam.abbr)

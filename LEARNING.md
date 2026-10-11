@@ -108,3 +108,7 @@ bun run build
 ```
 
 The native Node check compiles the API and loads each server entry point, catching ESM resolution errors that Bun/Vite can hide. Server dependency imports explicitly use their emitted `.js` names. The learning API tests mock all network calls; they spend no model credits. `scripts/learning-schema.test.mjs` additionally checks the SQL with an isolated `@electric-sql/pglite` install; set `NFL_TEST_PGLITE_MODULE` to its absolute module path when it is installed outside this repo. A successful local schema test does not mean the intended production database has been configured.
+
+## Paid research access
+
+Set a separate strong `NFL_RESEARCH_ACCESS_KEY` on the server and enter it when the website asks to unlock paid research. Never use the OpenRouter key or a database secret as this access key. The browser keeps it in memory only. Without it, paid endpoints return 503; incorrect keys return 401. The server limits authorized requests to ten per minute per running instance. Configure an OpenRouter key credit limit for a global monetary ceiling; the per-instance throttle is not a global spending budget. Pregame research now reuses its first durable forecast and takes an atomic database lease before a new provider call. Storage/lease failure blocks spending. The existing postgame claim RPCs are reused with the learning experiment version. Normal football predictions remain available without a research key.
