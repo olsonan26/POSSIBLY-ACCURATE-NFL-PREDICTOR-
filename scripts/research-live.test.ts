@@ -5,7 +5,7 @@ import {DatabaseResearchState} from '../server/researchStore.js';
 const originalFetch=globalThis.fetch,originalEnv={...process.env},events:any[]=[];
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 const schedule=['game_id,season,game_type,week,gameday,gametime,away_team,home_team,away_score,home_score,location',
- ...Array.from({length:1001},(_,i)=>`fixture-${i},2024,REG,7,2024-10-20,13:00,TEN,BUF,10,20,Home`)].join('\n');
+ ...Array.from({length:1001},(_,i)=>`fixture-${i},2026,REG,7,2026-10-20,13:00,TEN,BUF,10,20,Home`)].join('\n');
 let unavailable=false;
 globalThis.fetch=async(input,init)=>{
  const url=String(input);
@@ -20,8 +20,8 @@ globalThis.fetch=async(input,init)=>{
   }
   const id=path.searchParams.get('event_id')?.slice(3);return json(events.filter(e=>!id||e.event_id===id));
  }
- if(path.pathname.endsWith('nfl_prediction_snapshots'))return json([{id:'frozen-fixture',game_id:'fixture-0',season:2024,week:7,game_date:'2024-10-20',
-  kickoff_at:'2024-10-20T17:00:00Z',captured_at:'2024-10-20T12:00:00Z',home_team:'BUF',away_team:'TEN',model_version:'test-control',home_win_probability:.6,predicted_winner:'BUF',feature_snapshot:{}}]);
+ if(path.pathname.endsWith('nfl_prediction_snapshots'))return json([{id:'frozen-fixture',game_id:'fixture-0',season:2026,week:7,game_date:'2026-10-20',
+  kickoff_at:'2026-10-20T17:00:00Z',captured_at:'2026-10-20T12:00:00Z',home_team:'BUF',away_team:'TEN',model_version:'test-control',home_win_probability:.6,predicted_winner:'BUF',feature_snapshot:{}}]);
  return json([]);
 };
 async function request(handler:any,headers:any){let status=200,body:any;await handler({method:'GET',headers},{setHeader(){},status(n:number){status=n;return this;},json(value:any){body=value;return this;}});return {status,body};}

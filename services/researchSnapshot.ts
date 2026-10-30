@@ -194,6 +194,7 @@ export function validateUnifiedSnapshot(snapshot: UnifiedPregameSnapshot, expect
   if(expected && (snapshot.gameId!==expected.gameId||snapshot.modelVersion!==expected.modelVersion||kickoff!==Date.parse(expected.kickoffAt)||capture>Date.parse(expected.now)||
     snapshot.evidenceMode!=='PROSPECTIVE'||snapshot.captureHorizon!==captureHorizon(snapshot.kickoffAt,snapshot.capturedAt))) throw new Error('Snapshot provenance mismatch.');
   for(const [key,f] of Object.entries(snapshot.features)) {
+    if(f?.status==='known'&&f.sourceObservedAt!=null&&(!Number.isFinite(Date.parse(f.sourceObservedAt))||Date.parse(f.sourceObservedAt)>cutoff))throw new Error('Source observation exceeds cutoff.');
     if(!/^(football_|coach_|experimental_|meta_disagreement\.|data_quality\.|deepseek_learning\.)/.test(key)||/(^|\.)(actual|winner|postgame|final.?score|game.?id|season|team.?id)(\.|$)/i.test(key)) throw new Error('Forbidden research feature.');
     if(!f || typeof f!=='object'||!['known','missing','unknown','not-applicable','BLOCKED_DATA'].includes(f.status)||!f.source||!f.version||f.capturedAt!==snapshot.capturedAt) throw new Error('Invalid feature metadata.');
     if(f.status==='known' && (f.value==null||!f.observedAt||!Number.isFinite(Date.parse(f.observedAt))||Date.parse(f.observedAt)>cutoff||

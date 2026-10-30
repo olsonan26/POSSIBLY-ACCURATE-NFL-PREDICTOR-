@@ -103,6 +103,7 @@ export const ACTION_FAMILIES = ['ADD_FEATURE', 'ADD_INTERACTION', 'DAMP_FEATURE'
 export type ActionFamily = typeof ACTION_FAMILIES[number];
 
 export interface ResearchHypothesis {
+  originRuleKey?: ClusterRuleKey;
   origin?: 'MANUAL' | 'KNOWN_FAILURE_RULE' | 'DISCOVERED_FAILURE_CLUSTER' | 'COACH_SECTION_SCORECARD' | 'DISAGREEMENT_RESEARCH' | 'DATA_QUALITY_RESEARCH';
   actionType?: ActionFamily;
   sourceModelVersion?: string;
@@ -515,7 +516,12 @@ export function hypothesisProbability(snapshot: ResearchPredictionSnapshot, hypo
     if(action==='REPLACE_FEATURE'&&(!replaced||!Object.hasOwn(snapshot.featureSnapshot,replaced))) throw new Error('Explicit replacement contribution required.');
     return logistic(logit(control)+parameter*signal-(replaced?snapshot.featureSnapshot[replaced]:0));
   }
-  return challengerHomeProbability(snapshot, action, parameter);
+  const f=snapshot.featureSnapshot;
+  if(action==='COMPRESS_CONFIDENCE')return logistic(logit(control)*parameter);
+  if(action==='HOME_BIAS')return logistic(logit(control)+parameter);
+  const contribution=action==='DAMP_H2H'?f.h2hLogit:action==='DAMP_VENUE'?f.venueLogit:action==='BOOST_FORM'?f.formLogit:action==='DAMP_ELO'?f.baseLogit:undefined;
+  if(contribution!==undefined)return logistic(logit(control)+(parameter-1)*contribution);
+  throw new Error('Unsupported hypothesis implementation');
 }
 
 export function controlHomeProbability(snapshot: ResearchPredictionSnapshot): number {
@@ -597,7 +603,7 @@ export function pairedComparison(
 
 export function clusterEligibleSnapshots(
   snapshots: ResearchPredictionSnapshot[],
-  cluster: FailureCluster
+  cluster: Pick<FailureCluster,'ruleKey'|'conditions'>
 ): ResearchPredictionSnapshot[] {
   const rows = buildFailureFeatureRows(snapshots);
   const rowById = new Map(rows.map(row => [row.snapshotId, row]));

@@ -1,7 +1,7 @@
 import {buildFailureFeatureRows,discoverFailureClusters,clusterEligibleSnapshots,leakageInvariant,controlHomeProbability,hypothesisProbability,type ResearchPredictionSnapshot as Snapshot,type ResearchHypothesis as Hypothesis} from './research-core.js';
 import {numericResearchFeatures,captureHorizon} from '../services/researchSnapshot.js';
 import {discoverResidualSubgroups} from './residual-discovery.js';
-import {cohortRows,defaultCohortPlan,researchPopulations,digest,type CohortPlan} from './research-cohorts.js';
+import {cohortRows,defaultCohortPlan,researchPopulations,digest,validateCohortPlan,type CohortPlan} from './research-cohorts.js';
 import {generateResearchHypotheses,manualHypotheses,validateHypothesis} from './research-hypotheses.js';
 import {walkForward,evaluateChallenger} from './research-walk-forward.js';
 import type {ResearchState,ResearchEvent} from './research-state.js';
@@ -10,10 +10,13 @@ const completed=(s:Snapshot)=>Boolean(s.actualWinner&&s.actualWinner!=='TIE');
 function inputSignature(rows:Snapshot[]){return digest(rows.map(s=>({id:s.snapshotId,model:s.sourceModelVersion,p:s.homeWinProbability,
   features:numericResearchFeatures(s.unifiedSnapshot),actual:s.actualWinner,cutoff:s.dataCutoffTimestamp})));}
 export function checkResearchInputs(rows:Snapshot[],asOf=new Date().toISOString()) {
+  if(!Number.isFinite(Date.parse(asOf)))throw new Error('Invalid research clock');
   const invariant=leakageInvariant(rows);
   const replay=rows.filter(s=>!Number.isFinite(s.homeWinProbability)||s.homeWinProbability<=0||s.homeWinProbability>=1||Math.abs(controlHomeProbability(s)-s.homeWinProbability)>.0025).map(s=>`${s.gameId}: control replay mismatch`);
   const identities=new Set<string>();
   for(const s of rows){const key=`${s.gameId}:${s.sourceModelVersion}:${s.unifiedSnapshot?.captureHorizon}:${s.unifiedSnapshot?.evidenceMode}`;
+    if(Date.parse(s.predictionTimestamp)>Date.parse(asOf)||Date.parse(s.unifiedSnapshot?.capturedAt||'')>Date.parse(asOf))invariant.violations.push(`${key}: input not yet captured`);
+    if(s.unifiedSnapshot?.evidenceMode==='PROSPECTIVE'&&captureHorizon(s.unifiedSnapshot.kickoffAt,s.unifiedSnapshot.capturedAt)!==s.unifiedSnapshot.captureHorizon)invariant.violations.push(`${key}: incorrect horizon`);
     if(completed(s)&&s.unifiedSnapshot&&Date.parse(s.unifiedSnapshot.kickoffAt)>=Date.parse(asOf))invariant.violations.push(`${key}: future outcome`);
     if(identities.has(key))invariant.violations.push(`${key}: duplicate model/horizon forecast`);identities.add(key);}
   return {passed:!invariant.violations.length&&!replay.length,violations:[...invariant.violations,...replay],replayPassed:!replay.length};
@@ -76,9 +79,11 @@ export async function runResearchEngine(rows:Snapshot[],options:EngineOptions) {
   let events=await state.all();
   const populations:any[]=[],candidates:{hypothesis:Hypothesis;plan:CohortPlan;discovery:Snapshot[];validation:Snapshot[];legacy:Snapshot[]}[]=[],blocked:any[]=[];
   for(const population of researchPopulations(rows)) {
-    const proposed=options.plans?.find(p=>p.modelVersion===population[0].sourceModelVersion&&p.horizon===population[0].unifiedSnapshot?.captureHorizon&&p.mode===population[0].unifiedSnapshot?.evidenceMode)||defaultCohortPlan(population,now);
+    const proposed=options.plans?.find(p=>p.modelVersion===population[0].sourceModelVersion&&p.horizon===population[0].unifiedSnapshot?.captureHorizon&&p.mode===population[0].unifiedSnapshot?.evidenceMode&&p.ranges.some(r=>r.role==='DISCOVERY'&&population.some(s=>s.season===r.season)))||defaultCohortPlan(population,now);
+    validateCohortPlan(proposed,now);
     const existing=events.find(e=>e.event_kind==='COHORT'&&e.event_key===proposed.id);
     const plan:CohortPlan=(existing||await state.append('COHORT',proposed.id,proposed)).payload;
+    validateCohortPlan(plan,now);
     const discovery=cohortRows(population,plan,'DISCOVERY'),validation=cohortRows(population,plan,'VALIDATION'),legacy=cohortRows(population,plan,'LEGACY_TEST');
     if(discovery.length<plan.minimum.discovery||validation.length<plan.minimum.validation){
       populations.push({plan,status:'INSUFFICIENT_SAMPLE',discovery:discovery.length,validation:validation.length,confirmation:cohortRows(population,plan,'FUTURE_LOCKBOX').length,

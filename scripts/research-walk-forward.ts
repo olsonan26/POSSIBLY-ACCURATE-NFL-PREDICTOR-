@@ -1,4 +1,4 @@
-import {hypothesisProbability,scoreProbabilities,pairedComparison,buildFailureFeatureRows,type ResearchPredictionSnapshot as Snapshot,type ResearchHypothesis as Hypothesis} from './research-core.js';
+import {hypothesisProbability,scoreProbabilities,pairedComparison,buildFailureFeatureRows,clusterEligibleSnapshots,type ResearchPredictionSnapshot as Snapshot,type ResearchHypothesis as Hypothesis} from './research-core.js';
 import {matchesConditions} from './residual-discovery.js';
 import {researchAttacks} from './research-evaluation.js';
 export const frozenControl=(s:Snapshot)=>s.homeWinProbability;
@@ -23,7 +23,7 @@ export function walkForward(development:Snapshot[],h:Hypothesis,minimumTrain=40,
 export function evaluateChallenger(rows:Snapshot[],h:Hypothesis,parameter:number,minimumGlobal=40,minimumOrigin=20) {
   const completed=rows.filter(s=>s.actualWinner&&s.actualWinner!=='TIE');
   const fn=(s:Snapshot)=>hypothesisProbability(s,h,parameter);
-  const origin=h.conditions?.length?completed.filter(s=>matchesConditions(buildFailureFeatureRows([s])[0],h.conditions!)):completed;
+  const origin=h.conditions?.length?completed.filter(s=>matchesConditions(buildFailureFeatureRows([s])[0],h.conditions!)):h.originRuleKey?clusterEligibleSnapshots(completed,{ruleKey:h.originRuleKey}):completed;
   const control=scoreProbabilities(completed,frozenControl),challenger=scoreProbabilities(completed,fn);
   const originControl=scoreProbabilities(origin,frozenControl),originChallenger=scoreProbabilities(origin,fn);
   const attacks=researchAttacks(completed,fn,500),originAttacks=researchAttacks(origin,fn,200);

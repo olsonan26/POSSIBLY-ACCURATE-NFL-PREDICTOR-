@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {buildUnifiedSnapshot,numericResearchFeatures} from '../services/researchSnapshot.js';
 import {runResearchEngine,freezeChallengerForecasts,checkResearchInputs} from './research-engine.js';
 import {MemoryResearchState} from './research-state.js';
-import {defaultCohortPlan} from './research-cohorts.js';
+import {defaultCohortPlan,validateCohortPlan} from './research-cohorts.js';
 import {validateHypothesis,manualHypotheses,generateResearchHypotheses} from './research-hypotheses.js';
 import {buildFailureFeatureRows,type ResearchPredictionSnapshot as Snapshot} from './research-core.js';
 import {walkForward,evaluateChallenger} from './research-walk-forward.js';
@@ -31,6 +31,10 @@ const allFixtures=fixtures(),rows=allFixtures.filter(r=>r.week<=12),state=new Me
 check('known booleans enter research matrix as 1/0; missing stays null',()=>{
  const features=numericResearchFeatures(rows[0].unifiedSnapshot);assert.equal(features['football_travel.isShortRest'],Number(rows[0].unifiedSnapshot!.features['football_travel.isShortRest'].value));
  assert.equal(features['football_matchup.edge'],null);
+});
+check('cohort contracts reject overlapping windows and reused legacy lockboxes',()=>{
+ const plan=defaultCohortPlan(rows,now);assert.throws(()=>validateCohortPlan({...plan,ranges:[...plan.ranges,{season:2027,fromWeek:8,throughWeek:10,role:'FUTURE_LOCKBOX'}]},now));
+ assert.throws(()=>validateCohortPlan({...plan,ranges:[...plan.ranges,{season:2025,fromWeek:1,throughWeek:18,role:'FUTURE_LOCKBOX'}]},now));
 });
 const summary=await runResearchEngine(rows,{state,now,codeCommit:'synthetic-test'});
 check('complete forward cycle creates source-specific hypotheses, frozen inputs, manifest, rolling evaluation and result',()=>{
@@ -79,6 +83,11 @@ check('required hypothesis fields and manual populations are actually validated'
 });
 const corrupt=structuredClone(rows[0]);corrupt.unifiedSnapshot!.features['football_qb.edge'].observedAt='2099-01-01T00:00:00Z';
 await assert.rejects(runResearchEngine([corrupt],{state:new MemoryResearchState(),codeCommit:'test'}),/leakage/);assertions++;console.log('PASS leakage blocks insufficient-sample/empty-experiment paths too');
+check('known-rule mechanism gates use their actual originating population',()=>{
+ const source=rows.slice(0,60).map((s,i)=>({...s,predictedWinner:i<10?s.awayTeam:s.homeTeam}));
+ const assessment=evaluateChallenger(source,{...summary.experiment.hypothesis,conditions:[],originRuleKey:'AWAY_PICK',proposedImplementation:'NO_MODEL_CHANGE_RESEARCH_ONLY'},0);
+ assert.equal(assessment.originControl.n,10);assert.equal(assessment.gates.sample,false);
+});
 const noEffect=evaluateChallenger(rows.slice(0,100),{...summary.experiment.hypothesis,conditions:[],proposedImplementation:'NO_MODEL_CHANGE_RESEARCH_ONLY'},0);
 check('neutral or uncertain improvements cannot survive robustness gates',()=>{assert.notEqual(noEffect.decision,'SURVIVED_RESEARCH');assert.equal(noEffect.gates.uncertainty,false);assert.equal(noEffect.gates.nullChallenge,false);});
 const noise=fixtures(true),nRows=buildFailureFeatureRows(noise);

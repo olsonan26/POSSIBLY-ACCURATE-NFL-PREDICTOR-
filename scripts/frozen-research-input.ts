@@ -15,7 +15,7 @@ export function adaptFrozenPredictions(records: any[], coachRows: any[] = []): R
     const scores=Number.isFinite(s.baseHomeProbability)?s:undefined;
     const coachRow=coachRows.filter(c=>c.report?.gameId===row.game_id && c.mode==='pregame' && Date.parse(c.captured_at)<=Date.parse(row.captured_at) && Date.parse(c.captured_at)<Date.parse(c.kickoff_at))
       .sort((a,b)=>Date.parse(b.captured_at)-Date.parse(a.captured_at))[0];
-    const cutoff=row.data_cutoff_at || row.captured_at;
+    const cutoff=s.unifiedSnapshot?.cutoffAt || row.data_cutoff_at || row.captured_at;
     const unified:UnifiedPregameSnapshot=s.unifiedSnapshot || buildUnifiedSnapshot({gameId:row.game_id,modelVersion:row.model_version,
       kickoffAt:row.kickoff_at,capturedAt:row.captured_at,cutoffAt:cutoff,horizon,mode:'PROSPECTIVE',result:{modelScores:scores},
       controlProbability:row.home_win_probability,homeTeam:row.home_team,awayTeam:row.away_team,coach:coachRow?.report,

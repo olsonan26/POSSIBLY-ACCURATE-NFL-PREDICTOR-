@@ -1,6 +1,7 @@
 import {ACTION_FAMILIES,generateHypotheses,type FailureCluster,type FailureFeatureRow,type ResearchHypothesis} from './research-core.js';
 import {digest} from './research-cohorts.js';
 export function validateHypothesis(h:ResearchHypothesis) {
+  if(![...ACTION_FAMILIES,'DAMP_H2H','DAMP_VENUE','BOOST_FORM','DAMP_ELO','COMPRESS_CONFIDENCE','HOME_BIAS'].includes(h.proposedImplementation))throw new Error('Unsupported hypothesis implementation');
   for(const key of ['hypothesisId','sourceClusterId','sourceModelVersion','statement','mechanism','featuresInvolved','actionType','expectedDirection','historicalPopulation',
     'comparisonPopulation','proposedImplementation','parameterGrid','minimumSampleRequirement','leakageRisks','duplicationRisks','missingDataRisks','falsificationCondition','complexityScore','priorityScore','origin'])
     if(h[key]===undefined||h[key]===null)throw new Error(`Hypothesis missing ${key}`);
@@ -9,12 +10,16 @@ export function validateHypothesis(h:ResearchHypothesis) {
     if(h.featuresInvolved.length<1||h.featuresInvolved.length>3||h.parameterGrid.some(p=>Math.abs(p)>.5))throw new Error('Unbounded feature experiment');
     for(const key of h.featuresInvolved)if(!h.featureScales?.[key]||h.featureScales[key].sd<=0)throw new Error('Discovery-only scales required');
   }
+  const action=h.proposedImplementation;
+  if(['CALIBRATE_SUBGROUP','ADD_UNCERTAINTY_GATE','COMPRESS_CONFIDENCE','DAMP_H2H','DAMP_VENUE','DAMP_ELO'].includes(action)&&h.parameterGrid.some(p=>p<0||p>1))throw new Error('Unbounded damping/calibration grid');
+  if(['DAMP_FEATURE','BOOST_FEATURE','BOOST_FORM'].includes(action)&&h.parameterGrid.some(p=>p<0||p>2))throw new Error('Unbounded feature weight grid');
+  if(action==='HOME_BIAS'&&h.parameterGrid.some(p=>Math.abs(p)>.5))throw new Error('Unbounded intercept grid');
   if(h.conditions&&h.conditions.length>3)throw new Error('Unbounded subgroup complexity');
   return h;
 }
 export function generateResearchHypotheses(clusters:FailureCluster[],discovery:FailureFeatureRow[],modelVersion:string):ResearchHypothesis[] {
   return generateHypotheses(clusters).map(h=>{
-    h={...h,sourceModelVersion:modelVersion,actionType:h.actionType||(['BOOST_FORM'].includes(h.proposedImplementation)?'BOOST_FEATURE':['HOME_BIAS'].includes(h.proposedImplementation)?'ADD_FEATURE':'DAMP_FEATURE'),
+    h={...h,originRuleKey:clusters.find(c=>c.clusterId===h.sourceClusterId)?.ruleKey,sourceModelVersion:modelVersion,actionType:h.actionType||(['BOOST_FORM'].includes(h.proposedImplementation)?'BOOST_FEATURE':['HOME_BIAS'].includes(h.proposedImplementation)?'ADD_FEATURE':h.proposedImplementation==='COMPRESS_CONFIDENCE'?'CALIBRATE_SUBGROUP':'DAMP_FEATURE'),
       comparisonPopulation:h.comparisonPopulation||'Same selected side, confidence, Elo and season phase',duplicationRisks:h.duplicationRisks||h.duplicatedSignals,
       missingDataRisks:h.missingDataRisks||['Unavailable fields cannot satisfy a rule'],complexityScore:h.complexityScore||1};
     if(h.origin==='DISCOVERED_FAILURE_CLUSTER') {
@@ -46,7 +51,8 @@ export function manualHypotheses(entries:any[],clusters:FailureCluster[],modelVe
   const executable:ResearchHypothesis[]=[],blocked:any[]=[];
   for(const item of entries) {
     if(item.hypothesisId&&item.proposedImplementation) {
-      try {const h=validateHypothesis({...item,origin:'MANUAL',sourceModelVersion:modelVersion});
+      try {const cluster=clusters.find(c=>c.clusterId===item.sourceClusterId);
+        const h=validateHypothesis({...item,origin:'MANUAL',originRuleKey:cluster?.ruleKey,conditions:item.conditions??cluster?.conditions,sourceModelVersion:modelVersion});
         if(!clusters.some(c=>c.clusterId===h.sourceClusterId))throw new Error('Manual hypothesis source population unavailable');executable.push(h);
       } catch(e){blocked.push({...item,status:'BLOCKED_CONTRACT',reason:String(e),origin:'MANUAL'});}
     } else blocked.push({...item,status:item.priority==='completed'?'TESTED':'BLOCKED_CONTRACT',origin:'MANUAL',reason:'Research brief preserved; requires an executable hypothesis and registered population.'});
