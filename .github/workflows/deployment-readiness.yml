@@ -94,6 +94,12 @@ jobs:
       - name: Autoresearch synthetic acceptance tests
         run: bun run research:test
 
+      - name: Analyzer V2 capture, discovery and leakage acceptance
+        run: bun run research:test:v2
+
+      - name: Historical ensemble target-week truncation acceptance
+        run: bun run research:chronology-check
+
       - name: EXP-031 pregame intelligence evidence-gate tests
         run: bun run research:pregame-intelligence
 
