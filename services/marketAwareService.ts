@@ -1,5 +1,5 @@
-import { PredictionResult } from '../types';
-import { normalizeTeamAbbr } from '../data/teamRegistry';
+import { PredictionResult } from '../types.js';
+import { normalizeTeamAbbr } from '../data/teamRegistry.js';
 
 const NFLVERSE_GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 const CACHE_TTL_MS = 60_000;

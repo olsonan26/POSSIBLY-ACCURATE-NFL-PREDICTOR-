@@ -28,10 +28,26 @@ export function horizonComparisons(snapshots:Snapshot[]) {
    const a=sorted[i-1],b=sorted[i];if(a.unifiedSnapshot!.captureHorizon===b.unifiedSnapshot!.captureHorizon)continue;
    const before=numericResearchFeatures(a.unifiedSnapshot),after=numericResearchFeatures(b.unifiedSnapshot);
    pairs.push({gameId:a.gameId,model:a.sourceModelVersion,from:a.unifiedSnapshot!.captureHorizon,to:b.unifiedSnapshot!.captureHorizon,
+    hoursToKickoffBefore:(Date.parse(a.unifiedSnapshot!.kickoffAt)-Date.parse(a.predictionTimestamp))/3600000,
+    hoursToKickoffAfter:(Date.parse(b.unifiedSnapshot!.kickoffAt)-Date.parse(b.predictionTimestamp))/3600000,
+    rawChanges:Object.fromEntries([...new Set([...Object.keys(a.unifiedSnapshot!.features),...Object.keys(b.unifiedSnapshot!.features)])].flatMap(key=>{
+     const from=a.unifiedSnapshot!.features[key],to=b.unifiedSnapshot!.features[key];
+     return from?.value===to?.value&&from?.status===to?.status?[]:[[key,{before:from?.value??null,after:to?.value??null,beforeStatus:from?.status??'missing',afterStatus:to?.status??'missing'}]];
+    })),
     probabilityDelta:b.homeWinProbability-a.homeWinProbability,changes:Object.fromEntries(Object.keys(after).filter(k=>after[k]!=null&&before[k]!=null&&after[k]!==before[k]).map(k=>[k,{before:before[k],after:after[k],delta:after[k]!-before[k]!}])),
     controlBefore:a.actualWinner&&a.actualWinner!=='TIE'?calibrationMetrics([{p:a.homeWinProbability,y:Number(a.actualWinner===a.homeTeam)}]):null,
     controlAfter:b.actualWinner&&b.actualWinner!=='TIE'?calibrationMetrics([{p:b.homeWinProbability,y:Number(b.actualWinner===b.homeTeam)}]):null});
   }
  }
  return pairs;
+}
+export function horizonPerformance(snapshots:Snapshot[]){
+ const rows=snapshots.filter(s=>s.unifiedSnapshot?.evidenceMode==='PROSPECTIVE'&&s.actualWinner&&s.actualWinner!=='TIE');
+ const models=[...new Set(rows.map(s=>s.sourceModelVersion))],horizons=['T-72h','T-24h','T-3h','T-30m'];
+ const score=(r:Snapshot[])=>({...calibrationMetrics(r.map(s=>({p:s.homeWinProbability,y:Number(s.actualWinner===s.homeTeam)}))),uniqueGames:new Set(r.map(s=>s.gameId)).size});
+ return {perHorizon:models.flatMap(model=>horizons.map(horizon=>({model,horizon,...score(rows.filter(s=>s.sourceModelVersion===model&&s.unifiedSnapshot!.captureHorizon===horizon))}))),
+  paired:models.flatMap(model=>horizons.flatMap((from,i)=>horizons.slice(i+1).map(to=>{
+   const a=rows.filter(s=>s.sourceModelVersion===model&&s.unifiedSnapshot!.captureHorizon===from),b=rows.filter(s=>s.sourceModelVersion===model&&s.unifiedSnapshot!.captureHorizon===to);
+   const ids=new Set(a.filter(s=>b.some(t=>t.gameId===s.gameId)).map(s=>s.gameId));return {model,from,to,sameGames:ids.size,before:score(a.filter(s=>ids.has(s.gameId))),after:score(b.filter(s=>ids.has(s.gameId)))};
+  })))};
 }

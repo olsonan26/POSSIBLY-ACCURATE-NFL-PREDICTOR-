@@ -48,7 +48,10 @@
     "research:audit": "bun scripts/audit-research-v2.ts",
     "research:verify": "bun scripts/verify-research-v2.ts",
     "research:chronology-check": "bun scripts/ensemble-chronology-acceptance.ts",
-    "research:test:engine": "bun scripts/research-engine.test.ts && bun scripts/research-live.test.ts && node scripts/research-schema.test.mjs"
+    "research:test:engine": "bun scripts/research-engine.test.ts && bun scripts/research-live.test.ts && node scripts/research-schema.test.mjs",
+    "research:backfill": "bun scripts/research-backfill.ts",
+    "research:worker": "bun scripts/research-worker.ts",
+    "research:test:data": "bun scripts/research-data.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",

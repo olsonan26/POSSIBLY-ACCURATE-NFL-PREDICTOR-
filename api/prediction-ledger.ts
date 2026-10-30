@@ -48,19 +48,21 @@ export function snapshotWindowStatus(kickoffAt: string, nowMs = Date.now()): 'el
 }
 
 function storageConfig() {
-  const url = process.env.NFL_LEDGER_SUPABASE_URL?.trim();
-  const key = process.env.NFL_LEDGER_SUPABASE_KEY?.trim();
+  const url = (process.env.NFL_LEDGER_SUPABASE_URL||process.env.NFL_LEARNING_SUPABASE_URL)?.trim();
+  const key = (process.env.NFL_LEDGER_SUPABASE_KEY||process.env.NFL_LEARNING_SUPABASE_KEY)?.trim();
   const secret = process.env.NFL_LEDGER_SECRET?.trim();
-  if (!url || !key || !secret) return null;
+  let serviceRole=false;
+  try {serviceRole=JSON.parse(Buffer.from(key?.split('.')[1]||'','base64url').toString()).role==='service_role';}catch{}
+  if (!url || !key || (!secret&&!key.startsWith('sb_secret_')&&!serviceRole)) return null;
   return { url: url.replace(/\/$/, ''), key, secret };
 }
 
 function storageHeaders(config: NonNullable<ReturnType<typeof storageConfig>>, prefer?: string) {
   const headers: Record<string, string> = {
     apikey: config.key,
-    Authorization: `Bearer ${config.key}`,
     'Content-Type': 'application/json',
-    'x-ledger-secret': config.secret
+    ...(/^(sb_secret_|sb_publishable_)/.test(config.key)?{}:{Authorization:`Bearer ${config.key}`}),
+    ...(config.secret?{'x-ledger-secret':config.secret}:{})
   };
   if (prefer) headers.Prefer = prefer;
   return headers;
@@ -149,9 +151,9 @@ async function officialGame(body: JsonRecord) {
   return game;
 }
 
-async function recordSnapshot(body: JsonRecord, res: any) {
+export async function recordSnapshot(body: JsonRecord, res: any, verified?: Awaited<ReturnType<typeof officialGame>>) {
   let game;
-  try { game = await officialGame(body); } catch (error) {
+  try { game = verified || await officialGame(body); } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : "Official game verification failed." });
   }
   if (!game.gametime) return res.status(400).json({ error: 'Official kickoff time is required before a prediction can be frozen.' });
@@ -204,6 +206,7 @@ async function recordSnapshot(body: JsonRecord, res: any) {
       if(captureHorizon(kickoffAt,receivedAt)!==unified.captureHorizon) throw new Error('Stale capture horizon.');
       unified=structuredClone(unified);
       unified.capturedAt=receivedAt;
+      unified.hoursToKickoff=(Date.parse(kickoffAt)-Date.parse(receivedAt))/3600000;
       Object.values(unified.features).forEach(f=>{f.capturedAt=receivedAt;});
       const researchInput=prediction.researchInput;
       if(researchInput&&typeof researchInput==='object'&&!Array.isArray(researchInput)) {

@@ -32,7 +32,7 @@ export function defaultCohortPlan(rows:Snapshot[],createdAt:string):CohortPlan {
     {season,fromWeek:9,throughWeek:12,role:'VALIDATION'},
     {season,fromWeek:13,throughWeek:18,role:'FUTURE_LOCKBOX'},
     {season:season+1,fromWeek:1,throughWeek:18,role:'FUTURE_LOCKBOX'}
-  ]:[2022,2023,2024,2025].map(s=>({season:s,fromWeek:1,throughWeek:18,role:s<2024?'DISCOVERY':s===2024?'VALIDATION':'LEGACY_TEST'}));
+  ]:[...new Set(rows.filter(r=>r.season<=2025).map(r=>r.season))].sort().map(s=>({season:s,fromWeek:1,throughWeek:18,role:s<2024?'DISCOVERY':s===2024?'VALIDATION':'LEGACY_TEST'}));
   if(!forward)ranges.push({season:2026,fromWeek:1,throughWeek:18,role:'FUTURE_LOCKBOX'},{season:2027,fromWeek:1,throughWeek:18,role:'FUTURE_LOCKBOX'});
   const identity={modelVersion:first.sourceModelVersion,horizon:first.unifiedSnapshot?.captureHorizon||'legacy',mode,ranges,version:'cohorts-v2' as const};
   return {...identity,id:`COHORT-${digest(identity).slice(0,20)}`,createdAt,minimum:{discovery:80,validation:40,confirmation:50}};

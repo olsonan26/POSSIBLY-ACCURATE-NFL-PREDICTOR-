@@ -1,11 +1,11 @@
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {parseGamesCsv,parseTeamData,predictWinner} from '../services/validatedPredictionService.js';
-import {buildUnifiedSnapshot} from '../services/researchSnapshot.js';
+import {parseGamesCsv} from '../services/validatedPredictionService.js';
+import {reconstructHistoricalGame} from '../server/historicalResearch.js';
 import {easternKickoffIso} from '../services/kickoff.js';
 import {loadResearchTeamEdges} from '../services/researchTeamStats.js';
-import {logit,buildFailureFeatureRows,normalizeFailureRows,type ResearchPredictionSnapshot} from './research-core.js';
+import {buildFailureFeatureRows,normalizeFailureRows,type ResearchPredictionSnapshot} from './research-core.js';
 import {adaptFrozenPredictions} from './frozen-research-input.js';
 import {cohortRows,researchPopulations} from './research-cohorts.js';
 import {FileResearchState} from './research-state.js';
@@ -15,82 +15,16 @@ import {writeResearchScorecards} from './research-scorecards.js';
 const GAMES_URL='https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 const CONTROL_VERSION='v2.2-validated-current-season';
 const DISCOVERY_SEASONS=new Set([2022,2023]),VALIDATION_SEASON=2024,LEGACY_TEST_SEASON=2025;
-type Game=ReturnType<typeof parseGamesCsv>[number];
-function actualWinner(game: Game): string | undefined {
-  if (!Number.isFinite(game.homeScore) || !Number.isFinite(game.awayScore) || game.homeScore === game.awayScore) return undefined;
-  return game.homeScore! > game.awayScore! ? game.homeTeam : game.awayTeam;
+async function generateSnapshots(games:ReturnType<typeof parseGamesCsv>) {
+ const schedule=games.map(g=>({...g,neutralSite:g.location==='Neutral',completed:Number.isFinite(g.homeScore)&&Number.isFinite(g.awayScore)}));
+ const selected=schedule.filter(g=>(DISCOVERY_SEASONS.has(g.season)||g.season===VALIDATION_SEASON||g.season===LEGACY_TEST_SEASON)&&g.gameType==='REG'&&g.completed&&g.homeScore!==g.awayScore);
+ const snapshots:ResearchPredictionSnapshot[]=[];
+ for(const [i,game] of selected.entries()){
+  snapshots.push(await reconstructHistoricalGame(game,schedule));
+  if((i+1)%100===0)console.log('snapshot progress '+(i+1)+'/'+selected.length);
+ }
+ return snapshots;
 }
-
-async function generateSnapshots(games: Game[]): Promise<ResearchPredictionSnapshot[]> {
-  const teams = parseTeamData();
-  const byAbbr = new Map(teams.map(team => [team.abbr, team]));
-  const selected = games.filter(game =>
-    (DISCOVERY_SEASONS.has(game.season) || game.season === VALIDATION_SEASON || game.season === LEGACY_TEST_SEASON) &&
-    game.gameType === 'REG' &&
-    Number.isFinite(game.homeScore) &&
-    Number.isFinite(game.awayScore) &&
-    game.homeScore !== game.awayScore
-  );
-  const snapshots: ResearchPredictionSnapshot[] = [];
-
-  for (let i = 0; i < selected.length; i++) {
-    const game = selected[i];
-    const home = byAbbr.get(game.homeTeam);
-    const away = byAbbr.get(game.awayTeam);
-    if (!home || !away) continue;
-    const result = await predictWinner(
-      home,
-      away,
-      new Date(`${game.gameday}T12:00:00Z`),
-      true,
-      { neutralSite: game.location === 'Neutral' }
-    );
-    if (!result.modelScores) continue;
-    const s = result.modelScores;
-    const homeProbability = s.finalHomeProbability / 100;
-    const winner = actualWinner(game);
-    const predictedWinner = homeProbability >= 0.5 ? game.homeTeam : game.awayTeam;
-    const kickoffAt = easternKickoffIso(game.gameday, game.gametime || '') || `${game.gameday}T23:59:59Z`;
-    const capturedAt = new Date().toISOString();
-    const cutoffAt = `${game.gameday}T00:00:00.000Z`;
-    const extraFeatures = await loadResearchTeamEdges(game.homeTeam, game.awayTeam, game.gameday, game.season, game.week, cutoffAt, capturedAt);
-    const unifiedSnapshot = buildUnifiedSnapshot({ gameId: game.gameId, modelVersion: CONTROL_VERSION, kickoffAt,
-      capturedAt, cutoffAt, horizon: 'T-24h', mode: 'HISTORICAL_RECONSTRUCTION', result,
-      homeTeam: game.homeTeam, awayTeam: game.awayTeam, extraFeatures });
-    snapshots.push({
-      unifiedSnapshot,
-      snapshotId: `${CONTROL_VERSION}:${game.gameId || `${game.season}-${game.week}-${game.awayTeam}-${game.homeTeam}`}`,
-      gameId: game.gameId || `${game.season}-${game.week}-${game.awayTeam}-${game.homeTeam}`,
-      sourceModelVersion: CONTROL_VERSION,
-      season: game.season,
-      week: Number(game.week) || 0,
-      gameday: game.gameday,
-      predictionTimestamp: capturedAt,
-      dataCutoffTimestamp: `${game.gameday}T00:00:00.000Z`,
-      homeTeam: game.homeTeam,
-      awayTeam: game.awayTeam,
-      neutralSite: game.location === 'Neutral',
-      homeWinProbability: homeProbability,
-      awayWinProbability: 1 - homeProbability,
-      predictedWinner,
-      featureSnapshot: {
-        baseLogit: logit(s.baseHomeProbability / 100),
-        formLogit: s.footballLogitAdjustment,
-        venueLogit: s.venueLogitAdjustment,
-        h2hLogit: s.h2hLogitAdjustment,
-        personnelLogit: s.personnelLogitAdjustment,
-        restLogit: s.restLogitAdjustment
-      },
-      actualWinner: winner,
-      homeScore: game.homeScore,
-      awayScore: game.awayScore,
-      correct: winner ? predictedWinner === winner : undefined
-    });
-    if ((i + 1) % 100 === 0) console.log(`snapshot progress ${i + 1}/${selected.length}`);
-  }
-  return snapshots;
-}
-
 
 const arg=(key:string)=>process.argv.find(a=>a.startsWith('--'+key+'='))?.slice(key.length+3);
 async function main(){

@@ -12,6 +12,7 @@ export interface PointInTimeTeamStats extends TeamStatsDataset {
 }
 
 const datasetCache = new Map<number, Promise<TeamStatsDataset>>();
+const datasetExpiry = new Map<number, number>();
 const targetWeekCache = new Map<string, Promise<number | null>>();
 
 function parseCsvLine(line: string): string[] {
@@ -109,7 +110,8 @@ async function fetchTextWithFallback(primary: string, fallback: string): Promise
 
 async function loadTeamStatsDataset(season: number): Promise<TeamStatsDataset> {
   const existing = datasetCache.get(season);
-  if (existing) return existing;
+  if (existing && Date.now() < (datasetExpiry.get(season)||0)) return existing;
+  datasetExpiry.set(season,Date.now()+60*60_000);
 
   const promise = fetchTextWithFallback(
     `/api/nfl-data?dataset=team-stats&season=${season}`,
@@ -123,7 +125,8 @@ async function loadTeamStatsDataset(season: number): Promise<TeamStatsDataset> {
       return dataset;
     })
     .catch(error => {
-      datasetCache.delete(season);
+      // Missing seasons/outages are shared across games, rather than hammered once per team/game.
+      datasetExpiry.set(season,Date.now()+10*60_000);
       throw error;
     });
 

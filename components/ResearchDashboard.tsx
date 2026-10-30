@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import ResearchAccessField from './ResearchAccessField';
 import { researchHeaders,resetResearchAccess } from '../services/researchAccess';
 import type summary from '../research/reports/v2-summary';
-type Summary=typeof summary & {source?:string;liveUnavailable?:boolean;liveStatus?:string;liveEngine?:any;upsetComparisons?:any[];horizonChanges?:any[];dataQuality?:any;durableEvents?:any;redundancy?:any[]};
+type Summary=typeof summary & {library?:any;source?:string;liveUnavailable?:boolean;liveStatus?:string;liveEngine?:any;upsetComparisons?:any[];horizonChanges?:any[];dataQuality?:any;durableEvents?:any;redundancy?:any[]};
 const percent=(value:number|null)=>value==null?'Insufficient sample':`${(value*100).toFixed(1)}%`;
 export default function ResearchDashboard() {
   const [data,setData]=useState<Summary|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -30,6 +30,7 @@ export default function ResearchDashboard() {
         <thead><tr><th scope="col">Evidence</th><th scope="col">N</th><th scope="col">Correct</th><th scope="col">Misses</th><th scope="col">Known groups</th><th scope="col">Validated discoveries</th></tr></thead>
         <tbody>{[data.historical,data.durable].filter(Boolean).map(row=><tr key={row.evidence}><th scope="row" className="py-2 font-normal">{row.evidence}</th><td>{row.eligible}</td><td>{row.correct}</td><td>{row.misses}</td><td>{row.knownClusters}</td><td>{row.validatedDiscoveredClusters}</td></tr>)}</tbody>
       </table></div>
+      {data.library?<div className="space-y-2"><p>Historical reconstruction: {data.library.historical.uniqueGames} unique games / {data.library.historical.snapshots} snapshots across {data.library.historical.seasons.join(', ')}.</p><p>Prospective: {data.library.prospective.uniqueGames} unique games / {data.library.prospective.snapshots} snapshots. Completed: {data.library.completedProspectiveUniqueGames} unique games / {data.library.completedProspectiveSnapshots} snapshots.</p><details><summary>Evidence-class coverage, horizon performance and scheduler captures</summary><pre className="overflow-auto text-xs whitespace-pre-wrap">{JSON.stringify(data.library,null,2)}</pre></details></div>:null}
       <p className="text-sm">{data.snapshot.fields} frozen fields across {data.snapshot.families} families; {data.snapshot.fieldsEverKnown} fields available in at least one historical reconstruction. Forward forecasts cover {data.completedUniqueGames} completed games across separate horizons.</p>
       <p className="text-sm">Active experiment: {data.activeExperiment?.experiment_id||'None selected: no eligible validated failure pattern.'}</p>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-bold">Prospective Coach section scorecard</caption>

@@ -1,3 +1,4 @@
+import ResearchBackfillPanel from './ResearchBackfillPanel';
 import React, { useMemo, useState } from 'react';
 import { parseTeamData, predictWinner } from '../services/validatedPredictionService';
 import { getSeasonGames, ScheduledGame } from '../services/scheduleService';
@@ -302,6 +303,7 @@ const SeasonBacktestPanel: React.FC = () => {
           </div>
         )}
       </div>
+      <ResearchBackfillPanel season={season} includePlayoffs={includePostseason}/>
     </section>
   );
 };

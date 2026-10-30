@@ -1,8 +1,8 @@
-name: Grade frozen DeepSeek forecasts
+name: Capture and grade NFL research evidence
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '7,17,27,37,47,57 * * * *'
 permissions:
   contents: read
 concurrency:
@@ -11,7 +11,7 @@ concurrency:
 jobs:
   grade:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       NFL_LEARNING_SUPABASE_URL: ${{ secrets.NFL_LEARNING_SUPABASE_URL }}
       NFL_LEARNING_SUPABASE_KEY: ${{ secrets.NFL_LEARNING_SUPABASE_KEY }}
@@ -19,6 +19,8 @@ jobs:
       NFL_LEDGER_SUPABASE_URL: ${{ secrets.NFL_LEDGER_SUPABASE_URL }}
       NFL_LEDGER_SUPABASE_KEY: ${{ secrets.NFL_LEDGER_SUPABASE_KEY }}
       NFL_LEDGER_SECRET: ${{ secrets.NFL_LEDGER_SECRET }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NFL_RESEARCH_ACCESS_KEY: ${{ secrets.NFL_RESEARCH_ACCESS_KEY }}
       OPENROUTER_PREGAME_MODEL: ${{ vars.OPENROUTER_PREGAME_MODEL || 'deepseek/deepseek-v4.1-flash' }}
     steps:
       - uses: actions/checkout@v4
@@ -27,11 +29,10 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - name: Grade outcomes without paid model calls
+      - name: Capture due horizons, resume backfills and perform daily grading/research
         run: |
           if [ -z "$NFL_LEARNING_SUPABASE_URL" ] || [ -z "$NFL_LEARNING_SUPABASE_KEY" ]; then
-            echo '::notice::Optional GitHub grading worker is not configured. Production grading uses the Vercel cron; no games were graded by this workflow.'
-            exit 0
+            echo '::error::Automatic forward capture is BLOCKED_CONFIGURATION: server storage credentials are missing.'
+            exit 1
           fi
-          bun run learning:sync
-          bun run research:cycle --live
+          bun run research:worker

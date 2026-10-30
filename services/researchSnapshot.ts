@@ -25,6 +25,8 @@ export interface UnifiedPregameSnapshot {
   capturedAt: string;
   cutoffAt: string;
   kickoffAt: string;
+  /** Actual capture clock, including negative values for after-event reconstruction. */
+  hoursToKickoff?: number;
   features: Record<string, ResearchFeature>;
 }
 export function captureHorizon(kickoffAt: string, capturedAt: string): CaptureHorizon {
@@ -177,7 +179,7 @@ export function buildUnifiedSnapshot(input: {
   put('data_quality.missingFeatureCount', measured.filter(f => f.value === null).length, 'deterministic');
   put('data_quality.coverage', measured.filter(f => f.status === 'known').length / measured.length, 'deterministic');
   put('data_quality.staleMarket',marketSafe?Number(cutoff-Date.parse(market.observedAt)>24*3600000):null,'deterministic');
-  return deepFreeze({ schemaVersion: 'unified-pregame-v1', forecastId: `${input.gameId}:${input.modelVersion}:${input.horizon}:${input.mode}`,
+  return deepFreeze({ schemaVersion: 'unified-pregame-v1', forecastId: `${input.gameId}:${input.modelVersion}:${input.horizon}:${input.mode}`,hoursToKickoff:(kickoff-capture)/3600000,
     gameId: input.gameId, modelVersion: input.modelVersion, captureHorizon: input.horizon, evidenceMode: input.mode,
     capturedAt, cutoffAt, kickoffAt, features });
 }
@@ -187,6 +189,7 @@ export function numericResearchFeatures(snapshot?: UnifiedPregameSnapshot): Reco
 export function validateUnifiedSnapshot(snapshot: UnifiedPregameSnapshot, expected?: {gameId:string;modelVersion:string;kickoffAt:string;now:string}): void {
   if (!snapshot || snapshot.schemaVersion!=='unified-pregame-v1' || !snapshot.features || Array.isArray(snapshot.features)) throw new Error('Invalid unified snapshot.');
   const cutoff=Date.parse(snapshot.cutoffAt),capture=Date.parse(snapshot.capturedAt),kickoff=Date.parse(snapshot.kickoffAt);
+  if(snapshot.hoursToKickoff!==undefined&&(!Number.isFinite(snapshot.hoursToKickoff)||Math.abs(snapshot.hoursToKickoff-(kickoff-capture)/3600000)>1e-6))throw new Error('Incorrect hours to kickoff.');
   if(![cutoff,capture,kickoff].every(Number.isFinite)||cutoff>capture||cutoff>=kickoff) throw new Error('Invalid snapshot chronology.');
   if(snapshot.evidenceMode==='PROSPECTIVE' && capture>=kickoff) throw new Error('Late prospective snapshot.');
   if(!['PROSPECTIVE','HISTORICAL_RECONSTRUCTION'].includes(snapshot.evidenceMode)) throw new Error('Unknown evidence mode.');
