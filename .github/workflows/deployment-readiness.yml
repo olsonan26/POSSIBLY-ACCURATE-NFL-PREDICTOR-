@@ -96,6 +96,8 @@ jobs:
 
       - name: Analyzer V2 capture, discovery and leakage acceptance
         run: bun run research:test:v2
+      - name: Research engine recovery and SQL integrity
+        run: bun run research:test:engine
 
       - name: Historical ensemble target-week truncation acceptance
         run: bun run research:chronology-check

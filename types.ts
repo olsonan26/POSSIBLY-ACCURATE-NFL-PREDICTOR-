@@ -116,6 +116,9 @@ export interface DecisionFactor {
 }
 
 export interface PersonnelSnapshot {
+  sourceRetrievedAt?: string;
+  injuriesLoaded?: boolean;
+  depthLoaded?: boolean;
   team: string;
   teamAbbr: string;
   coach?: Person;

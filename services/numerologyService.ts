@@ -50,6 +50,7 @@ interface LiveAthlete extends Person {
 }
 
 interface LiveTeamContext {
+  sourceRetrievedAt: string;
   rosterLoaded: boolean;
   depthLoaded: boolean;
   injuriesLoaded: boolean;
@@ -484,6 +485,7 @@ async function loadLiveTeamContext(teamAbbr: string): Promise<LiveTeamContext> {
     const keyDefense = keyDefensePositions.map(position => pickRankOne(depth, [position])).filter(Boolean).slice(0, 4) as LiveAthlete[];
 
     return {
+      sourceRetrievedAt: new Date().toISOString(),
       rosterLoaded: rosterResult.status === 'fulfilled' && roster.length > 0,
       depthLoaded: depthResult.status === 'fulfilled' && depth.length > 0,
       injuriesLoaded: injuryResult.status === 'fulfilled',
@@ -703,6 +705,9 @@ function buildPersonnelSnapshot(team: Team, coach: Person, qb: Person, live: Liv
   return {
     team: team.name,
     teamAbbr: team.abbr,
+    sourceRetrievedAt: live?.sourceRetrievedAt,
+    injuriesLoaded: live?.injuriesLoaded,
+    depthLoaded: live?.depthLoaded,
     coach,
     startingQb: qb,
     backupQb: live?.backupQb,

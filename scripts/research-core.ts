@@ -12,6 +12,7 @@ export interface ResearchFeatureSnapshot {
 }
 
 export interface ResearchPredictionSnapshot {
+  entityContext?: {homeQbId?:string;awayQbId?:string};
   unifiedSnapshot?: UnifiedPregameSnapshot;
   snapshotId: string;
   gameId: string;
@@ -35,6 +36,7 @@ export interface ResearchPredictionSnapshot {
 }
 
 export interface FailureFeatureRow {
+  quarterbackIds?:string[];
   researchFeatures?: Record<string, number | null>;
   snapshotId: string;
   gameId: string;
@@ -236,6 +238,7 @@ export function buildFailureFeatureRows(snapshots: ResearchPredictionSnapshot[])
       const f = snapshot.featureSnapshot;
       return {
         researchFeatures: numericResearchFeatures(snapshot.unifiedSnapshot),
+        quarterbackIds:[snapshot.entityContext?.homeQbId,snapshot.entityContext?.awayQbId].filter((v):v is string=>Boolean(v)),
         snapshotId: snapshot.snapshotId,
         gameId: snapshot.gameId,
         sourceModelVersion: snapshot.sourceModelVersion,
@@ -497,6 +500,7 @@ export function hypothesisProbability(snapshot: ResearchPredictionSnapshot, hypo
     return logistic(logit(control)+(parameter-1)*snapshot.featureSnapshot[key]);
   }
   if(['ADD_FEATURE','ADD_INTERACTION','ADD_DISAGREEMENT_FEATURE','REPLACE_FEATURE'].includes(action)) {
+    if(hypothesis.conditions?.length&&!matchesConditions(buildFailureFeatureRows([{...snapshot,actualWinner:snapshot.homeTeam}])[0],hypothesis.conditions))return control;
     const values=numericResearchFeatures(snapshot.unifiedSnapshot);
     const keys=hypothesis.featuresInvolved;
     if(keys.length<1||keys.length>3||Math.abs(parameter)>.5) throw new Error('Unsafe challenger complexity.');

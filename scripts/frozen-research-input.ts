@@ -25,6 +25,7 @@ export function adaptFrozenPredictions(records: any[], coachRows: any[] = []): R
     return [{snapshotId:row.id,gameId:row.game_id,sourceModelVersion:row.model_version,season:row.season,week:row.week,
       gameday:row.game_date,predictionTimestamp:row.captured_at,dataCutoffTimestamp:cutoff,homeTeam:row.home_team,awayTeam:row.away_team,
       neutralSite:row.neutral_site,homeWinProbability:row.home_win_probability,awayWinProbability:1-row.home_win_probability,
+      entityContext:{homeQbId:typeof unified.features['football_qb.homeIdentity']?.value==='string'?String(unified.features['football_qb.homeIdentity'].value):undefined,awayQbId:typeof unified.features['football_qb.awayIdentity']?.value==='string'?String(unified.features['football_qb.awayIdentity'].value):undefined},
       predictedWinner:row.predicted_winner,actualWinner:row.actual_winner || undefined,unifiedSnapshot:unified,
       featureSnapshot:{baseLogit:scores?Math.log(s.baseHomeProbability/(100-s.baseHomeProbability)):Math.log(row.home_win_probability/(1-row.home_win_probability)),
         formLogit:s.footballLogitAdjustment ?? 0,venueLogit:s.venueLogitAdjustment ?? 0,h2hLogit:s.h2hLogitAdjustment ?? 0,

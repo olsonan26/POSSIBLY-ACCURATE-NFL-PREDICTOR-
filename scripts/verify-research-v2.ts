@@ -3,9 +3,9 @@ import { mkdirSync,writeFileSync } from 'node:fs';
 const commands=[
   ['node',['node_modules/typescript/bin/tsc','--noEmit']],
   ['node',['scripts/node-api-runtime.test.mjs']],
-  ...['research-cycle.test.ts','research-v2.test.ts','point-in-time-integrity.test.ts','prediction-ledger.test.ts','reliability.test.ts',
+  ...['research-cycle.test.ts','research-v2.test.ts','research-engine.test.ts','research-live.test.ts','point-in-time-integrity.test.ts','prediction-ledger.test.ts','reliability.test.ts',
     'coach-analysis.test.ts','learning-feedback.test.ts','learning-api.test.ts','postgame-learning.test.ts','pregame-intelligence.test.ts'].map(file=>[process.execPath,[`scripts/${file}`]]),
-  ['node',['scripts/coach-schema.test.mjs']],['node',['scripts/learning-schema.test.mjs']],
+  ['node',['scripts/research-schema.test.mjs']],['node',['scripts/coach-schema.test.mjs']],['node',['scripts/learning-schema.test.mjs']],
   ['node',['node_modules/vite/bin/vite.js','build']]
 ] as [string,string[]][];
 mkdirSync('research/runtime/test-reports',{recursive:true});

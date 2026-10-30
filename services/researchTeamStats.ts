@@ -28,7 +28,7 @@ export function teamStatResearchEdges(home: PointInTimeTeamStats | null, away: P
     const h=measure(home,config),a=measure(away,config);
     result[key] = {value:h===null||a===null?null:(h-a)*(config.invert?-1:1),status:h===null||a===null?'BLOCKED_DATA':'known',
       source:`nflverse stats_team_week; season-to-date team proxy; week < ${targetWeek}; historical feeds may be revised`,
-      observedAt:cutoffAt,capturedAt,version:'team-proxies-v1',includedInProduction:false};
+      observedAt:cutoffAt,capturedAt,version:'team-proxies-v1',includedInProduction:false,timestampKind:'derived_cutoff',sourceObservedAt:null};
   }
   return result;
 }

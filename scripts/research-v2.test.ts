@@ -133,7 +133,7 @@ test('generalized interaction challengers are bounded, ablatable and fail closed
   const base=generateHypotheses(found.clusters)[0];
   const fixture:any={unifiedSnapshot:snapshot,homeWinProbability:.61,homeTeam:'BUF',awayTeam:'MIA',actualWinner:'BUF',predictedWinner:'BUF',
     featureSnapshot:{baseLogit:.4,formLogit:.02,venueLogit:0,h2hLogit:0,personnelLogit:0,restLogit:0}};
-  const hypothesis:any={...base,proposedImplementation:'ADD_INTERACTION',actionType:'ADD_INTERACTION',
+  const hypothesis:any={...base,conditions:[],proposedImplementation:'ADD_INTERACTION',actionType:'ADD_INTERACTION',
     featuresInvolved:['football_core.formLogit','football_travel.awayTravelMiles'],featureScales:{'football_core.formLogit':{mean:0,sd:.02},'football_travel.awayTravelMiles':{mean:0,sd:1000}}};
   assert.ok(hypothesisProbability(fixture,hypothesis,.1)>.61);
   assert.ok(Math.abs(hypothesisProbability(fixture,hypothesis,0)-.61)<1e-12);
@@ -165,7 +165,7 @@ try {
   });
   late=true;
   const blocked=await frozenResearchContext('test',context.cutoffAt,context.capturedAt);
-  test('later frozen source records cannot modify earlier horizons',()=>{assert.equal(blocked.coach,undefined);assert.equal(blocked.extraFeatures,undefined);});
+  test('later frozen source records cannot modify earlier horizons',()=>{assert.equal(blocked.coach,undefined);assert.equal(Object.keys(blocked.extraFeatures||{}).length,0);});
 } finally {
   globalThis.fetch=original;
   for(const [name,value] of [['NFL_LEARNING_SUPABASE_URL',storageEnv.url],['NFL_LEARNING_SUPABASE_KEY',storageEnv.key]] as const) {

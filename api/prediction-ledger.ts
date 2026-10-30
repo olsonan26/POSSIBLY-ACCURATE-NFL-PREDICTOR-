@@ -4,7 +4,9 @@ import { parseScheduleCsv } from '../services/scheduleService.js';
 import { createHash } from 'node:crypto';
 import { buildUnifiedSnapshot,validateUnifiedSnapshot, captureHorizon, type UnifiedPregameSnapshot } from '../services/researchSnapshot.js';
 import { frozenResearchContext } from '../server/researchCapture.js';
+import { captureResearchShadows } from '../server/researchStore.js';
 import type { ModelScores } from '../types.js';
+export const config = { maxDuration: 60 };
 
 const MAX_PAYLOAD_BYTES = 96_000;
 const NFL_TEAMS = new Set([
@@ -205,7 +207,7 @@ async function recordSnapshot(body: JsonRecord, res: any) {
       Object.values(unified.features).forEach(f=>{f.capturedAt=receivedAt;});
       const researchInput=prediction.researchInput;
       if(researchInput&&typeof researchInput==='object'&&!Array.isArray(researchInput)) {
-        const {coach,extraFeatures}=await frozenResearchContext(game.gameId,unified.cutoffAt,receivedAt);
+        const {coach,extraFeatures}=await frozenResearchContext(game.gameId,unified.cutoffAt,receivedAt,game);
         const market=body.market as Record<string,any>|null;
         unified=buildUnifiedSnapshot({gameId:game.gameId,modelVersion,kickoffAt,capturedAt:receivedAt,cutoffAt:unified.cutoffAt,
           horizon:unified.captureHorizon,mode:'PROSPECTIVE',result:{...researchInput,modelScores:featureSnapshot as ModelScores},
@@ -294,7 +296,10 @@ async function recordSnapshot(body: JsonRecord, res: any) {
   }
 
   if (Array.isArray(rows) && rows.length > 0) {
+    let researchCapture='captured';
+    try { await captureResearchShadows(rows[0]); } catch { researchCapture='retry_required'; }
     return res.status(201).json({
+      researchCapture,
       status: 'frozen',
       snapshotId: rows[0].id,
       capturedAt: rows[0].captured_at,

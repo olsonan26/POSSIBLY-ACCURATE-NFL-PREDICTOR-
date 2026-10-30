@@ -1,5 +1,6 @@
 import type { PredictionResult } from '../types.js';
 import { COACH_SECTIONS, type CoachReport } from './coachAnalysis.js';
+import {encodeResearchFeatures} from './researchEncoding.js';
 
 export type CaptureHorizon = 'T-72h' | 'T-24h' | 'T-3h' | 'T-30m';
 export type EvidenceMode = 'PROSPECTIVE' | 'HISTORICAL_RECONSTRUCTION';
@@ -11,6 +12,8 @@ export interface ResearchFeature {
   capturedAt: string;
   version: string;
   includedInProduction: boolean;
+  timestampKind?: 'source_observed'|'derived_cutoff'|'capture_observed'|'unverified';
+  sourceObservedAt?: string|null;
 }
 export interface UnifiedPregameSnapshot {
   schemaVersion: 'unified-pregame-v1';
@@ -67,7 +70,9 @@ export function buildUnifiedSnapshot(input: {
     const safe = observedAt != null && Number.isFinite(Date.parse(observedAt)) && Date.parse(observedAt) <= cutoff;
     features[name] = { value: available && safe ? value! : null,
       status: status || (available && safe ? 'known' : 'BLOCKED_DATA'), source, observedAt: safe ? observedAt : null,
-      capturedAt, version: '1', includedInProduction: production };
+      capturedAt, version: '1', includedInProduction: production,
+      timestampKind:observedAt!==cutoffAt?'source_observed':'derived_cutoff',
+      sourceObservedAt:observedAt!==cutoffAt&&safe?observedAt:null };
   };
   const s = input.result.modelScores;
   const control: Record<string, number | undefined> = {
@@ -81,9 +86,10 @@ export function buildUnifiedSnapshot(input: {
   for(const [side,personnel] of Object.entries({home:input.result.homePersonnel,away:input.result.awayPersonnel})) {
     // Current personnel are unavailable for historical reconstructions, even if accidentally passed by a caller.
     const live=input.mode==='PROSPECTIVE'&&personnel&&personnel.sourceStatus!=='fallback'?personnel:undefined;
-    put(`football_personnel.${side}InjuryCount`,live?.injuries?.length,'Analyzer live personnel');
-    put(`football_personnel.${side}StartingQbKnown`,live?Boolean(live.startingQb):null,'Analyzer live personnel');
-    put(`football_personnel.${side}SourceStatus`,live?.sourceStatus,'Analyzer live personnel');
+    put(`football_personnel.${side}InjuryCount`,live?.injuriesLoaded?live.injuries?.length:null,'ESPN personnel retrieval',false,live?.sourceRetrievedAt||null);
+    put(`football_personnel.${side}StartingQbKnown`,live?.depthLoaded?Boolean(live.startingQb):null,'ESPN depth retrieval',false,live?.sourceRetrievedAt||null);
+    put(`football_qb.${side}Identity`,live?.depthLoaded?live.startingQb?.name:null,'ESPN depth retrieval',false,live?.sourceRetrievedAt||null);
+    put(`football_personnel.${side}SourceStatus`,live?.sourceStatus,'ESPN personnel retrieval',false,live?.sourceRetrievedAt||null);
   }
   for (const [key, namespace] of Object.entries(families)) {
     let group = input.result.accuracyFeatures?.[key];
@@ -121,6 +127,8 @@ export function buildUnifiedSnapshot(input: {
     Date.parse(coach.generatedAt) <= capture && (input.mode !== 'PROSPECTIVE' ||
       (coach.mode === 'pregame' && Date.parse(coach.generatedAt) < kickoff));
   const votes: number[] = [];
+  const independentCoach=coachSafe&&coach.prediction.method==='matchup-analysis'?coach.prediction.winner===input.homeTeam?1:coach.prediction.winner===input.awayTeam?-1:null:null;
+  put('coach_summary.finalDirection',independentCoach,coach?.version||'Coach unavailable');
   for (const [id] of COACH_SECTIONS) {
     const section = coachSafe ? coach.sections.find(row => row.id === id) : undefined;
     const evidence = section ? coach!.evidence.filter(e => section.evidenceIds.includes(e.id)) : [];
@@ -145,6 +153,10 @@ export function buildUnifiedSnapshot(input: {
   if (p != null && p !== .5) votes.push(pickedHome ? 1 : -1);
   if (pureDirection) votes.push(pureDirection);
   if (lettrologyDirection) votes.push(lettrologyDirection);
+  if(independentCoach)votes.push(independentCoach);
+  for(const key of ['football_efficiency.logitEdge','football_qb.edge','football_matchup.edge']) {
+    const signal=features[key];if(signal?.status==='known'&&typeof signal.value==='number'&&signal.value!==0)votes.push(Math.sign(signal.value));
+  }
   const learningProbability=features['deepseek_learning.homeProbability']?.value;
   if(typeof learningProbability==='number'&&learningProbability!==.5) votes.push(learningProbability>.5?1:-1);
   const market = input.market;
@@ -154,7 +166,8 @@ export function buildUnifiedSnapshot(input: {
   put('meta_disagreement.controlMarketGap', marketSafe && p != null ? Math.abs(p - market.probability) : null, 'deterministic');
   put('meta_disagreement.controlCoachDisagreement', coachVotes.length && p != null
     ? coachVotes.filter(v => (v > 0) !== pickedHome).length / coachVotes.length : null, 'deterministic');
-  put('meta_disagreement.controlExperimentalDisagreement', pureDirection && p != null ? Number((pureDirection > 0) !== pickedHome) : null, 'deterministic');
+  const experimental=[pureDirection,lettrologyDirection].filter((v):v is number=>v!==null&&v!==0);
+  put('meta_disagreement.controlExperimentalDisagreement',experimental.length&&p!=null?experimental.filter(v=>(v>0)!==pickedHome).length/experimental.length:null,'deterministic');
   put('meta_disagreement.availableSignalCount', votes.length, 'deterministic');
   const fraction = votes.length ? votes.filter(v => v > 0).length / votes.length : null;
   put('meta_disagreement.directionalEntropy', fraction === null ? null : fraction === 0 || fraction === 1 ? 0 :
@@ -163,13 +176,13 @@ export function buildUnifiedSnapshot(input: {
   const measured = Object.values(features);
   put('data_quality.missingFeatureCount', measured.filter(f => f.value === null).length, 'deterministic');
   put('data_quality.coverage', measured.filter(f => f.status === 'known').length / measured.length, 'deterministic');
+  put('data_quality.staleMarket',marketSafe?Number(cutoff-Date.parse(market.observedAt)>24*3600000):null,'deterministic');
   return deepFreeze({ schemaVersion: 'unified-pregame-v1', forecastId: `${input.gameId}:${input.modelVersion}:${input.horizon}:${input.mode}`,
     gameId: input.gameId, modelVersion: input.modelVersion, captureHorizon: input.horizon, evidenceMode: input.mode,
     capturedAt, cutoffAt, kickoffAt, features });
 }
 export function numericResearchFeatures(snapshot?: UnifiedPregameSnapshot): Record<string, number | null> {
-  return Object.fromEntries(Object.entries(snapshot?.features || {}).map(([key, f]) =>
-    [key, f.status === 'known' && typeof f.value === 'number' && Number.isFinite(f.value) ? f.value : null]));
+  return encodeResearchFeatures(snapshot?.features||{});
 }
 export function validateUnifiedSnapshot(snapshot: UnifiedPregameSnapshot, expected?: {gameId:string;modelVersion:string;kickoffAt:string;now:string}): void {
   if (!snapshot || snapshot.schemaVersion!=='unified-pregame-v1' || !snapshot.features || Array.isArray(snapshot.features)) throw new Error('Invalid unified snapshot.');

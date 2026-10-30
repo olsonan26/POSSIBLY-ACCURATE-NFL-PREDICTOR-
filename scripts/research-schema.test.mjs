@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const {PGlite}=await import(process.env.NFL_TEST_PGLITE_MODULE||'@electric-sql/pglite');
+const db=new PGlite();
+try {
+ await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+ await db.exec(await readFile(new URL('../database/learning-schema.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../database/postgame-schema.sql',import.meta.url),'utf8'));
+ await db.exec((await readFile(new URL('../database/learning-scoped-access.sql',import.meta.url),'utf8')).replaceAll('__LEARNING_SECRET_SHA256__',createHash('sha256').update('test-secret').digest('hex')));
+ await db.exec('create table nfl_prediction_snapshots(id uuid primary key,game_id text,model_version text,captured_at timestamptz,kickoff_at timestamptz); grant select on nfl_prediction_snapshots to anon,service_role;');
+ const schema=await readFile(new URL('../database/research-ledger-schema.sql',import.meta.url),'utf8');await db.exec(schema);await db.exec(schema);
+ const insert='insert into nfl_research_events(event_id,event_kind,event_key,payload,recorded_at) values($1,$2,$3,$4,$5) returning *';
+ const hash=s=>createHash('sha256').update(s).digest('hex');
+ await db.exec('set role anon;');await assert.rejects(db.query(insert,[hash('bad'),'COHORT','bad','{}','2000-01-01']));
+ await db.query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-learning-secret':'test-secret'})]);
+ const row=(await db.query(insert,[hash('cohort'),'COHORT','cohort','{}','2000-01-01'])).rows[0];assert.ok(new Date(row.recorded_at).getUTCFullYear()>2020);
+ await assert.rejects(db.query(insert,[hash('cohort2'),'COHORT','cohort','{}','2000-01-01']));
+ await assert.rejects(db.exec("update nfl_research_events set payload='{}'"));
+ await db.exec('reset role;');await assert.rejects(db.exec('delete from nfl_research_events'));await assert.rejects(db.exec('truncate nfl_research_events'));
+ await db.exec('set role service_role;');
+ await assert.rejects(db.query(insert,[hash('late'),'SHADOW_FORECAST','late',JSON.stringify({kickoffAt:'2000-01-01'}),'2000-01-01']));
+ await assert.rejects(db.query(insert,[hash('unregistered'),'SHADOW_FORECAST','unregistered',JSON.stringify({kickoffAt:'2099-01-01',experimentId:'missing'}),'2000-01-01']));
+ await db.query(insert,[hash('manifest'),'MANIFEST','exp','{}','2000-01-01']);
+ await db.query(insert,[hash('result'),'RESULT','exp',JSON.stringify({decision:'SURVIVED_RESEARCH'}),'2000-01-01']);
+ await db.exec("reset role; insert into nfl_prediction_snapshots values('00000000-0000-0000-0000-000000000001','game','model',now()-interval '1 hour',now()+interval '2 days'); set role service_role");
+ const source=(await db.query('select kickoff_at from nfl_prediction_snapshots')).rows[0];
+ const shadow={kickoffAt:new Date(source.kickoff_at).toISOString(),experimentId:'exp',snapshotId:'00000000-0000-0000-0000-000000000001',gameId:'game',modelVersion:'model',capturedAt:'2000-01-01'};
+ const saved=(await db.query(insert,[hash('valid-shadow'),'SHADOW_FORECAST','valid-shadow',JSON.stringify(shadow),'2000-01-01'])).rows[0];
+ assert.ok(new Date(saved.payload.capturedAt).getUTCFullYear()>2020);
+ await assert.rejects(db.query(insert,[hash('false-kickoff'),'SHADOW_FORECAST','false-kickoff',JSON.stringify({...shadow,kickoffAt:'2099-01-01'}),'2000-01-01']));
+ console.log('Research SQL: append-only state, server clocks, scoped RLS, uniqueness, truncate protection and pregame shadow prerequisites passed.');
+} finally {await db.close();}

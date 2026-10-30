@@ -1,72 +1,57 @@
-# Analyzer and autoresearch contract
+# NFL Autoresearch V2.1 contract
 
-The production champion remains `v2.2-validated-current-season`. The numerical control formula and `validatedFootballContext.ts` are unchanged from main `33d1d72b77ef9c51866ba3cd28cb398c9bbea57d`. New features have zero production weight. The 2025 replay remains 180/271 (66.42%), Brier 0.2250, log loss 0.6416.
+The numerical production model remains `v2.2-validated-current-season`. Research survival and production-candidate eligibility never edit that model or its weights. The original model formula and validated football context are checked against commit `33d1d72b77ef9c51866ba3cd28cb398c9bbea57d`.
 
-## One pregame representation
+## Frozen representation and evidence
 
-`services/researchSnapshot.ts` builds a deeply frozen, namespaced representation with game/model identity, capture horizon, evidence mode, cutoff, capture and kickoff timestamps. Every field has a value, availability status, source, observation/capture time, feature version and production-use flag. Null is never imputed to neutral. The five control logit contributions remain distinguishable from derived control probability/Elo fields and research-only rest.
+`services/researchSnapshot.ts` captures model/game/horizon identity, five active control contributions, the separate rest/shadow contribution, available Analyzer signals, ten Coach sections, Coach summary, experimental signals, market, disagreement and data quality. Known booleans become 1/0. Fixed categorical vocabularies use one-hot encoding; missing and unrecognized values stay null. IDs and timestamps are not numeric discovery features.
 
-The snapshot captures available Analyzer efficiency, weather, travel, HFA, divisional, prior, pace, special-teams and turnover values. Live personnel coverage is captured only prospectively. PURE and provisional Lettrology directions remain qualitative research. The original immutable JSON ledgers carry the expanded snapshot, including signals excluded from scoring. No new database schema is needed.
+Features identify their source, capture clock, observation/cutoff clock, version and production inclusion. `timestampKind` distinguishes an upstream/retrieval observation from a derived cutoff. A historical cutoff does not prove that a mutable downloaded historical feed existed byte-for-byte at that time. Season-to-date statistics exclude target/future weeks but remain labeled team proxies with possible historical revisions.
 
-The server validates the capture against the verified schedule and its receipt clock, chooses a deterministic `(game, model, horizon)` capture token, and uses existing append-only storage. Repeated calls within a horizon return the first record. Earlier horizons cannot be overwritten. The DB capture clock remains authoritative: import rejects a snapshot whose stored horizon disagrees with the DB clock. A transaction finishing across a horizon boundary is rejected by research ingestion instead of being silently relabeled.
+Live personnel now retains retrieval timestamps, depth availability and injury-feed availability. Failed injury retrieval cannot become a known zero-injury count. Unverified old personnel remains blocked. Pregame QB identities are context for concentration checks, never split features. Weather retains its own capture and actual venue/hour provenance. No archived reanalysis is presented as a prospectively frozen forecast.
 
-The existing Coach endpoint saves ten section directions, evidence/source/missing counts and version within its immutable report JSON. It also saves its canonical research representation. Forecast capture reads the latest eligible stored Coach report that existed before the forecast cutoff. Reports arriving later cannot change an earlier forecast. DeepSeek learning captures save their canonical representation in the existing immutable feedback JSON; there were zero stored learning forecasts at this audit.
+Captures use separate T-72h, T-24h, T-3h and T-30m identities. Server and database clocks reject late/backdated captures. First per game/model/horizon wins. Later Coach/learning reports cannot alter earlier forecasts. Available prior-week team EPA, pressure, OL, explosive, turnover and special-teams proxies are connected at server capture. Unsupported player-level QB/OL/pressure ratings remain blocked.
 
-## Honest historical evidence
+## Chronological populations
 
-Historical replay records use the actual reconstruction timestamp and `HISTORICAL_RECONSTRUCTION`, rather than fabricated pregame capture times. Their observation cutoff describes the information restriction, not proof that today's downloaded feed existed byte-for-byte at that time. Revised historical feeds and historical LLM memory remain limitations. Existing immutable source records are preserved.
+`research-cohorts.ts` registers immutable cohort plans. Model versions, horizons and evidence modes are isolated. Default historical development is 2022–23 DISCOVERY, 2024 VALIDATION and 2025 LEGACY_TEST. All are previously used data; 2025 is never called a fresh lockbox.
 
-The 2022–2023 seasons are DISCOVERY; 2024 is VALIDATION; 2025 is LEGACY_TEST. All have previously influenced research. None is a fresh future lockbox. New, genuinely frozen forecasts are FORWARD_SHADOW. This change cannot retroactively create a pristine confirmation season.
+For each prospective season, weeks 1–8 are DISCOVERY, weeks 9–12 VALIDATION, and weeks 13–18 plus the following season are FUTURE_LOCKBOX. Minimum discovery/validation/confirmation sample sizes are 80/40/50. Historical survivors have separately declared 2026–27 prospective confirmation ranges. Only actual challenger forecasts captured after registration and before kickoff count as confirmation. The orchestrator excludes future outcomes even on its insufficient-data path.
 
-## Failure matrix and discovery
+Explicit plans can be supplied with `--cohorts=...`; registering a different plan creates a new tracked search, not a silent change to an existing experiment. Lockbox outcomes never fit scales, thresholds, parameters or ranking. A late-starting plan cannot backfill confirmation forecasts.
 
-The cycle writes all eligible rows, separate misses, and correct comparison populations. The unified numeric fields extend the six legacy logit inputs. Additional season-to-date team-stat proxies include pass EPA per dropback, rush EPA per carry, sacks allowed, sacks/QB hits generated, explosive gains, giveaways and net punting. They are explicitly team proxies, not invented player-level QB ratings or charted pressure rates. Missing source fields and Week 1 samples are blocked.
+## Discovery and hypotheses
 
-All seven original known failure rules are retained. Separately, bounded subgroup search learns interpretable conjunctions from discovery data. Defaults: depth at most 3, beam width 12, minimum leaf 30, maximum 1,500 examined candidates, discovery-only quartile thresholds and at least 60% feature availability. IDs, outcomes, final scores, seasons and weeks are forbidden splits.
+Seven known rules are preserved. Residual discovery separately searches conjunctions of up to three conditions with discovery-only thresholds, bounded beam/search budgets and minimum leaf N=30. Comparable populations match selected side, market favorite where available, confidence, Elo and season phase. Gates enforce effect size, independent validation, team/week/QB concentration, missingness confounding, temporal folds and nearby thresholds. Cross-season candidates must also be rediscovered with each discovery season held out. A single-season forward finding is POSSIBLE, not cross-season STABLE.
 
-Candidates must survive independent chronological validation, matched confidence/picked-side/Elo/season-phase comparisons, cross-season discovery folds, at least 12 teams, maximum 30% single-team concentration, and ±5% threshold perturbations. Discovery and validation both apply conservative search-breadth adjustments. Defaults require discovery lift ≥10 points, validation lift ≥8 points and matched coverage ≥80%. Noise does not generate a hypothesis. Membership duplicates among discovered subgroups are collapsed; the cycle rejects >85% Jaccard overlap with a surviving known-rule population. Correlation must still be inspected before interpreting a mechanism as novel.
+Discovery corrects for current and prior search breadth. Equivalent memberships are deduplicated; more than 85% Jaccard overlap with a known rule does not count as a novel subgroup. Unknown QB context blocks the engine's dependency-sensitive acceptance rather than asserting independence.
 
-The historical search budget and every rejected finalist are written to `research/runtime/residual-discovery.json`. A null result is valid; the engine does not lower thresholds to manufacture a result.
+`research-hypotheses.ts` validates executable contracts: source cluster/model, origin, mechanism, features, comparison population, direction, bounded grid, minimum N, leakage/duplication/missing-data risks, complexity and falsification condition. Automatic football/Coach findings generate additive features or interactions with discovery-fitted scales. Quality/disagreement findings generate uncertainty gates. The existing bounded action dispatcher remains available for explicit manual hypotheses.
 
-## Hypotheses, experiments and promotion
+Manual/generated hypotheses enter the same scheduler. Existing prose briefs remain visible as BLOCKED_CONTRACT or TESTED; they are not arbitrarily converted to executable algorithms. Adding an executable manual hypothesis requires a complete research specification, not user intervention in normal automated cycles.
 
-Known-rule mechanisms remain runnable. Generalized action families support feature addition, interaction, damping/boosting, replacement, subgroup calibration, uncertainty gates, disagreement and research-only actions. Additive actions require preregistered discovery-only scales and bounded coefficients. Missing inputs leave the control probability unchanged. The initial automatic residual challenger compresses confidence only inside its discovered subgroup; it does not flip winners.
+## Durable experiments and evaluation
 
-Hypotheses reference their source cluster/model, mechanism, features, comparison population, risks, parameter grid and falsification condition. Ranking uses validation effect, sample, breadth, stability and complexity. The original manual research briefs are preserved alongside automatic queue entries. Briefs without a complete executable hypothesis contract are not silently converted into experiments.
+`nfl_research_events` stores append-only COHORT, SEARCH, INPUTS, MANIFEST, RESULT, SHADOW_FORECAST, PROMOTION and RUN events. The additive migration was applied to the connected database. RLS uses the existing server scope; service-role access is supported. Updates, deletes and truncation are rejected. Database clocks replace caller clocks. Shadow insertion requires a registered survivor and an immutable source forecast with the same game, model and kickoff that is still in the future.
 
-An exclusive manifest must exist before parameter evaluation. Each experiment has its own manifest/result directory and persistent ledger entry. The cycle selects one experiment, evaluates the 2024 grid, then performs the 2025 legacy comparison, origin-cluster comparison, paired counts/McNemar, neutral ablation, parameter neighbors, season/side reports, week-block bootstrap and confidence/side-stratified null challenge. Search breadth accompanies the result. Historical survival cannot establish a causal mechanism or production eligibility.
+Every experiment archives encoded input batches, exact eligible IDs, hashes, subgroup conditions/scales, code/encoding versions, ranges, metrics, success/failure gates and search counts before evaluation. Interrupted runs resume from that manifest and archive. First-wins keys prevent duplicate results. File state supports offline replay but is explicitly non-durable and cannot confer production eligibility.
 
-The path remains DISCOVERED → VALIDATED → SURVIVED_RESEARCH → SHADOW_CANDIDATE → frozen prospective evaluation → PRODUCTION_CANDIDATE. No code here automatically promotes a feature or edits production weights. A production candidate requires a separate review of prospective sample, calibration, accuracy, Brier/log loss, reliability, robustness and cumulative search breadth. An LLM has no promotion authority.
+Validation uses rolling weekly folds trained only on earlier dates. The chosen parameter then receives global/origin comparisons, accuracy/Brier/log-loss/ECE gates, paired results, week-block bootstrap, stratified shuffled-adjustment null tests, neighboring parameters, season and selected-side robustness, and control-restoring ablation. A displayed statistic is not enough: survival requires every explicit gate. 2025 comparisons remain legacy evidence.
 
-## Coach and disagreement research
+Survivors become SHADOW_CANDIDATE. New primary forecasts trigger actual frozen challenger forecasts. Confirmation joins those saved bytes and verifies reproducibility. PRODUCTION_CANDIDATE requires durable state, sufficient prospective sample, all evaluation gates, reliable feature availability, exact frozen predictions and a search-breadth-adjusted null test. This status does not activate a model. No LLM has promotion authority.
 
-Each section retains home/away/even/unknown; unknown maps to null. No qualitative confidence is converted into a fabricated probability. The scorecard separates prospective and reconstructed evidence and reports coverage, available/directional N, accuracy, picked-side bias, per-season results, control agreement, and disagreement accuracy. QB–protection, QB–receivers and protection–availability agreement are explicit research fields. There are no brute-force section combinations.
+## Coach and reports
 
-Current availability evidence is restricted to 30 days. Structural evidence can extend to July 1 of the relevant NFL season. Source-window provenance is saved. Unsupported current-state sections become unknown before the final pick is built. Sensitivity conditions only identify evidence-supported dependencies; they do not invent probability or pick-flip thresholds.
+Ten sections remain qualitative home/away/even/unknown signals. No section is assigned an invented probability. Scorecards separate evidence mode and horizon and report coverage, directional accuracy, control disagreement, incremental paired comparison, favorite/underdog and season results. The overall independently sourced Coach direction and dynamic frozen challengers appear on the shadow leaderboard with same-population control comparisons.
 
-Disagreement includes available control, Coach sections, market, PURE, Lettrology and DeepSeek directions. Entropy, market gap, control/Coach and experimental disagreement, section disagreement and coverage are research features. Correlated sections are not independent statistical votes. No uncertainty relationship has been validated by the current real run. The deterministic data-quality coverage is a missingness descriptor, not a calibrated reliability probability.
+Evidence excerpts are classified into current-state or structural windows. Current injury, starter and replacement claims require the recent 30-day window even outside the availability section. Structural windows follow the actual season opening. Sensitivity conditions cite actual evidence and player/role dependencies, without invented numerical pick-flip thresholds.
 
-## Weather and chronology
+Disagreement includes available EPA, QB, matchup, Coach, market, PURE, Lettrology and DeepSeek signals. Correlated signals are not independent votes. Upset reports compare underdog wins with favorite wins using explicit market/control references. Paired horizon reports show all known field changes and before/after control outcomes, including QB, injury, weather, evidence and market changes when captured.
 
-The ensemble EPA API requires exact NFL season/week and uses the existing quoted-CSV point-in-time parser. Target/future weeks and seasons are excluded; missing EPA is unavailable with zero ensemble weight, never a synthetic 50% forecast. The implementation uses team EPA per opportunity and makes no calibration claim.
+The authenticated dashboard reads live stored evidence, the latest run, queue, counts, scorecards, leaderboard, quality, redundancy, upsets and horizon changes. A storage outage returns a clearly labeled dated archive. Daily outcome grading invokes research without paid model calls; immutable prediction capture invokes surviving challenger capture. The optional GitHub worker also runs the live engine when its server environment is configured.
 
-Weather resolves the game's actual stadium ID and verified venue name, rather than the designated home team. Unknown/relocated venues fail closed. Retractable roofs remain unknown prospectively unless supplied with verified roof context. Indoor conditions have null meteorological measurements and zero outdoor-weather adjustment, not invented 72°F observations. Outdoor weather uses the kickoff UTC hour, including gusts, precipitation, snowfall and humidity. See [Open-Meteo historical documentation](https://open-meteo.com/en/docs/historical-weather-api): archived data are reanalysis, not a historical forecast that was frozen before kickoff. The future forecast response is captured separately. New stadiums and other international venues require verified registry entries.
+## Verification and data limits
 
-## Reproduction
+Run `bun run research:verify`, `bun run research:test:engine`, `bun run research:audit`, `bun run research:cycle`, and the existing weather/EPA chronology checks. The default historical cycle and frozen export ingestion share the same engine. `--live` uses the durable database. Runtime state, exports and credentials are not committed.
 
-```powershell
-npm ci --ignore-scripts
-bun scripts/audit-research-v2.ts
-bun scripts/verify-research-v2.ts
-bun run research:cycle
-bun scripts/ensemble-chronology-acceptance.ts
-bun run research:weather-check
-bun run research:coach-score --input=training/exports/research-v2/coaches.json
-bun run research:cycle --input=training/exports/research-v2/predictions.json --coaches=training/exports/research-v2/coaches.json --output-dir=research/runtime/durable
-bun run research:summary
-bun run evaluate --season=2025
-```
-
-`training/exports/` and `research/runtime/` are deliberately untracked. Exported prediction rows require DB capture/kickoff/cutoff clocks, frozen feature JSON, model/game identity, probabilities, market timestamps and verified outcomes. Coach exports require report JSON and DB capture/kickoff/mode. Export these read-only from the existing tables; never publish service credentials. The delivered run used 170 source prediction rows, 43 outcome records and one historical Coach report from the connected NFL database. Imports retain the first forecast per game/model/horizon: 85 forecasts, 69 completed horizon forecasts across 43 unique completed games. Multiple horizons are reported separately, not independent replications.
-
-The authenticated dashboard displays the **last recorded research run**, not live database counts. Regenerate the summary after a new run. Existing production and forward-test components remain separate.
+Real historical acceptance found no new validated failure subgroup across 1,084 eligible games. The frozen export contains 85 first-per-model/game/horizon forecasts, 69 completed horizon forecasts across 43 unique games; the chronological forward sample is insufficient. There are zero prospective Coach reports and zero DeepSeek learning forecasts in the inspected export. No winning new real mechanism, Coach utility or production improvement can be claimed from these data. Synthetic fixtures prove the complete executable path, including survival, future frozen confirmation and restart recovery; they are never presented as real games.
