@@ -25,7 +25,8 @@ globalThis.fetch = async (url: any, init?: RequestInit) => {
   if (s === 'https://openrouter.ai/api/v1/chat/completions') {
     calls++; const body = JSON.parse(String(init?.body));
     assert.match(body.messages[0].content, /Verified final: DEN 17, KC 28/);
-    assert.doesNotMatch(body.messages[0].content, /99/);
+    // A real review timestamp can contain "99"; test the untrusted score override specifically.
+    assert.doesNotMatch(body.messages[0].content, /Verified final:[^\n]*(?:KC|DEN) 99\b/);
     if (fail) return json({}, 503);
     assert.equal(body.provider.require_parameters, true);
     assert.equal(body.tools, undefined, 'Archived evidence is fetched directly instead of relying on provider tool loops.');

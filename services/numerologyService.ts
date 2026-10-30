@@ -837,6 +837,7 @@ function addDecisionFactor(
 
 export interface PredictionOptions {
   neutralSite?: boolean;
+  weatherContext?: { kickoffAt: string; venue: import('./gameWeather.js').GameVenue };
 }
 
 export async function predictWinner(

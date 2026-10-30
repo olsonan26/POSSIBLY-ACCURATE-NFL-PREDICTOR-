@@ -27,7 +27,7 @@ This registry exists to prevent hidden, duplicated, or silently changing logic.
 | Long-history play-by-play margin architecture | REJECTED AS STANDALONE | nflverse PBP 2000–2026 + weekly QB stats + games | every game feature uses only prior weeks/games; carryover fit through 2022; 2025/2026 select no parameters | 845,276 plays; separate raw/ridge offense+defense EPA/success/explosive/pressure; empirical offense/defense carryover; n/(n+6) prior blend; 16-game cross-season QB; Weeks 1–3 raw, Week 4 mixed, Week 5+ opponent adjusted; margin-first ridge | missing prior season/current sample falls to available component/neutral; missing QB history contributes neutral QB value | zero | EXP-016A: 2023–2025 527/815=64.66%; 2025 165/271=60.89% vs v2.2 66.42%; 2026 26/48=54.17% vs v2.2 58.33%. REJECT standalone forecast. Structural finding survives: offense EPA carryover slope 0.469 vs defense 0.317. |
 | Probability calibration | RESEARCH TARGET | prior out-of-sample model probabilities | calibration fit must precede evaluated season | Platt/logistic or isotonic candidate; not yet promoted | no valid calibration sample -> raw probability | none | 2025 ECE 0.0804 exposes non-monotonic confidence buckets |
 | Market-aware residual/disagreement layer | SURVIVES / MARKET-AWARE SHADOW | nflverse games.csv two-sided pregame moneylines | historical closing line must be pre-kickoff; future deployment must timestamp exact snapshot | no-vig moneyline probability; locked 2024 winner was 75% market / 25% v2.2 logit blend | missing either moneyline -> unavailable, never imputed | zero in pure-football control | EXP-019: 2024 196/272=72.06%; locked 2025 182/271=67.16% vs control 66.42%, Brier 0.2137 vs 0.2250, log loss 0.6137 vs 0.6416; 2026 obs 31/48=64.58% vs control 28/48=58.33%. Market-only 2026 32/48=66.67%. Keep separate; paired 2025 p=0.8388. |
-| Weather | NOT IMPLEMENTED | future historical/live weather source | observed/forecast known before kickoff | matchup/scoring modifier only if validated | missing -> unavailable | none | research target |
+| Kickoff weather | RESEARCH SHADOW | Open-Meteo hourly + verified actual venue ID/name | future forecast frozen before kickoff; archive is labeled reanalysis reconstruction | hourly temperature/wind/gust/precipitation/snow/humidity; unknown roof fails closed | null / BLOCKED_DATA; indoor measurements not invented | zero | Research V2; outdoor, dome and neutral-site acceptance passed |
 
 ## Rules
 
@@ -37,3 +37,7 @@ This registry exists to prevent hidden, duplicated, or silently changing logic.
 4. A feature is not promoted because it makes one slate or one season look better.
 5. Market-assisted and non-market models must remain separately labeled.
 6. Post-confirmation ablations can generate hypotheses but cannot be used to retune the same test season and call it untouched.
+
+## Analyzer/autoresearch V2
+
+See RESEARCH_V2_CONTRACT.md and RESEARCH_V2_AUDIT.md. Canonical snapshots include research-only features, ten Coach sections, disagreement and missingness. The five production logit contributions remain unchanged. Historical 2025 evidence is LEGACY_TEST, even where older experiment entries originally called it locked. This annotation does not alter immutable historical ledger entries.

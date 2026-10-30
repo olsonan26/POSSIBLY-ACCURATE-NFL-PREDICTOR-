@@ -1,6 +1,9 @@
 import type { PredictionResult } from '../types';
 import type { MarketAwarePrediction } from './marketAwareService';
 import type { ScheduledGame } from './scheduleService';
+import { buildUnifiedSnapshot, captureHorizon } from './researchSnapshot.js';
+import { easternKickoffIso } from './kickoff.js';
+import type { CoachReport } from './coachAnalysis.js';
 
 export type LedgerCaptureState = 'frozen' | 'outcome_recorded' | 'skipped' | 'rejected' | 'failed';
 
@@ -48,6 +51,7 @@ export async function freezePredictionToServer(input: {
   result: PredictionResult;
   marketAware?: MarketAwarePrediction;
   runId: string;
+  coach?: CoachReport;
 }): Promise<LedgerCaptureStatus> {
   const { game, result, marketAware, runId } = input;
   if (game.completed) {
@@ -58,7 +62,15 @@ export async function freezePredictionToServer(input: {
   }
 
   const modelVersion = result.modelVersion || 'unknown-model';
-  const captureToken = `${runId}:${game.gameId}:${modelVersion}`;
+  const capturedAt = new Date().toISOString();
+  const kickoffAt = easternKickoffIso(game.gameday, game.gametime);
+  if (!kickoffAt || Date.parse(kickoffAt) <= Date.now()) return {state:'rejected',message:'Kickoff has passed.'};
+  const horizon = captureHorizon(kickoffAt, capturedAt);
+  const captureToken = `${game.gameId}:${modelVersion}:${horizon}`;
+  const unifiedSnapshot = buildUnifiedSnapshot({gameId:game.gameId,modelVersion,kickoffAt,capturedAt,cutoffAt:capturedAt,
+    horizon,mode:'PROSPECTIVE',result,homeTeam:game.homeTeam,awayTeam:game.awayTeam,coach:input.coach,
+    market: marketAware?.marketHomeProbability != null && marketAware.snapshotAt ? {probability:marketAware.marketHomeProbability,
+      observedAt:marketAware.snapshotAt,source:marketAware.source} : undefined});
   const pHome = homeProbability(result, game.homeTeam);
   const { response, body } = await postLedger({
     action: 'snapshot',
@@ -69,8 +81,11 @@ export async function freezePredictionToServer(input: {
       modelVersion,
       predictedWinner: result.winner.abbr,
       homeWinProbability: pHome,
-      generatedAt: new Date().toISOString(),
-      featureSnapshot: result.modelScores || {}
+      generatedAt: capturedAt,
+      researchInput: {accuracyFeatures:result.accuracyFeatures,pureAstrology:result.pureAstrology,
+        decisionFactors:result.decisionFactors.filter(f=>f.title==='Provisional Lettrology Matchup + Monte Carlo').map(f=>({title:f.title,edgeScore:f.edgeScore,advantage:f.advantage})),
+        homePersonnel:result.homePersonnel,awayPersonnel:result.awayPersonnel},
+      featureSnapshot: { ...result.modelScores, unifiedSnapshot }
     },
     market: marketAware ? {
       homeProbability: marketAware.marketHomeProbability,

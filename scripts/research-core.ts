@@ -1,3 +1,5 @@
+import { numericResearchFeatures, validateUnifiedSnapshot, type UnifiedPregameSnapshot } from '../services/researchSnapshot.js';
+import { matchesConditions, type SplitCondition } from './residual-discovery.js';
 export type ResearchDecision = 'KILLED' | 'INCONCLUSIVE' | 'SURVIVED_RESEARCH' | 'SHADOW_CANDIDATE' | 'PRODUCTION_CANDIDATE';
 
 export interface ResearchFeatureSnapshot {
@@ -10,6 +12,7 @@ export interface ResearchFeatureSnapshot {
 }
 
 export interface ResearchPredictionSnapshot {
+  unifiedSnapshot?: UnifiedPregameSnapshot;
   snapshotId: string;
   gameId: string;
   sourceModelVersion: string;
@@ -32,6 +35,7 @@ export interface ResearchPredictionSnapshot {
 }
 
 export interface FailureFeatureRow {
+  researchFeatures?: Record<string, number | null>;
   snapshotId: string;
   gameId: string;
   sourceModelVersion: string;
@@ -55,14 +59,16 @@ export interface FailureFeatureRow {
 }
 
 export interface ModelReadyFailureRow extends FailureFeatureRow {
-  zConfidence: number;
-  zBase: number;
-  zForm: number;
-  zVenue: number;
-  zH2h: number;
+  zConfidence: number | null;
+  zBase: number | null;
+  zForm: number | null;
+  zVenue: number | null;
+  zH2h: number | null;
 }
 
 export interface FailureCluster {
+  conditions?: SplitCondition[];
+  validation?: { n:number; lift:number };
   clusterId: string;
   ruleKey: ClusterRuleKey;
   description: string;
@@ -87,9 +93,24 @@ export type HypothesisMechanism =
   | 'BOOST_FORM'
   | 'DAMP_ELO'
   | 'COMPRESS_CONFIDENCE'
-  | 'HOME_BIAS';
+  | 'HOME_BIAS'
+  | ActionFamily;
+
+export const ACTION_FAMILIES = ['ADD_FEATURE', 'ADD_INTERACTION', 'DAMP_FEATURE', 'BOOST_FEATURE', 'REPLACE_FEATURE',
+  'CALIBRATE_SUBGROUP', 'ADD_UNCERTAINTY_GATE', 'ADD_DISAGREEMENT_FEATURE', 'NO_MODEL_CHANGE_RESEARCH_ONLY'] as const;
+export type ActionFamily = typeof ACTION_FAMILIES[number];
 
 export interface ResearchHypothesis {
+  origin?: 'MANUAL' | 'KNOWN_FAILURE_RULE' | 'DISCOVERED_FAILURE_CLUSTER' | 'COACH_SECTION_SCORECARD' | 'DISAGREEMENT_RESEARCH' | 'DATA_QUALITY_RESEARCH';
+  actionType?: ActionFamily;
+  sourceModelVersion?: string;
+  comparisonPopulation?: string;
+  duplicationRisks?: string[];
+  missingDataRisks?: string[];
+  complexityScore?: number;
+  conditions?: SplitCondition[];
+  featureScales?: Record<string,{mean:number;sd:number}>;
+  replacedControlFeature?: keyof ResearchFeatureSnapshot;
   hypothesisId: string;
   sourceClusterId: string;
   statement: string;
@@ -133,6 +154,7 @@ export interface LedgerLikeEntry {
 }
 
 type ClusterRuleKey =
+  | 'DISCOVERED'
   | 'HIGH_CONFIDENCE'
   | 'H2H_SUPPORTS_PICK'
   | 'VENUE_SUPPORTS_PICK'
@@ -213,6 +235,7 @@ export function buildFailureFeatureRows(snapshots: ResearchPredictionSnapshot[])
       const correct = snapshot.predictedWinner === actualWinner;
       const f = snapshot.featureSnapshot;
       return {
+        researchFeatures: numericResearchFeatures(snapshot.unifiedSnapshot),
         snapshotId: snapshot.snapshotId,
         gameId: snapshot.gameId,
         sourceModelVersion: snapshot.sourceModelVersion,
@@ -243,12 +266,13 @@ function meanSd(values: number[]) {
   return { mean, sd: Math.sqrt(variance) || 1 };
 }
 
-export function normalizeFailureRows(rows: FailureFeatureRow[]): ModelReadyFailureRow[] {
-  const conf = meanSd(rows.map(row => row.confidence));
-  const base = meanSd(rows.map(row => row.alignedBaseLogit));
-  const form = meanSd(rows.map(row => row.alignedFormLogit));
-  const venue = meanSd(rows.map(row => row.alignedVenueLogit));
-  const h2h = meanSd(rows.map(row => row.alignedH2hLogit));
+export function normalizeFailureRows(rows: FailureFeatureRow[], referenceRows=rows): ModelReadyFailureRow[] {
+  if(!referenceRows.length) return rows.map(row=>({...row,zConfidence:null,zBase:null,zForm:null,zVenue:null,zH2h:null}));
+  const conf = meanSd(referenceRows.map(row => row.confidence));
+  const base = meanSd(referenceRows.map(row => row.alignedBaseLogit));
+  const form = meanSd(referenceRows.map(row => row.alignedFormLogit));
+  const venue = meanSd(referenceRows.map(row => row.alignedVenueLogit));
+  const h2h = meanSd(referenceRows.map(row => row.alignedH2hLogit));
   return rows.map(row => ({
     ...row,
     zConfidence: (row.confidence - conf.mean) / conf.sd,
@@ -335,6 +359,17 @@ function hypothesisForCluster(cluster: FailureCluster): Omit<ResearchHypothesis,
   };
 
   switch (cluster.ruleKey) {
+    case 'DISCOVERED':
+      return { ...base, hypothesisId: `H-${cluster.clusterId}`, origin: 'DISCOVERED_FAILURE_CLUSTER',
+        actionType: 'CALIBRATE_SUBGROUP', sourceModelVersion: 'v2.2-validated-current-season',
+        statement: `Test whether probability compression reduces excess error when ${cluster.description}.`,
+        mechanism: 'Apply one logit temperature inside the frozen discovered subgroup; retain control elsewhere.',
+        featuresInvolved: cluster.dominantFeatures, expectedDirection: 'Reduced overconfidence; no automatic winner flip.',
+        historicalPopulation: cluster.description, comparisonPopulation: 'Matched selected side, confidence, Elo and season phase.',
+        proposedImplementation: 'CALIBRATE_SUBGROUP', parameterGrid: [.75,.85,.95,1], conditions: cluster.conditions,
+        complexityScore: cluster.conditions?.length || 1, duplicationRisks: ['Correlated features and known-rule membership overlap.'],
+        missingDataRisks: ['Missing values never satisfy a subgroup rule.'],
+        falsificationCondition: 'Reject without global AND origin-cluster probability improvement, threshold stability and prospective confirmation.' };
     case 'H2H_SUPPORTS_PICK':
       return {
         ...base,
@@ -415,16 +450,18 @@ function hypothesisForCluster(cluster: FailureCluster): Omit<ResearchHypothesis,
 
 export function generateHypotheses(clusters: FailureCluster[]): ResearchHypothesis[] {
   return clusters
-    .map(cluster => {
+    .map((cluster):ResearchHypothesis|null => {
       const raw = hypothesisForCluster(cluster);
       if (!raw) return null;
       const impact = Math.min(1, Math.max(0, cluster.missRateLift) / 0.20);
-      const sample = Math.min(1, cluster.numberOfMisses / 30);
+      const sample = Math.min(1, Math.min(cluster.numberOfMisses,cluster.validation?.n ?? cluster.numberOfMisses) / 30);
       const breadth = Math.min(1, cluster.teamsRepresented / 16);
       const stability = cluster.stabilityScore;
       const simplicity = raw.proposedImplementation === 'COMPRESS_CONFIDENCE' ? 1 : 0.9;
-      const priorityScore = 100 * (stability * 0.30 + impact * 0.25 + sample * 0.20 + breadth * 0.15 + simplicity * 0.10);
-      return { ...raw, priorityScore } satisfies ResearchHypothesis;
+      const validatedImpact=cluster.validation?Math.min(1,Math.max(0,cluster.validation.lift)/.2):impact;
+      const complexity=raw.conditions?.length || 1;
+      const priorityScore = 100 * (stability * 0.25 + validatedImpact * 0.25 + sample * 0.20 + breadth * 0.15 + simplicity * 0.15) / (1+(complexity-1)*.1);
+      return {origin:'KNOWN_FAILURE_RULE',sourceModelVersion:'v2.2-validated-current-season',...raw, priorityScore } satisfies ResearchHypothesis;
     })
     .filter((value): value is ResearchHypothesis => Boolean(value))
     .sort((a, b) => b.priorityScore - a.priorityScore);
@@ -435,7 +472,46 @@ export function removePreviouslyTested(
   ledger: LedgerLikeEntry[]
 ): ResearchHypothesis[] {
   const tested = new Set(ledger.map(entry => entry.hypothesisId || entry.hypothesis_id).filter(Boolean));
-  return hypotheses.filter(hypothesis => !tested.has(hypothesis.hypothesisId));
+  return hypotheses.filter(hypothesis => {
+    if (hypothesis.actionType && !ACTION_FAMILIES.includes(hypothesis.actionType)) throw new Error('Unsupported action family.');
+    if (tested.has(hypothesis.hypothesisId)) return false;
+    tested.add(hypothesis.hypothesisId);
+    return true;
+  });
+}
+
+export function hypothesisProbability(snapshot: ResearchPredictionSnapshot, hypothesis: ResearchHypothesis, parameter: number): number {
+  const action=hypothesis.proposedImplementation;
+  if(!Number.isFinite(parameter)) throw new Error('Invalid experiment parameter.');
+  const control=snapshot.homeWinProbability;
+  if (action === 'CALIBRATE_SUBGROUP' || action==='ADD_UNCERTAINTY_GATE') {
+    if(parameter<0||parameter>1) throw new Error('Uncertainty gates must compress confidence.');
+    const row = buildFailureFeatureRows([{ ...snapshot, actualWinner: snapshot.homeTeam }])[0];
+    return hypothesis.conditions?.length && matchesConditions(row, hypothesis.conditions)
+      ? logistic(logit(control) * parameter) : control;
+  }
+  if(action==='NO_MODEL_CHANGE_RESEARCH_ONLY') return control;
+  if(action==='DAMP_FEATURE'||action==='BOOST_FEATURE') {
+    const key=hypothesis.featuresInvolved[0] as keyof ResearchFeatureSnapshot;
+    if(!Object.hasOwn(snapshot.featureSnapshot,key)) throw new Error('Only explicit control contributions may be reweighted.');
+    return logistic(logit(control)+(parameter-1)*snapshot.featureSnapshot[key]);
+  }
+  if(['ADD_FEATURE','ADD_INTERACTION','ADD_DISAGREEMENT_FEATURE','REPLACE_FEATURE'].includes(action)) {
+    const values=numericResearchFeatures(snapshot.unifiedSnapshot);
+    const keys=hypothesis.featuresInvolved;
+    if(keys.length<1||keys.length>3||Math.abs(parameter)>.5) throw new Error('Unsafe challenger complexity.');
+    if(keys.some(k=>values[k]==null)) return control;
+    const standardized=keys.map(key=>{
+      const scale=hypothesis.featureScales?.[key];
+      if(!scale||!Number.isFinite(scale.mean)||!Number.isFinite(scale.sd)||scale.sd<=0) throw new Error('Preregister discovery-only feature scales.');
+      return clamp((values[key]!-scale.mean)/scale.sd,-3,3);
+    });
+    const signal=action==='ADD_INTERACTION'?standardized.reduce((a,b)=>a*b,1):standardized[0];
+    const replaced=action==='REPLACE_FEATURE'?hypothesis.replacedControlFeature:undefined;
+    if(action==='REPLACE_FEATURE'&&(!replaced||!Object.hasOwn(snapshot.featureSnapshot,replaced))) throw new Error('Explicit replacement contribution required.');
+    return logistic(logit(control)+parameter*signal-(replaced?snapshot.featureSnapshot[replaced]:0));
+  }
+  return challengerHomeProbability(snapshot, action, parameter);
 }
 
 export function controlHomeProbability(snapshot: ResearchPredictionSnapshot): number {
@@ -463,6 +539,10 @@ export function challengerHomeProbability(
       return logistic(control * parameter);
     case 'HOME_BIAS':
       return logistic(control + parameter);
+    case 'CALIBRATE_SUBGROUP':
+      throw new Error('Subgroup calibration requires hypothesis conditions.');
+    default:
+      throw new Error('Generalized actions require a preregistered hypothesis.');
   }
 }
 
@@ -518,6 +598,10 @@ export function clusterEligibleSnapshots(
   const rows = buildFailureFeatureRows(snapshots);
   const rowById = new Map(rows.map(row => [row.snapshotId, row]));
   const rule = RULES.find(candidate => candidate.key === cluster.ruleKey);
+  if (cluster.conditions?.length) return snapshots.filter(snapshot => {
+    const row = buildFailureFeatureRows([{ ...snapshot, actualWinner: snapshot.actualWinner || snapshot.homeTeam }])[0];
+    return matchesConditions(row, cluster.conditions!);
+  });
   if (!rule) return [];
   return snapshots.filter(snapshot => {
     const row = rowById.get(snapshot.snapshotId);
@@ -550,6 +634,7 @@ export function decideExperiment(input: {
   if (!input.parameterStable) {
     return { decision: 'INCONCLUSIVE', reason: 'Any apparent gain is too parameter-sensitive to survive the robustness attack.' };
   }
+  if(input.complexityPenalty) return {decision:'INCONCLUSIVE',reason:'Apparent improvement did not survive the null/search-complexity challenge.'};
   if (globalNotWorse && probabilityImproves && clusterImproves && !input.complexityPenalty) {
     return { decision: 'SURVIVED_RESEARCH', reason: 'Locked probability metrics improved, global accuracy did not materially regress, and the originating failure population improved.' };
   }
@@ -562,6 +647,12 @@ export function decideExperiment(input: {
 export function leakageInvariant(snapshots: ResearchPredictionSnapshot[]): { passed: boolean; violations: string[] } {
   const violations: string[] = [];
   for (const snapshot of snapshots) {
+    if(snapshot.unifiedSnapshot) {
+      try {validateUnifiedSnapshot(snapshot.unifiedSnapshot);}
+      catch {violations.push(`${snapshot.gameId}: unified feature chronology/schema failure`);}
+      if(snapshot.unifiedSnapshot.modelVersion!==snapshot.sourceModelVersion||snapshot.unifiedSnapshot.gameId!==snapshot.gameId)
+        violations.push(`${snapshot.gameId}: unified identity/version mismatch`);
+    }
     const cutoff = Date.parse(snapshot.dataCutoffTimestamp);
     const predicted = Date.parse(snapshot.predictionTimestamp);
     if (!Number.isFinite(cutoff) || !Number.isFinite(predicted) || cutoff > predicted) {

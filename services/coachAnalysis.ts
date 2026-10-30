@@ -1,4 +1,4 @@
-export const COACH_ANALYSIS_VERSION = 'coach-matchup-v1';
+export const COACH_ANALYSIS_VERSION = 'coach-matchup-v2';
 export const COACH_SECTIONS = [
   ['identity', 'Coaching and team identity'], ['quarterback', 'Quarterbacks and pressure response'],
   ['run_game', 'Run schemes versus defensive fronts'], ['protection', 'Protection versus pass rush'],
@@ -9,6 +9,9 @@ export const COACH_SECTIONS = [
 export interface CoachEvidence { id: string; url: string; title: string; publishedAt: string; quote: string; }
 export interface CoachSection { id: string; title: string; observation: string; mechanism: string; counter: string; advantage: 'home' | 'away' | 'even' | 'unknown'; evidenceIds: string[]; missing: string[]; }
 export interface CoachReport {
+  researchSnapshot?: import('./researchSnapshot.js').UnifiedPregameSnapshot;
+  evidenceWindows?: { currentStateStart: string; structuralIdentityStart: string; cutoff: string };
+  sensitivityConditions?: string[];
   version: string; gameId: string; homeTeam: string; awayTeam: string; gameday: string; cutoff: string;
   mode: 'pregame' | 'historical-reconstruction'; generatedAt: string;
   sections: CoachSection[]; evidence: CoachEvidence[]; homeKeys: string[]; awayKeys: string[];
@@ -21,7 +24,8 @@ export function buildCoachReport(raw: any, evidence: CoachEvidence[], context: O
   const ids = new Set(evidence.map(e => e.id));
   const sections: CoachSection[] = COACH_SECTIONS.map(([id, title]) => {
     const row = Array.isArray(raw?.sections) ? raw.sections.find((s: any) => s.id === id) : null;
-    const refs: string[] = [...new Set<string>((Array.isArray(row?.evidenceIds) ? row.evidenceIds : []).filter((x: any) => typeof x === 'string' && ids.has(x)))];
+    const refs: string[] = [...new Set<string>((Array.isArray(row?.evidenceIds) ? row.evidenceIds : []).filter((x: any) => typeof x === 'string' && ids.has(x)
+      && (id !== 'availability' || !context.evidenceWindows || evidence.some(e=>e.id===x && Date.parse(e.publishedAt)>=Date.parse(context.evidenceWindows!.currentStateStart)))))];
     if (!refs.length) return { id, title, observation: 'No dated pregame source was verified for this topic.', mechanism: '', counter: '', advantage: 'unknown', evidenceIds: [], missing: ['Verified scheme, player-role or situational evidence.'] };
     return { id, title, observation: refs.slice(0, 2).map(ref => evidence.find(e => e.id === ref)!.quote).join(' '), mechanism: clean(row.mechanism), counter: clean(row.counter),
       advantage: ['home','away','even'].includes(row.advantage) ? row.advantage : 'unknown', evidenceIds: refs,

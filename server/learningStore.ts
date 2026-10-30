@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
+import { buildUnifiedSnapshot,captureHorizon } from '../services/researchSnapshot.js';
 import { buildLearningFeedback, LEARNING_VERSION, type LearningExample } from '../services/learningFeedback.js';
 import { parseScheduleCsv, type ScheduledGame } from '../services/scheduleService.js';
-import { easternKickoffIso } from '../api/prediction-ledger.js';
+import { easternKickoffIso } from '../services/kickoff.js';
 
 export const NFL_SCHEDULE_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
 export interface LearningForecast {
@@ -136,6 +137,14 @@ export async function freezeLearningForecast(row: Omit<LearningForecast, 'captur
   if (!learningStorageConfigured()) return { status: 'not-configured', message: 'Learning database is not configured; this forecast was not saved.' };
   if (Date.parse(row.kickoff_at) <= Date.now()) return { status: 'kickoff-passed', message: 'Research finished after kickoff; this forecast is not eligible for learning.' };
   try {
+    const capturedAt=new Date().toISOString();
+    const feature=(value:number)=>({value,status:'known' as const,source:`Frozen DeepSeek learning shadow:${row.research_model}`,
+      observedAt:row.completed_at,capturedAt,version:row.experiment_version,includedInProduction:false});
+    const unifiedSnapshot=buildUnifiedSnapshot({gameId:row.game_id,modelVersion:'v2.2-validated-current-season',
+      kickoffAt:row.kickoff_at,capturedAt,cutoffAt:row.completed_at,horizon:captureHorizon(row.kickoff_at,capturedAt),mode:'PROSPECTIVE',
+      result:{},controlProbability:row.base_home_probability,homeTeam:row.home_team,awayTeam:row.away_team,
+      extraFeatures:{'deepseek_learning.homeProbability':feature(row.learned_home_probability),'deepseek_learning.rawHomeProbability':feature(row.raw_home_probability)}});
+    row={...row,feedback:{...row.feedback,unifiedSnapshot}};
     const result = await storage<LearningForecast[]>('nfl_learning_forecasts?on_conflict=game_id', {
       method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
       body: JSON.stringify({ ...row, payload_sha256: createHash('sha256').update(JSON.stringify(row)).digest('hex') })

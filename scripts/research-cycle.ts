@@ -1,9 +1,19 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { buildUnifiedSnapshot } from '../services/researchSnapshot.js';
+import { easternKickoffIso } from '../services/kickoff.js';
+import { discoverResidualSubgroups } from './residual-discovery.js';
+import { writeResearchScorecards } from './research-scorecards.js';
+import { loadResearchTeamEdges } from '../services/researchTeamStats.js';
+import { adaptFrozenPredictions } from './frozen-research-input.js';
+import { researchAttacks } from './research-evaluation.js';
+import { preregisterManifest, evaluateRegistered } from './research-ledger.js';
 import { parseGamesCsv, parseTeamData, predictWinner } from '../services/validatedPredictionService';
 import {
   buildFailureFeatureRows,
   challengerHomeProbability,
+  hypothesisProbability,
   clusterEligibleSnapshots,
   controlHomeProbability,
   decideExperiment,
@@ -24,11 +34,11 @@ const GAMES_URL = 'https://raw.githubusercontent.com/nflverse/nfldata/master/dat
 const CONTROL_VERSION = 'v2.2-validated-current-season';
 const LEDGER_PATH = resolve('research/experiment-ledger.json');
 const QUEUE_PATH = resolve('research/research-queue.json');
-const RUNTIME_DIR = resolve('research/runtime');
-const REPORT_PATH = resolve('research/reports/latest.md');
+const RUNTIME_DIR = resolve(process.argv.find(a=>a.startsWith('--output-dir='))?.slice(13) || 'research/runtime');
+const REPORT_PATH = resolve(RUNTIME_DIR, 'latest.md');
 const DISCOVERY_SEASONS = new Set([2022, 2023]);
 const VALIDATION_SEASON = 2024;
-const LOCKED_TEST_SEASON = 2025;
+const LEGACY_TEST_SEASON = 2025;
 
 type Game = ReturnType<typeof parseGamesCsv>[number];
 
@@ -89,7 +99,7 @@ async function generateSnapshots(games: Game[]): Promise<ResearchPredictionSnaps
   const teams = parseTeamData();
   const byAbbr = new Map(teams.map(team => [team.abbr, team]));
   const selected = games.filter(game =>
-    (DISCOVERY_SEASONS.has(game.season) || game.season === VALIDATION_SEASON || game.season === LOCKED_TEST_SEASON) &&
+    (DISCOVERY_SEASONS.has(game.season) || game.season === VALIDATION_SEASON || game.season === LEGACY_TEST_SEASON) &&
     game.gameType === 'REG' &&
     Number.isFinite(game.homeScore) &&
     Number.isFinite(game.awayScore) &&
@@ -114,14 +124,22 @@ async function generateSnapshots(games: Game[]): Promise<ResearchPredictionSnaps
     const homeProbability = s.finalHomeProbability / 100;
     const winner = actualWinner(game);
     const predictedWinner = homeProbability >= 0.5 ? game.homeTeam : game.awayTeam;
+    const kickoffAt = easternKickoffIso(game.gameday, game.gametime || '') || `${game.gameday}T23:59:59Z`;
+    const capturedAt = new Date().toISOString();
+    const cutoffAt = `${game.gameday}T00:00:00.000Z`;
+    const extraFeatures = await loadResearchTeamEdges(game.homeTeam, game.awayTeam, game.gameday, game.season, game.week, cutoffAt, capturedAt);
+    const unifiedSnapshot = buildUnifiedSnapshot({ gameId: game.gameId, modelVersion: CONTROL_VERSION, kickoffAt,
+      capturedAt, cutoffAt, horizon: 'T-24h', mode: 'HISTORICAL_RECONSTRUCTION', result,
+      homeTeam: game.homeTeam, awayTeam: game.awayTeam, extraFeatures });
     snapshots.push({
+      unifiedSnapshot,
       snapshotId: `${CONTROL_VERSION}:${game.gameId || `${game.season}-${game.week}-${game.awayTeam}-${game.homeTeam}`}`,
       gameId: game.gameId || `${game.season}-${game.week}-${game.awayTeam}-${game.homeTeam}`,
       sourceModelVersion: CONTROL_VERSION,
       season: game.season,
       week: Number(game.week) || 0,
       gameday: game.gameday,
-      predictionTimestamp: `${game.gameday}T00:00:00.000Z`,
+      predictionTimestamp: capturedAt,
       dataCutoffTimestamp: `${game.gameday}T00:00:00.000Z`,
       homeTeam: game.homeTeam,
       awayTeam: game.awayTeam,
@@ -148,13 +166,13 @@ async function generateSnapshots(games: Game[]): Promise<ResearchPredictionSnaps
 }
 
 function neutralParameter(hypothesis: ResearchHypothesis): number {
-  return hypothesis.proposedImplementation === 'HOME_BIAS' ? 0 : 1;
+  return ['HOME_BIAS','ADD_FEATURE','ADD_INTERACTION','ADD_DISAGREEMENT_FEATURE','REPLACE_FEATURE'].includes(hypothesis.proposedImplementation) ? 0 : 1;
 }
 
 function selectParameter(hypothesis: ResearchHypothesis, validation: ResearchPredictionSnapshot[]) {
   const candidates = hypothesis.parameterGrid.map(parameter => ({
     parameter,
-    metrics: scoreProbabilities(validation, snapshot => challengerHomeProbability(snapshot, hypothesis.proposedImplementation, parameter))
+    metrics: scoreProbabilities(validation, snapshot => hypothesisProbability(snapshot, hypothesis, parameter))
   }));
   const selected = candidates.reduce((best, candidate) => {
     if (candidate.metrics.brier < best.metrics.brier - 1e-9) return candidate;
@@ -193,7 +211,7 @@ function parameterStability(
   const neighborParams = [hypothesis.parameterGrid[index - 1], hypothesis.parameterGrid[index + 1]].filter((value): value is number => value != null);
   const neighbors = neighborParams.map(parameter => ({
     parameter,
-    metrics: scoreProbabilities(locked, snapshot => challengerHomeProbability(snapshot, hypothesis.proposedImplementation, parameter))
+    metrics: scoreProbabilities(locked, snapshot => hypothesisProbability(snapshot, hypothesis, parameter))
   }));
   const acceptable = neighbors.filter(item =>
     item.metrics.brier <= control.brier + 0.001 &&
@@ -218,25 +236,47 @@ async function main() {
   const response = await fetch(GAMES_URL);
   if (!response.ok) throw new Error(`Could not load nflverse games.csv: ${response.status}`);
   const games = parseGamesCsv(await response.text());
-  const snapshots = await generateSnapshots(games);
-  if (snapshots.length < 900) throw new Error(`Autoresearch snapshot coverage too small: ${snapshots.length}`);
+  const inputPath = process.argv.find(arg=>arg.startsWith('--input='))?.slice(8);
+  const coachPath = process.argv.find(arg=>arg.startsWith('--coaches='))?.slice(10);
+  const snapshots = inputPath ? adaptFrozenPredictions(readJson<any[]>(resolve(inputPath),[]), coachPath?readJson<any[]>(resolve(coachPath),[]):[]) : await generateSnapshots(games);
+  if (!inputPath && snapshots.length < 900) throw new Error(`Autoresearch snapshot coverage too small: ${snapshots.length}`);
   safeWrite(resolve(RUNTIME_DIR, 'prediction-snapshots.json'), snapshots);
 
   const allRows = buildFailureFeatureRows(snapshots);
-  const normalizedRows = normalizeFailureRows(allRows);
+  const normalizedRows = normalizeFailureRows(allRows,allRows.filter(row=>DISCOVERY_SEASONS.has(row.season)));
   const discoveryRows = allRows.filter(row => DISCOVERY_SEASONS.has(row.season));
   const discoveryMisses = discoveryRows.filter(row => !row.correct);
   const discoveryCorrect = discoveryRows.filter(row => row.correct);
-  safeWrite(resolve(RUNTIME_DIR, 'failure-feature-matrix.raw.json'), discoveryMisses);
-  safeWrite(resolve(RUNTIME_DIR, 'failure-feature-matrix.model-ready.json'), normalizedRows.filter(row => DISCOVERY_SEASONS.has(row.season) && !row.correct));
+  safeWrite(resolve(RUNTIME_DIR, 'failure-feature-matrix.raw.json'), allRows);
+  safeWrite(resolve(RUNTIME_DIR, 'failure-feature-matrix.model-ready.json'), normalizedRows);
+  safeWrite(resolve(RUNTIME_DIR, 'failure-feature-matrix.misses.json'), discoveryMisses);
   safeWrite(resolve(RUNTIME_DIR, 'comparison-population.correct.json'), discoveryCorrect);
 
-  const clusters = discoverFailureClusters(discoveryRows);
+  const knownClusters = discoverFailureClusters(discoveryRows);
+  const discovered = discoverResidualSubgroups(discoveryRows, allRows.filter(row => row.season === VALIDATION_SEASON));
+  const discoverySnapshots=snapshots.filter(s=>DISCOVERY_SEASONS.has(s.season));
+  const knownMembership=knownClusters.map(c=>new Set(clusterEligibleSnapshots(discoverySnapshots,c).map(s=>s.gameId)));
+  discovered.clusters=discovered.clusters.filter(cluster=>{
+    const ids=new Set(clusterEligibleSnapshots(discoverySnapshots,cluster).map(s=>s.gameId));
+    const duplicate=knownMembership.some(known=>[...ids].filter(id=>known.has(id)).length/Math.max(1,new Set([...ids,...known]).size)>.85);
+    if(duplicate) discovered.rejected.push({...cluster,stability:'NOISE'});
+    return !duplicate;
+  });
+  discovered.result=discovered.clusters.length?'STABLE NEW FAILURE PATTERN FOUND':'NO NEW VALIDATED DATA-DRIVEN FAILURE PATTERN FOUND';
+  safeWrite(resolve(RUNTIME_DIR, 'residual-discovery.json'), discovered);
+  console.log(discovered.result);
+  const clusters = [...knownClusters, ...discovered.clusters];
+  writeResearchScorecards(snapshots, RUNTIME_DIR);
+  safeWrite(resolve(RUNTIME_DIR, 'discovery-summary.json'), { evidence: inputPath?'PROSPECTIVE_FROZEN_EXPORT':'HISTORICAL_RECONSTRUCTION',
+    datasets: { '2022-2023': 'DISCOVERY', '2024': 'VALIDATION', '2025': 'LEGACY_TEST', future: 'FORWARD_SHADOW' },
+    eligible: allRows.length, misses: allRows.filter(r => !r.correct).length, correct: allRows.filter(r => r.correct).length,
+    knownClusters: knownClusters.length, validatedDiscoveredClusters: discovered.clusters.length, search: discovered.search });
   safeWrite(resolve(RUNTIME_DIR, 'failure-clusters.json'), clusters);
   console.log(`Snapshots: ${snapshots.length}; discovery misses: ${discoveryMisses.length}; comparison correct: ${discoveryCorrect.length}`);
   console.log(`Possible/stable failure clusters: ${clusters.length}`);
 
-  const ledger = readJson<LedgerEntry[]>(LEDGER_PATH, []);
+  const runtimeLedger = readJson<LedgerEntry[]>(resolve(RUNTIME_DIR, 'experiment-ledger.json'), []);
+  const ledger = [...new Map([...readJson<LedgerEntry[]>(LEDGER_PATH, []), ...runtimeLedger].map(e=>[e.experiment_id,e])).values()];
   const hypotheses = removePreviouslyTested(generateHypotheses(clusters), ledger);
   const queue: QueueEntry[] = hypotheses.map(hypothesis => ({
     cluster_id: hypothesis.sourceClusterId,
@@ -247,9 +287,12 @@ async function main() {
     dependencies: []
   }));
   safeWrite(resolve(RUNTIME_DIR, 'research-queue.json'), queue);
+  safeWrite(resolve(RUNTIME_DIR, 'combined-research-queue.json'), [
+    ...readJson<any[]>(QUEUE_PATH,[]).map(item=>({...item,origin:'MANUAL'})),
+    ...queue.map(item=>({...item,origin:item.cluster_id.startsWith('DD-')?'DISCOVERED_FAILURE_CLUSTER':'KNOWN_FAILURE_RULE'}))]);
 
   if (!hypotheses.length) {
-    const noCluster = clusters.length ? 'NO UNTESTED STABLE FAILURE HYPOTHESIS FOUND' : 'NO STABLE FAILURE CLUSTER FOUND';
+    const noCluster = `${discovered.result}; ${clusters.length ? 'NO UNTESTED STABLE FAILURE HYPOTHESIS FOUND' : 'NO STABLE FAILURE CLUSTER FOUND'}`;
     console.log(noCluster);
     safeWrite(REPORT_PATH, `# NFL Autoresearch latest\n\n${noCluster}\n`);
     return;
@@ -259,7 +302,7 @@ async function main() {
   const cluster = clusters.find(item => item.clusterId === hypothesis.sourceClusterId)!;
   queue[0].status = 'RUNNING';
   const id = experimentId(ledger);
-  const commit = process.env.GITHUB_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'working-tree';
+  const commit = process.env.GITHUB_SHA || process.env.VERCEL_GIT_COMMIT_SHA || execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
   const manifest = {
     experiment_id: id,
     hypothesis_id: hypothesis.hypothesisId,
@@ -270,27 +313,39 @@ async function main() {
     parameter_values: hypothesis.parameterGrid,
     training_range: '2022-2023 failure discovery',
     validation_range: '2024 parameter selection by Brier',
-    locked_test_range: '2025 one-time confirmation',
-    datasets: ['nflverse games.csv', 'immutable v2.2 pregame feature snapshots generated by this cycle'],
+    locked_test_range: '2025 LEGACY_TEST; repeatedly inspected, not fresh confirmation',
+    action_type: hypothesis.actionType || hypothesis.proposedImplementation,
+    search_budget_used: discovered.search,
+    datasets: ['nflverse games.csv', 'v2.2 HISTORICAL_RECONSTRUCTION snapshots; no prospective claims'],
     random_seed: 20260929,
     model_commit: commit,
     metrics_to_measure: ['accuracy', 'Brier', 'log loss', 'paired winner delta', 'cluster-specific metrics', 'parameter stability', 'leakage'],
-    success_conditions: ['No leakage violations', 'Locked global metrics not materially worse', 'Originating failure population improves', 'Neighboring parameter is not catastrophic'],
+    success_conditions: ['No leakage violations', 'Legacy global metrics not materially worse', 'Originating failure population improves', 'Neighboring parameter is not catastrophic'],
     failure_conditions: ['Leakage failure', 'Material locked regression on all primary metrics', 'Narrow one-parameter-only effect']
   };
   safeWrite(resolve(RUNTIME_DIR, 'active-experiment-manifest.json'), manifest);
+  const experimentDir = resolve(RUNTIME_DIR, 'experiments', id);
+  const manifestPath = resolve(experimentDir, 'manifest.json');
+  mkdirSync(experimentDir, { recursive: true });
+  preregisterManifest(manifestPath,manifest);
+  safeWrite(resolve(RUNTIME_DIR,'experiment-ledger.json'),[...runtimeLedger,{
+    experiment_id:id,hypothesis_id:hypothesis.hypothesisId,cluster_id:hypothesis.sourceClusterId,date:manifest.created_at,
+    parent_model:CONTROL_VERSION,challenger:'PREREGISTERED',feature_family:hypothesis.featuresInvolved.join(','),
+    parameters:{grid:hypothesis.parameterGrid},train_period:'2022-2023',validation_period:'2024',test_period:'2025 LEGACY_TEST',
+    decision:'RUNNING',reason:'Manifest persisted before parameter evaluation. Interrupted runs remain in the ledger.',git_commit:commit
+  }]);
   console.log(`Selected hypothesis: ${hypothesis.hypothesisId} (${hypothesis.priorityScore.toFixed(1)})`);
   console.log(hypothesis.statement);
 
   const validation = snapshots.filter(snapshot => snapshot.season === VALIDATION_SEASON);
-  const locked = snapshots.filter(snapshot => snapshot.season === LOCKED_TEST_SEASON);
-  const parameterSelection = selectParameter(hypothesis, validation);
+  const locked = snapshots.filter(snapshot => snapshot.season === LEGACY_TEST_SEASON);
+  const parameterSelection = evaluateRegistered(manifestPath,id,()=>selectParameter(hypothesis, validation));
   const selectedParameter = parameterSelection.selected.parameter;
   console.log(`2024 selected parameter: ${selectedParameter}`);
   for (const candidate of parameterSelection.candidates) console.log(`  ${candidate.parameter}: ${metricText(candidate.metrics)}`);
 
   const control = scoreProbabilities(locked, controlHomeProbability);
-  const challengerFn = (snapshot: ResearchPredictionSnapshot) => challengerHomeProbability(snapshot, hypothesis.proposedImplementation, selectedParameter);
+  const challengerFn = (snapshot: ResearchPredictionSnapshot) => hypothesisProbability(snapshot, hypothesis, selectedParameter);
   const challenger = scoreProbabilities(locked, challengerFn);
   const paired = pairedComparison(locked, challengerFn);
   const pValue = exactTwoSidedBinomial(paired.controlOnlyCorrect, paired.challengerOnlyCorrect);
@@ -302,17 +357,19 @@ async function main() {
   const replay = replayIntegrity(snapshots);
   const stability = parameterStability(hypothesis, selectedParameter, locked, control);
   const neutral = neutralParameter(hypothesis);
-  const ablation = scoreProbabilities(locked, snapshot => challengerHomeProbability(snapshot, hypothesis.proposedImplementation, neutral));
+  const ablation = scoreProbabilities(locked, controlHomeProbability);
+  const attacks = researchAttacks(locked,challengerFn);
   const decision = decideExperiment({
     control,
     challenger,
     clusterControl,
     clusterChallenger,
     leakagePassed: leakage.passed && replay.passed,
-    parameterStable: stability.stable
+    parameterStable: stability.stable,
+    complexityPenalty: attacks.nullPValue === null || attacks.nullPValue > .05
   });
 
-  console.log('\nLOCKED 2025');
+  console.log('\nLEGACY TEST 2025');
   console.log(`CONTROL:    ${metricText(control)}`);
   console.log(`CHALLENGER: ${metricText(challenger)}`);
   console.log(`Origin cluster control: ${metricText(clusterControl)}`);
@@ -342,15 +399,16 @@ async function main() {
     logloss_challenger: challenger.logLoss,
     paired_game_delta: paired.challengerOnlyCorrect - paired.controlOnlyCorrect,
     parameter_stability: stability.stable ? 'PASS' : 'WARNING',
-    season_stability: 'Discovery spans 2022-2023; parameter selected on 2024; locked confirmation 2025.',
+    season_stability: 'Discovery spans 2022-2023; parameter selected on 2024; legacy comparison 2025.',
     ablation_result: `Neutral/control parameter ${neutral}: ${metricText(ablation)}`,
     leakage_status: leakage.passed && replay.passed ? 'PASS' : `FAIL (${[...leakage.violations, ...replay.violations].slice(0, 5).join('; ')})`,
     decision: decision.decision,
     reason: decision.reason,
     git_commit: commit
   };
-  const nextLedger = [...ledger, entry];
+  const nextLedger = [...runtimeLedger, entry];
   safeWrite(resolve(RUNTIME_DIR, 'experiment-ledger.json'), nextLedger);
+  writeFileSync(resolve(experimentDir, 'result.json'), JSON.stringify({ entry, paired, manifestPath, attacks },null,2), {flag:'wx'});
 
   queue[0].status = decision.decision === 'KILLED' ? 'KILLED' : decision.decision === 'SURVIVED_RESEARCH' ? 'SURVIVED' : 'TESTED';
   queue[0].reason = decision.reason;
@@ -369,7 +427,7 @@ async function main() {
     `**${cluster.clusterId} — ${cluster.stability}**\n\n${cluster.description}\n\n` +
     `Misses ${cluster.numberOfMisses}/${cluster.eligibleGames}; miss-rate lift ${(cluster.missRateLift * 100).toFixed(1)} points; ${cluster.seasonsRepresented} discovery seasons; ${cluster.teamsRepresented} teams.\n\n` +
     `## Hypothesis\n\n**${hypothesis.hypothesisId}** — ${hypothesis.statement}\n\n` +
-    `## Experiment\n\n2024 selected parameter **${selectedParameter}** from ${hypothesis.parameterGrid.join(', ')} by Brier before the locked 2025 comparison.\n\n` +
+    `## Experiment\n\n2024 selected parameter **${selectedParameter}** from ${hypothesis.parameterGrid.join(', ')} by Brier before the legacy 2025 comparison.\n\n` +
     `- Control: ${metricText(control)}\n` +
     `- Challenger: ${metricText(challenger)}\n` +
     `- Origin cluster control: ${metricText(clusterControl)}\n` +
@@ -392,7 +450,7 @@ async function main() {
     clusterChallenger,
     paired: { ...paired, pValue },
     leakage: { invariant: leakage, replay },
-    robustness: stability,
+    robustness: { ...stability, attacks },
     decision,
     nextQueued: next || null,
     ledgerEntry: entry
