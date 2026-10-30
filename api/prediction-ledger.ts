@@ -2,6 +2,11 @@ import { easternKickoffIso } from '../services/kickoff.js';
 export { easternKickoffIso } from '../services/kickoff.js';
 import { parseScheduleCsv } from '../services/scheduleService.js';
 import { createHash } from 'node:crypto';
+import { buildUnifiedSnapshot,validateUnifiedSnapshot, captureHorizon, type UnifiedPregameSnapshot } from '../services/researchSnapshot.js';
+import { frozenResearchContext } from '../server/researchCapture.js';
+import { captureResearchShadows } from '../server/researchStore.js';
+import type { ModelScores } from '../types.js';
+export const config = { maxDuration: 60 };
 
 const MAX_PAYLOAD_BYTES = 96_000;
 const NFL_TEAMS = new Set([
@@ -166,7 +171,7 @@ async function recordSnapshot(body: JsonRecord, res: any) {
     ? body.prediction as JsonRecord
     : {};
   const runId = text(body.runId);
-  const captureToken = text(body.captureToken);
+  let captureToken = text(body.captureToken);
   const modelVersion = text(prediction.modelVersion);
   const predictedWinner = text(prediction.predictedWinner).toUpperCase();
   const homeWinProbability = finiteNumber(prediction.homeWinProbability);
@@ -188,6 +193,34 @@ async function recordSnapshot(body: JsonRecord, res: any) {
   if (generatedAt && (!Number.isFinite(generatedMs) || generatedMs >= Date.parse(kickoffAt))) {
     return res.status(409).json({ code: 'INVALID_PREGAME_TIMESTAMP', error: 'Prediction timestamp is not pre-kickoff.' });
   }
+  let unified=(featureSnapshot as {unifiedSnapshot?:UnifiedPregameSnapshot}).unifiedSnapshot;
+  if(unified) {
+    try {
+      const receivedAt=new Date().toISOString();
+      validateUnifiedSnapshot(unified,{gameId:game.gameId,modelVersion,kickoffAt,now:receivedAt});
+      const recordedProbability=unified.features['football_core.homeProbability']?.value;
+      if(typeof recordedProbability!=='number'||!Number.isFinite(recordedProbability)||Math.abs(recordedProbability-homeWinProbability)>1e-9) throw new Error('Probability mismatch.');
+      // Clients cannot backdate a capture into an earlier horizon. DB captured_at remains authoritative.
+      if(captureHorizon(kickoffAt,receivedAt)!==unified.captureHorizon) throw new Error('Stale capture horizon.');
+      unified=structuredClone(unified);
+      unified.capturedAt=receivedAt;
+      Object.values(unified.features).forEach(f=>{f.capturedAt=receivedAt;});
+      const researchInput=prediction.researchInput;
+      if(researchInput&&typeof researchInput==='object'&&!Array.isArray(researchInput)) {
+        const {coach,extraFeatures}=await frozenResearchContext(game.gameId,unified.cutoffAt,receivedAt,game);
+        const market=body.market as Record<string,any>|null;
+        unified=buildUnifiedSnapshot({gameId:game.gameId,modelVersion,kickoffAt,capturedAt:receivedAt,cutoffAt:unified.cutoffAt,
+          horizon:unified.captureHorizon,mode:'PROSPECTIVE',result:{...researchInput,modelScores:featureSnapshot as ModelScores},
+          homeTeam:game.homeTeam,awayTeam:game.awayTeam,coach,market:market?.homeProbability!=null&&market?.snapshotAt?
+            {probability:market.homeProbability,observedAt:market.snapshotAt,source:market.source}:undefined,
+          extraFeatures});
+        validateUnifiedSnapshot(unified,{gameId:game.gameId,modelVersion,kickoffAt,now:receivedAt});
+        if(unified.features['football_core.homeProbability']?.value!==homeWinProbability) throw new Error('Rebuilt probability mismatch.');
+      }
+      (featureSnapshot as {unifiedSnapshot:UnifiedPregameSnapshot}).unifiedSnapshot=unified;
+      captureToken=`${game.gameId}:${modelVersion}:${unified.captureHorizon}`;
+    } catch {return res.status(400).json({error:'Unified research snapshot failed provenance checks.'});}
+  }
 
   const market = body.market && typeof body.market === 'object' && !Array.isArray(body.market)
     ? body.market as JsonRecord
@@ -199,6 +232,8 @@ async function recordSnapshot(body: JsonRecord, res: any) {
   const marketSource = text(market.source) || null;
 
   const sourceMetadata = {
+    research_schema: unified?.schemaVersion || null,
+    capture_horizon: unified?.captureHorizon || null,
     schedule_gametime_et: game.gametime,
     prediction_generated_at: generatedAt || null,
     request_received_at: new Date().toISOString(),
@@ -261,7 +296,10 @@ async function recordSnapshot(body: JsonRecord, res: any) {
   }
 
   if (Array.isArray(rows) && rows.length > 0) {
+    let researchCapture='captured';
+    try { await captureResearchShadows(rows[0]); } catch { researchCapture='retry_required'; }
     return res.status(201).json({
+      researchCapture,
       status: 'frozen',
       snapshotId: rows[0].id,
       capturedAt: rows[0].captured_at,

@@ -206,7 +206,7 @@ export async function predictWinner(
     awayTurnover
   ] = await Promise.all([
     runExp025Shadow ? getMatchupEpaContext(homeTeam.abbr, awayTeam.abbr, targetIso, currentSeason).catch(() => null) : Promise.resolve(null),
-    runExp025Shadow ? getWeatherForGame(homeTeam.abbr, targetIso, Boolean(options.neutralSite)).catch(() => null) : Promise.resolve(null),
+    runExp025Shadow ? getWeatherForGame(homeTeam.abbr, targetIso, Boolean(options.neutralSite), options.weatherContext).catch(() => null) : Promise.resolve(null),
     runExp025Shadow ? Promise.resolve(getTravelContext(awayTeam.abbr, homeTeam.abbr, Boolean(options.neutralSite))).catch(() => null) : Promise.resolve(null),
     runExp025Shadow ? Promise.resolve(getDynamicHfa(homeTeam.abbr, awayTeam.abbr, Boolean(options.neutralSite), [], currentSeason)).catch(() => null) : Promise.resolve(null),
     runExp025Shadow ? Promise.resolve(getDivisionalContext(homeTeam.abbr, awayTeam.abbr, targetIso, [])).catch(() => null) : Promise.resolve(null),
@@ -450,6 +450,10 @@ export async function predictWinner(
       windSpeedMph: weatherData.windSpeedMph,
       precipitation: weatherData.precipitation,
       isDome: weatherData.isDome,
+      windGustMph:weatherData.windGustMph,snowfall:weatherData.snowfall,humidity:weatherData.humidity,
+      venueId:weatherData.venue?.id,latitude:weatherData.venue?.latitude,longitude:weatherData.venue?.longitude,
+      roof:weatherData.venue?.roof,surface:weatherData.venue?.surface,kickoffAt:weatherData.kickoffAt,
+      capturedAt:weatherData.capturedAt,evidenceMode:weatherData.evidenceMode,
       logitEdge: weatherLogit
     } : undefined,
     travel: travelData ? {

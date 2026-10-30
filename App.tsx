@@ -1,4 +1,5 @@
 import CoachAnalysisPanel from './components/CoachAnalysisPanel';
+import ResearchDashboard from './components/ResearchDashboard';
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { PredictionResult, Team } from './types';
@@ -452,6 +453,7 @@ const App: React.FC = () => {
         </section>
 
         <PostgameLearningPanel />
+        <ResearchDashboard />
 
         {selectedBatchPrediction && <PredictionDisplay result={selectedBatchPrediction} />}
 

@@ -16,6 +16,10 @@ export interface ScheduledGame {
   homeScore?: number;
   neutralSite: boolean;
   completed: boolean;
+  stadiumId?: string;
+  stadium?: string;
+  roof?: string;
+  surface?: string;
 }
 
 interface CbsOrderResponse {
@@ -73,7 +77,7 @@ export function parseScheduleCsv(text: string): ScheduledGame[] {
     awayScore: idx('away_score'),
     homeTeam: idx('home_team'),
     homeScore: idx('home_score'),
-    location: idx('location')
+    location: idx('location'), stadiumId:idx('stadium_id'),stadium:idx('stadium'),roof:idx('roof'),surface:idx('surface')
   };
 
   return lines.slice(1).map(line => {
@@ -94,6 +98,7 @@ export function parseScheduleCsv(text: string): ScheduledGame[] {
       awayScore,
       homeScore,
       neutralSite: get(column.location) === 'Neutral',
+      stadiumId:get(column.stadiumId)||undefined,stadium:get(column.stadium)||undefined,roof:get(column.roof)||undefined,surface:get(column.surface)||undefined,
       completed: Number.isFinite(awayScore) && Number.isFinite(homeScore)
     } as ScheduledGame;
   }).filter(game => game.gameday && game.homeTeam && game.awayTeam && game.season >= 1999);

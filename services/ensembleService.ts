@@ -12,7 +12,7 @@
  * `weights` parameter.
  */
 
-import { PredictionResult } from '../types';
+import { filterTeamStatsBeforeWeek, getTeamStatsBeforeTarget, type TeamStatsDataset } from './pointInTimeTeamStats.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,7 +20,7 @@ import { PredictionResult } from '../types';
 
 export interface EnsembleMember {
   name: string;
-  homeProbability: number;   // 0–100
+  homeProbability: number | null;   // 0–100; null means unavailable
   weight: number;            // 0–1, normalized internally
 }
 
@@ -67,54 +67,25 @@ function logitToProb(l: number): number {
  * Fetches team EPA from nflverse weekly stats and converts to a win
  * probability using a logistic function with EPA differential.
  */
-async function epaAdjustedProbability(
-  homeAbbr: string,
-  awayAbbr: string,
-  currentSeason: number,
-): Promise<number> {
+export function epaProbabilityFromDataset(dataset: TeamStatsDataset, home: string, away: string, season: number, week: number): number | null {
+  if (!Number.isInteger(season) || !Number.isInteger(week) || week < 1) throw new Error('Exact NFL season and target week required.');
+  if (!['season','week','team','passing_epa','rushing_epa','attempts','carries'].every(k => dataset.headers.has(k))) return null;
+  const efficiency = (team: string) => {
+    const rows = filterTeamStatsBeforeWeek(dataset, team, season, week);
+    if (!rows.length || rows.some(r => ['passing_epa','rushing_epa','attempts','carries'].some(k => r[k] === '' || !Number.isFinite(Number(r[k]))))) return null;
+    const plays = rows.reduce((n,r) => n + Number(r.attempts) + Number(r.carries),0);
+    return plays > 0 ? rows.reduce((n,r) => n + Number(r.passing_epa) + Number(r.rushing_epa),0) / plays : null;
+  };
+  const h = efficiency(home), a = efficiency(away);
+  // Research estimator only; per-play units, no calibrated-probability claim.
+  return h === null || a === null ? null : logitToProb((h-a)*.12)*100;
+}
+async function epaAdjustedProbability(home: string, away: string, targetIso: string, context: {season:number;week:number}): Promise<number | null> {
   try {
-    const url =
-      'https://raw.githubusercontent.com/nflverse/nflverse-data/main/nfl_stats/weekly_stats.csv';
-    const res = await fetch(url);
-    if (!res.ok) return 50;
-
-    const csvText = await res.text();
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) return 50;
-
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
-    const idx = (name: string) => headers.indexOf(name);
-    const teamIdx = idx('team') ?? idx('recent_team');
-    const passingEpaIdx = idx('passing_epa');
-    const rushingEpaIdx = idx('rushing_epa');
-
-    if (teamIdx < 0) return 50;
-
-    function getTeamEpa(team: string): number {
-      let totalEpa = 0;
-      let games = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if ((cols[teamIdx] ?? '').trim() !== team) continue;
-        const passEpa = parseFloat(cols[passingEpaIdx] ?? '0') || 0;
-        const rushEpa = parseFloat(cols[rushingEpaIdx] ?? '0') || 0;
-        totalEpa += passEpa + rushEpa;
-        games += 1;
-      }
-      return games > 0 ? totalEpa / games : 0;
-    }
-
-    const homeEpa = getTeamEpa(homeAbbr);
-    const awayEpa = getTeamEpa(awayAbbr);
-    const epaDiff = homeEpa - awayEpa;
-
-    // Logistic: P(home win) = 1 / (1 + exp(-k * epaDiff))
-    // k ≈ 0.12 (EPA per play differential → win prob)
-    const prob = logitToProb(epaDiff * 0.12);
-    return prob * 100;
-  } catch {
-    return 50;
-  }
+    const [h,a] = await Promise.all([getTeamStatsBeforeTarget(home,targetIso,context.season),getTeamStatsBeforeTarget(away,targetIso,context.season)]);
+    if (!h || !a || h.targetWeek !== context.week || a.targetWeek !== context.week) return null;
+    return epaProbabilityFromDataset({headers:h.headers,rows:[...h.rows,...a.rows]},home,away,context.season,context.week);
+  } catch { return null; }
 }
 
 // ---------------------------------------------------------------------------
@@ -138,31 +109,33 @@ export async function ensemblePredict(
   targetIso: string,
   v22Probability: number,
   marketProbability: number | null,
+  context: { season: number; week: number },
   weights?: [number, number, number],
 ): Promise<EnsemblePrediction> {
   const w = weights ?? DEFAULT_WEIGHTS;
+  if(w.some(value=>!Number.isFinite(value)||value<0)) throw new Error('Ensemble weights must be finite and nonnegative.');
 
   // Compute EPA-adjusted probability
-  const currentSeason = new Date(targetIso).getFullYear();
-  const epaProb = await epaAdjustedProbability(homeAbbr, awayAbbr, currentSeason);
+  if (!context || !Number.isInteger(context.season) || !Number.isInteger(context.week) || context.week < 1) throw new Error('Exact NFL season and week required.');
+  const epaProb = await epaAdjustedProbability(homeAbbr, awayAbbr, targetIso, context);
 
   // Build ensemble members
   const members: EnsembleMember[] = [
     { name: 'v2.2 Elo', homeProbability: v22Probability, weight: w[0] },
-    { name: 'Market', homeProbability: marketProbability ?? 50, weight: marketProbability !== null ? w[1] : 0 },
-    { name: 'EPA-Adjusted', homeProbability: epaProb, weight: w[2] },
+    { name: 'Market', homeProbability: marketProbability, weight: marketProbability !== null ? w[1] : 0 },
+    { name: 'EPA-Adjusted', homeProbability: epaProb, weight: epaProb === null ? 0 : w[2] },
   ];
 
   // Renormalize weights (in case market was null → weight 0)
   const totalWeight = members.reduce((sum, m) => sum + m.weight, 0);
-  const normalizedMembers = members.map((m) => ({
+  const normalizedMembers = members.map((m,index) => ({
     ...m,
-    weight: totalWeight > 0 ? m.weight / totalWeight : 1 / members.length,
+    weight: totalWeight > 0 ? m.weight / totalWeight : index===0?1:0,
   }));
 
   // Blend in logit space
   const blendedLogit = normalizedMembers.reduce(
-    (sum, m) => sum + probToLogit(m.homeProbability / 100) * m.weight,
+    (sum, m) => sum + (m.homeProbability===null?0:probToLogit(m.homeProbability / 100) * m.weight),
     0,
   );
 

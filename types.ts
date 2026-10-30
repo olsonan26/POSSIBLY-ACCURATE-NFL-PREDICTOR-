@@ -116,6 +116,9 @@ export interface DecisionFactor {
 }
 
 export interface PersonnelSnapshot {
+  sourceRetrievedAt?: string;
+  injuriesLoaded?: boolean;
+  depthLoaded?: boolean;
   team: string;
   teamAbbr: string;
   coach?: Person;
@@ -282,9 +285,20 @@ export interface AccuracyFeatures {
     logitEdge: number;
   };
   weather?: {
-    temperatureF: number;
-    windSpeedMph: number;
-    precipitation: number;
+    temperatureF: number | null;
+    windSpeedMph: number | null;
+    precipitation: number | null;
+    windGustMph?: number | null;
+    snowfall?: number | null;
+    humidity?: number | null;
+    venueId?: string;
+    latitude?: number;
+    longitude?: number;
+    roof?: string;
+    surface?: string;
+    kickoffAt?: string;
+    capturedAt?: string;
+    evidenceMode?: string;
     isDome: boolean;
     logitEdge: number;
   };
