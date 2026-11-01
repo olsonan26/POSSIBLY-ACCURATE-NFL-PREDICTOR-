@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "research:archive-results": "bun scripts/archive-game-results.ts",
+    "research:import-history": "bun scripts/research-import-history.ts",
+    "test:game-results": "bun scripts/game-results.test.ts",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "vite build",

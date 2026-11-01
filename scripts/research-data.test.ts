@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {MemoryResearchState} from './research-state.js';
 import {buildUnifiedSnapshot,validateUnifiedSnapshot} from '../services/researchSnapshot.js';
-import {startBackfill,advanceBackfill,historicalSnapshots,coverageReport} from '../server/historicalResearch.js';
+import {startBackfill,advanceBackfill,historicalSnapshots,coverageReport,verifyHistoricalSources} from '../server/historicalResearch.js';
 import {dueHorizon,runForwardCaptures,syncResearchPredictionOutcomes} from '../server/forwardResearch.js';
 import {coachSectionScorecard} from './research-scorecards.js';
 import {buildCoachReport,COACH_SECTIONS} from '../services/coachAnalysis.js';
@@ -27,6 +27,11 @@ const before=JSON.stringify(historicalSnapshots(await restart.all()));
 const repeat=await startBackfill(restart,games,options),again=await advanceBackfill(restart,games,repeat.jobId,50,reconstruct);
 assert.equal(again.created,0);assert.equal(again.alreadyExisting,6);assert.equal(reconstructions,6);assert.equal(historicalSnapshots(await restart.all()).length,6);assert.equal(again.independentProspectiveGamesAdded,0);assert.equal(JSON.stringify(historicalSnapshots(await restart.all())),before);
 const rows=historicalSnapshots(await restart.all());assert.equal(cohortRows(rows,{...defaultCohortPlan(rows,new Date().toISOString()),mode:'PROSPECTIVE'},'FUTURE_LOCKBOX').length,0);
+const officialRow={...rows[0],homeScore:24,awayScore:10};
+verifyHistoricalSources([officialRow],games);
+for(const bad of [{...officialRow,gameId:'synthetic'}, {...officialRow,homeScore:23}, {...officialRow,actualWinner:'TEN'}, {...officialRow,homeTeam:'KC'}]){
+ assert.throws(()=>verifyHistoricalSources([bad],games),/verified completed schedule/);
+}
 const forged=new MemoryResearchState();forged.events=structuredClone(restart.events);forged.events.find(e=>e.event_key.startsWith('LIBRARY:'))!.payload.snapshot.unifiedSnapshot.evidenceMode='PROSPECTIVE';assert.throws(()=>historicalSnapshots(forged.events),/firewall/);
 const coverage=coverageReport(rows);assert.equal(coverage.uniqueGames,6);assert.equal(coverage.snapshots,6);assert.equal(coverage.fieldCoverage.find(f=>f.key==='football_qb.edge')!.known,0);
 const data=parseTeamStatsCsv('season,week,team,passing_epa\n2024,1,BUF,2\n2024,2,BUF,999\n2025,1,BUF,999\n2024,1,TEN,9');assert.equal(filterTeamStatsBeforeWeek(data,'BUF',2024,2).length,1);assert.equal(filterTeamStatsBeforeWeek(data,'BUF',2024,2)[0].passing_epa,'2');

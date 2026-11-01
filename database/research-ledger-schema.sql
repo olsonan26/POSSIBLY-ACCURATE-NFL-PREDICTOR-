@@ -8,6 +8,7 @@ create table if not exists public.nfl_research_events (
  recorded_at timestamptz not null default clock_timestamp(),
  unique(event_kind,event_key)
 );
+create index if not exists nfl_research_recorded_idx on public.nfl_research_events(recorded_at,event_id);
 create or replace function public.nfl_research_capture_clock()
 returns trigger language plpgsql security invoker set search_path=pg_catalog,public as $$
 begin

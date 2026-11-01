@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import ResearchAccessField from './ResearchAccessField';
 import { researchHeaders,resetResearchAccess } from '../services/researchAccess';
 import type summary from '../research/reports/v2-summary';
-type Summary=typeof summary & {library?:any;source?:string;liveUnavailable?:boolean;liveStatus?:string;liveEngine?:any;upsetComparisons?:any[];horizonChanges?:any[];dataQuality?:any;durableEvents?:any;redundancy?:any[]};
+type Summary=typeof summary & {gameArchive?:any;library?:any;source?:string;liveUnavailable?:boolean;liveStatus?:string;liveEngine?:any;upsetComparisons?:any[];horizonChanges?:any[];dataQuality?:any;durableEvents?:any;redundancy?:any[]};
 const percent=(value:number|null)=>value==null?'Insufficient sample':`${(value*100).toFixed(1)}%`;
 export default function ResearchDashboard() {
   const [data,setData]=useState<Summary|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -25,6 +25,7 @@ export default function ResearchDashboard() {
     {error?<p role="alert" className="mt-3 text-rose-300">{error}</p>:null}
     {data?<div className="mt-5 space-y-5">
       <p className="text-sm">{data.liveStatus||`Source: ${data.source||'ARCHIVED_REPORT'}`}</p>
+      {data.gameArchive?.status==='AVAILABLE'?<p>Archived official results: {data.gameArchive.uniqueGames.toLocaleString()} unique games across {data.gameArchive.seasons.join(', ')}. These are postgame records; forecast accuracy uses the separate evidence populations below.</p>:null}
       <p className="text-xs text-gray-400">Recorded {new Date(data.generatedAt).toLocaleString()} · {data.controlModel}</p>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-bold">Eligible completed predictions by evidence source</caption>
         <thead><tr><th scope="col">Evidence</th><th scope="col">N</th><th scope="col">Correct</th><th scope="col">Misses</th><th scope="col">Known groups</th><th scope="col">Validated discoveries</th></tr></thead>

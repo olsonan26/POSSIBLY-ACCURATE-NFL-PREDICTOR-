@@ -3,6 +3,7 @@ import { learningStorageConfigured, syncLearningOutcomes, verifiedSchedule } fro
 import { runLiveResearch } from '../server/researchStore.js';
 import {DatabaseResearchState} from '../server/researchStore.js';
 import {runForwardCaptures,resumeBackfillJobs,syncResearchPredictionOutcomes} from '../server/forwardResearch.js';
+import {syncGameResults} from '../server/gameResults.js';
 export const config = { maxDuration: 300 };
 export default async function handler(req: any, res: any) {
   res.setHeader('Cache-Control', 'no-store');
@@ -13,7 +14,7 @@ export default async function handler(req: any, res: any) {
   if (!learningStorageConfigured()) return res.status(503).json({ error: 'Learning storage is not configured.' });
   try {
     const games=await verifiedSchedule(),state=new DatabaseResearchState();
-    const grading={...await syncLearningOutcomes(games),predictions:await syncResearchPredictionOutcomes(games)};
+    const grading={...await syncLearningOutcomes(games),predictions:await syncResearchPredictionOutcomes(games),gameResults:await syncGameResults(games)};
     const capture=await runForwardCaptures(games,state,{limit:1});
     const backfill=await resumeBackfillJobs(games,state);
     const paidModelCalls=capture.paidCoachAttempts?null:0;

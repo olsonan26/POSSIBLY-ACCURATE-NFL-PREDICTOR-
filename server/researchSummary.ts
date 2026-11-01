@@ -5,8 +5,10 @@ import {upsetComparisons,horizonComparisons,horizonPerformance} from '../scripts
 import {coverageReport} from './historicalResearch.js';
 import {calibrationMetrics} from '../scripts/research-scorecards.js';
 import {numericResearchFeatures} from '../services/researchSnapshot.js';
+import {gameResultArchiveSummary} from './gameResults.js';
 export async function liveResearchSummary(){
- const [input,events]=await Promise.all([liveResearchInput(),new DatabaseResearchState().all()]);
+ const [input,events,gameArchive]=await Promise.all([liveResearchInput(),new DatabaseResearchState().all(),
+  gameResultArchiveSummary().catch(()=>({status:'UNAVAILABLE'}))]);
  const historical=input.snapshots.filter(s=>s.unifiedSnapshot?.evidenceMode==='HISTORICAL_RECONSTRUCTION'),prospective=input.snapshots.filter(s=>s.unifiedSnapshot?.evidenceMode==='PROSPECTIVE');
  const completed=prospective.filter(s=>s.actualWinner&&s.actualWinner!=='TIE');
  const latest=events.filter(e=>e.event_kind==='RUN'&&e.payload.version==='autoresearch-v2.1').at(-1)?.payload;
@@ -18,7 +20,7 @@ export async function liveResearchSummary(){
  const historicalKnown=[...new Set(historical.flatMap(s=>Object.entries(s.unifiedSnapshot!.features).filter(([,f])=>f.status==='known').map(([key])=>key)))];
  const clusterCount=(mode:string,key:string)=>(latest?.populations||[]).filter((p:any)=>p.plan.mode===mode).reduce((n:number,p:any)=>n+(p[key]||0),0);
  const fields=[...new Set(input.snapshots.flatMap(s=>Object.keys(numericResearchFeatures(s.unifiedSnapshot))))];
- return {...fallback,generatedAt:new Date().toISOString(),source:'LIVE_DATABASE',liveEngine:latest||{status:'AWAITING_FIRST_RUN'},
+ return {...fallback,generatedAt:new Date().toISOString(),source:'LIVE_DATABASE',gameArchive,liveEngine:latest||{status:'AWAITING_FIRST_RUN'},
   historical:{evidence:'Historical reconstruction library',eligible:historicalCompleted.length,correct:historicalCorrect,misses:historicalCompleted.length-historicalCorrect,
    knownClusters:clusterCount('HISTORICAL_RECONSTRUCTION','known'),validatedDiscoveredClusters:clusterCount('HISTORICAL_RECONSTRUCTION','discovered')},
   snapshot:{...fallback.snapshot,fields:rawFields.length,families:new Set(rawFields.map(k=>k.split('.')[0])).size,fieldsEverKnown:historicalKnown.length,

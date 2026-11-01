@@ -20,6 +20,18 @@ export function eligibleHistoricalGames(games:ScheduledGame[],options:BackfillOp
   .sort((a,b)=>a.gameday.localeCompare(b.gameday)||a.gameId.localeCompare(b.gameId));
 }
 export const historicalKey=(gameId:string)=>`LIBRARY:HISTORICAL_RECONSTRUCTION:${gameId}:${CONTROL_VERSION}:T-24h:unified-pregame-v1`;
+/** Importing local archives requires independent official matchup/result verification. */
+export function verifyHistoricalSources(rows:Snapshot[],games:ScheduledGame[]){
+ const verified=new Map(eligibleHistoricalGames(games,{from:1999,through:new Date().getUTCFullYear(),includePlayoffs:true}).map(g=>[g.gameId,g]));
+ for(const row of rows){
+  const game=verified.get(row.gameId);
+  const winner=game?.homeScore===game?.awayScore?'TIE':game&&game.homeScore!>game.awayScore!?game.homeTeam:game?.awayTeam;
+  if(!game||row.sourceModelVersion!==CONTROL_VERSION||row.season!==game.season||row.week!==game.week||row.gameday!==game.gameday||
+   row.homeTeam!==game.homeTeam||row.awayTeam!==game.awayTeam||row.neutralSite!==game.neutralSite||
+   row.homeScore!==game.homeScore||row.awayScore!==game.awayScore||row.actualWinner!==winner||
+   Date.parse(row.unifiedSnapshot?.kickoffAt||'')!==Date.parse(easternKickoffIso(game.gameday,game.gametime||'')||''))throw new Error(`Historical record does not match verified completed schedule: ${row.gameId}`);
+ }
+}
 function validateHistoricalRecord(s:Snapshot){
  if(s?.unifiedSnapshot?.evidenceMode!=='HISTORICAL_RECONSTRUCTION'||s.gameId!==s.unifiedSnapshot.gameId||s.sourceModelVersion!==s.unifiedSnapshot.modelVersion||
   Date.parse(s.predictionTimestamp)<Date.parse(s.unifiedSnapshot.kickoffAt)||Date.parse(s.unifiedSnapshot.capturedAt)<Date.parse(s.unifiedSnapshot.kickoffAt)||
