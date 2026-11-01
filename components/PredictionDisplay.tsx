@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DecisionFactor, PersonnelSnapshot, PredictionResult } from '../types';
 import CalculationBreakdownCard from './CalculationBreakdownCard';
+import {ENABLE_NON_FOOTBALL_RESEARCH} from '../services/researchScope';
 
 interface PredictionDisplayProps {
   result: PredictionResult;
@@ -100,7 +101,7 @@ const PersonnelCard: React.FC<{ title: string; snapshot?: PersonnelSnapshot }> =
 };
 
 const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('pure');
+  const [activeTab, setActiveTab] = useState<Tab>('factors');
   const freshness = result.dataFreshness;
   const scores = result.modelScores;
   const pure = result.pureAstrology;
@@ -117,10 +118,8 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
   const resolverDisplay = teamNameForAbbr(resolver?.combinedExperimentalWinnerAbbr);
 
   const tabs: Array<[Tab, string]> = [
-    ['pure', 'PURE Astrology'],
     ['factors', 'Decision factors'],
     ['personnel', 'Personnel & injuries'],
-    ['numerology', 'Lettrology research'],
     ['history', 'Venue history']
   ];
 
@@ -128,22 +127,22 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
     <section className="mt-8 rounded-2xl border border-gray-700/80 bg-gray-900/90 p-5 sm:p-7 shadow-2xl">
       <div className="text-center mb-6">
         <span className="inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-950/40 px-3 py-1 text-[11px] uppercase tracking-wider font-bold text-indigo-300">
-          {result.modelVersion || 'Verified predictor'} + independent PURE
+          {result.modelVersion || 'Football predictor'}
         </span>
-        <h2 className="mt-3 text-2xl sm:text-3xl font-black text-white">Three-Layer Matchup Read</h2>
-        <p className="mt-2 text-xs text-gray-500">The football control, PURE Astrology, and resolver are deliberately kept separate.</p>
+        <h2 className="mt-3 text-2xl sm:text-3xl font-black text-white">Football Matchup Prediction</h2>
+        <p className="mt-2 text-xs text-gray-500">Team strength, current-season form, venue history and verified personnel.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+      <div className={`grid grid-cols-1 ${ENABLE_NON_FOOTBALL_RESEARCH?'lg:grid-cols-3':''} gap-4 mb-5`}>
         <div className="rounded-xl border-2 border-emerald-500/45 bg-gradient-to-b from-emerald-950/35 to-gray-950 p-5 text-center">
           <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] uppercase tracking-wider font-black text-gray-950">Football control</span>
           <p className="mt-3 text-xl sm:text-2xl font-black text-white">{result.winner.name}</p>
           <p className={`mt-2 text-4xl font-black ${probabilityTone(result.confidence)}`}>{result.confidence.toFixed(1)}%</p>
-          <p className="text-xs text-gray-500 mt-1">Calibrated-model estimate · v2.2 control</p>
+          <p className="text-xs text-gray-500 mt-1">Model probability · v2.2 control</p>
           <p className="text-[11px] text-gray-600 mt-2">vs. {result.loser.name} {(100 - result.confidence).toFixed(1)}%</p>
         </div>
 
-        <div className={`rounded-xl border-2 p-5 text-center ${pure?.decisionStatus === 'decisive' ? 'border-violet-500/50 bg-violet-950/25' : pure?.decisionStatus === 'lean' ? 'border-fuchsia-500/35 bg-fuchsia-950/15' : 'border-gray-700 bg-gray-950/60'}`}>
+        {ENABLE_NON_FOOTBALL_RESEARCH&&<><div className={`rounded-xl border-2 p-5 text-center ${pure?.decisionStatus === 'decisive' ? 'border-violet-500/50 bg-violet-950/25' : pure?.decisionStatus === 'lean' ? 'border-fuchsia-500/35 bg-fuchsia-950/15' : 'border-gray-700 bg-gray-950/60'}`}>
           <span className="rounded-full border border-violet-500/40 bg-violet-950/40 px-2.5 py-1 text-[10px] uppercase tracking-wider font-black text-violet-300">PURE Astrology</span>
           <p className="mt-3 text-xl sm:text-2xl font-black text-white">{pureDisplay || (pure?.status === 'unavailable' ? 'UNAVAILABLE' : 'UNRESOLVED')}</p>
           <p className="mt-2 text-sm font-bold uppercase tracking-wider text-violet-300">{pure?.decisionStatus || 'not connected'}</p>
@@ -164,7 +163,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
             {resolver?.agreement?.replaceAll('-', ' ') || 'PURE not connected'}
           </p>
           <p className="mt-3 text-[11px] text-gray-500 leading-relaxed">No arbitrary 70/30 or other invented astrology/statistics blend.</p>
-        </div>
+        </div></>}
       </div>
 
       <div className="rounded-xl border border-indigo-500/25 bg-indigo-950/20 p-4 mb-5">
@@ -186,9 +185,9 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
             <span className="block mt-1 text-sm font-mono font-bold text-white">{scores.finalHomeProbability.toFixed(1)}%</span>
           </div>
           <div className="rounded-xl border border-gray-700 bg-black/20 p-3">
-            <span className="block text-[10px] uppercase tracking-wider text-gray-500">PURE production weight</span>
-            <span className="block mt-1 text-sm font-mono font-bold text-gray-300">SEPARATE</span>
-            <span className="block mt-1 text-[10px] text-gray-600">Independent experiment, not hidden inside v2.2</span>
+            <span className="block text-[10px] uppercase tracking-wider text-gray-500">Prediction model</span>
+            <span className="block mt-1 text-sm font-mono font-bold text-gray-300">FOOTBALL</span>
+            <span className="block mt-1 text-[10px] text-gray-600">Current control model</span>
           </div>
         </div>
       )}
@@ -366,7 +365,7 @@ const PredictionDisplay: React.FC<PredictionDisplayProps> = ({ result }) => {
       )}
 
       <p className="mt-6 text-center text-[11px] text-gray-600">
-        Predictions are experimental model estimates, not guarantees. Football and PURE Astrology are scored and tracked separately so future/untouched games can test whether PURE adds real predictive information.
+        Predictions use the current football control model. These are estimates, not guarantees.
       </p>
     </section>
   );

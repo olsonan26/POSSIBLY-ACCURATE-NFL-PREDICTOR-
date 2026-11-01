@@ -14,6 +14,7 @@ import PostgameLearningPanel from './components/PostgameLearningPanel';
 import DeepSeekPregamePanel from './components/DeepSeekPregamePanel';
 import Button from './components/Button';
 import ChineseZodiacPanel from './components/ChineseZodiacPanel';
+import {ENABLE_NON_FOOTBALL_RESEARCH} from './services/researchScope';
 
 interface BatchPredictionRow {
   game: ScheduledGame;
@@ -291,15 +292,15 @@ const App: React.FC = () => {
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             Coach matchup analysis + v2.2 comparison + sourced DeepSeek research
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Numerology Predictor</h1>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-400">NFL Football Predictor</h1>
           <p className="mt-3 max-w-3xl mx-auto text-sm sm:text-base text-gray-400 leading-relaxed">Choose a matchup, analyze schemes and player matchups, then get a sourced coach-style pick. Past games use pregame reconstruction. The frozen football control remains available for comparison. Paid research runs only when you press its analysis button.</p>
         </header>
 
         <div role="tablist" aria-label="Prediction tools" className="mb-6 flex gap-2">
           <button id="football-tab" role="tab" aria-selected={activeTab === 'football'} aria-controls="football-panel" onClick={() => setActiveTab('football')} className={`rounded-xl border px-5 py-3 text-sm font-bold ${activeTab === 'football' ? 'border-indigo-400 bg-indigo-950 text-indigo-200' : 'border-gray-700 text-gray-400'}`}>Football Predictor</button>
-          <button id="zodiac-tab" role="tab" aria-selected={activeTab === 'zodiac'} aria-controls="chinese-zodiac-panel" onClick={() => setActiveTab('zodiac')} className={`rounded-xl border px-5 py-3 text-sm font-bold ${activeTab === 'zodiac' ? 'border-indigo-400 bg-indigo-950 text-indigo-200' : 'border-gray-700 text-gray-400'}`}>Chinese Zodiac</button>
+          {ENABLE_NON_FOOTBALL_RESEARCH&&<button id="zodiac-tab" role="tab" aria-selected={activeTab === 'zodiac'} aria-controls="chinese-zodiac-panel" onClick={() => setActiveTab('zodiac')} className={`rounded-xl border px-5 py-3 text-sm font-bold ${activeTab === 'zodiac' ? 'border-indigo-400 bg-indigo-950 text-indigo-200' : 'border-gray-700 text-gray-400'}`}>Chinese Zodiac</button>}
         </div>
-        {activeTab === 'zodiac' && <ChineseZodiacPanel />}
+        {ENABLE_NON_FOOTBALL_RESEARCH&&activeTab === 'zodiac' && <ChineseZodiacPanel />}
         <div id="football-panel" role="tabpanel" aria-labelledby="football-tab" hidden={activeTab !== 'football'}>
         <section className="bg-gray-900/80 backdrop-blur-sm p-5 sm:p-7 rounded-2xl shadow-2xl border border-indigo-500/25 mb-7">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">

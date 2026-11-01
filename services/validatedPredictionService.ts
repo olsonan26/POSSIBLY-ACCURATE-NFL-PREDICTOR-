@@ -29,6 +29,7 @@ import { getPreseasonPrior } from './preseasonPriorsService.js';
 import { getPaceMetrics } from './paceMetricsService.js';
 import { getSpecialTeamsStats } from './specialTeamsService.js';
 import { getTurnoverExpectation } from './turnoverExpectationService.js';
+import {ENABLE_NON_FOOTBALL_RESEARCH} from './researchScope.js';
 
 export { calculateAllPatterns, parseGamesCsv, parseTeamData };
 export type { PredictionOptions };
@@ -174,8 +175,7 @@ export async function predictWinner(
 ): Promise<PredictionResult> {
   const rawResearch = await runResearchModel(homeTeam, awayTeam, gameDate, isTeamAHome, options);
   if (!rawResearch.modelScores) {
-    const provisional = applyProvisionalDailyFormula(rawResearch, gameDate);
-    return { ...provisional, modelVersion: MODEL_VERSION };
+    throw new Error('Football control scores are unavailable.');
   }
 
   const targetIso = gameDate.toISOString().slice(0, 10);
@@ -273,14 +273,14 @@ export async function predictWinner(
   };
 
   const alignedRawBase = winnerIsHome === rawWinnerIsHome ? { ...rawResearch } : swapWinnerLoser(rawResearch);
-  const aligned = applyProvisionalDailyFormula(
+  const aligned = ENABLE_NON_FOOTBALL_RESEARCH?applyProvisionalDailyFormula(
     { ...alignedRawBase, modelScores: validatedScores },
     gameDate
-  );
+  ):{...alignedRawBase,modelScores:validatedScores};
 
   let decisionFactors = normalizeDecisionFactors(aligned, winnerIsHome, validatedContext, homeTeam.name, awayTeam.name);
   const researchWarnings: string[] = [];
-  try {
+  if(ENABLE_NON_FOOTBALL_RESEARCH)try {
     const lettrologyFactor = await buildLettrologyResearchFactor(
       homeTeam,
       awayTeam,
@@ -293,7 +293,7 @@ export async function predictWinner(
     researchWarnings.push(`Provisional Lettrology matchup/Monte Carlo research could not be loaded: ${message}. Football control scoring was unaffected.`);
   }
 
-  const pureAstrology = await getPureAstrologyPrediction(
+  const pureAstrology = ENABLE_NON_FOOTBALL_RESEARCH?await getPureAstrologyPrediction(
     homeTeam,
     awayTeam,
     gameDate,
@@ -303,9 +303,10 @@ export async function predictWinner(
       neutralSite: Boolean(options.neutralSite),
       retrospective
     }
-  );
-  const matchupResolver = resolveFootballAndPure(aligned.winner, pureAstrology);
+  ):undefined;
+  const matchupResolver = pureAstrology?resolveFootballAndPure(aligned.winner, pureAstrology):undefined;
 
+  if(pureAstrology&&matchupResolver){
   const pureDescription = pureAstrology.status === 'available' || pureAstrology.status === 'limited'
     ? pureAstrology.winnerAbbr
       ? `Independent PURE Astrology: ${pureAstrology.winnerName || pureAstrology.winnerAbbr} (${pureAstrology.decisionStatus}). ${pureAstrology.pickStabilityPct != null ? `Scenario stability ${pureAstrology.pickStabilityPct.toFixed(1)}% — this is pick stability, not calibrated win probability. ` : ''}${matchupResolver.agreement === 'agree' ? 'PURE agrees with the football control.' : matchupResolver.agreement === 'conflict' ? 'PURE conflicts with the football control.' : ''}`
@@ -324,6 +325,8 @@ export async function predictWinner(
     category: 'astrology',
     includedInScore: false
   });
+  }
+  if(!ENABLE_NON_FOOTBALL_RESEARCH)decisionFactors=decisionFactors.filter(f=>!/numerology|astrolog|lettrology|zodiac/i.test(f.title+' '+f.category));
 
   if (retrospective) {
     decisionFactors = decisionFactors.map(factor => factor.title === 'Live Injury / Availability Impact'
@@ -503,14 +506,14 @@ export async function predictWinner(
   };
 
   const warnings = [
-    ...(aligned.warnings || []),
+    ...(aligned.warnings || []).filter(message=>ENABLE_NON_FOOTBALL_RESEARCH||!/numerology|astrolog|lettrology|zodiac|birthday/i.test(message)),
     ...researchWarnings,
-    ...pureAstrology.warnings,
+    ...(pureAstrology?.warnings||[]),
     'v2.2 remains the frozen football control: target-season form and home/road context reset at each NFL season. The zero prior-season carryover rule was selected on 2024; on untouched 2025 it improved winner accuracy from 65.31% to 66.42%, while Brier and log loss worsened slightly.',
-    'PURE Astrology is calculated independently and can disagree with the football control. Scenario stability is not calibrated NFL win probability.',
+    'Active prediction and challenger workflow uses football inputs only.',
     'EXP-025 modules are preserved as a research shadow and do not alter the production winner or confidence until multi-season walk-forward validation proves incremental value.',
     ...(runExp025Shadow ? [`EXP-025 shadow home probability ${(exp025ShadowHomeProbability * 100).toFixed(1)}% versus frozen v2.2 ${(v22Probability * 100).toFixed(1)}%.`] : ['Retrospective control calculation: EXP-025 live shadow modules were not executed, preventing new live-data/network dependencies from contaminating historical research.']),
-    ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data were forced to zero. PURE receives no present-day personnel snapshot for past games and must fail closed or use independently verified point-in-time data.'] : [])
+    ...(retrospective ? ['Retrospective leakage guard active: current live personnel/injury data are excluded from past-game scoring.'] : [])
   ];
 
   return {
@@ -518,9 +521,9 @@ export async function predictWinner(
     confidence: Math.round(selectedProbability * 1000) / 10,
     isWinnerHome: winnerIsHome,
     modelVersion: MODEL_VERSION,
-    reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under the frozen ${MODEL_VERSION} football control.${runExp025Shadow ? ` ${EXP025_SHADOW_VERSION} independently projects ${(exp025ShadowHomeProbability * 100).toFixed(1)}% home probability and is not included in the production pick.` : ''} The separate PURE Astrology engine is ${pureAstrology.status}/${pureAstrology.decisionStatus}${pureAstrology.winnerName ? ` and selects ${pureAstrology.winnerName}` : ''}. ${matchupResolver.combinedReason}`,
-    winnerBreakdown: aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })),
-    loserBreakdown: aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })),
+    reasoning: `${aligned.winner.name} projects at ${(selectedProbability * 100).toFixed(1)}% under the frozen ${MODEL_VERSION} football control.${runExp025Shadow ? ` ${EXP025_SHADOW_VERSION} independently projects ${(exp025ShadowHomeProbability * 100).toFixed(1)}% home probability and is not included in the production pick.` : ''}`,
+    winnerBreakdown: ENABLE_NON_FOOTBALL_RESEARCH?aligned.winnerBreakdown.map(item => ({ ...item, includedInScore: false })):[],
+    loserBreakdown: ENABLE_NON_FOOTBALL_RESEARCH?aligned.loserBreakdown.map(item => ({ ...item, includedInScore: false })):[],
     decisionFactors,
     homePersonnel: retrospective ? undefined : aligned.homePersonnel,
     awayPersonnel: retrospective ? undefined : aligned.awayPersonnel,
@@ -533,11 +536,10 @@ export async function predictWinner(
       livePersonnelLoaded: retrospective ? false : aligned.dataFreshness.livePersonnelLoaded,
       injuryDataLoaded: retrospective ? false : aligned.dataFreshness.injuryDataLoaded,
       notes: [
-        ...aligned.dataFreshness.notes,
+        ...aligned.dataFreshness.notes.filter(message=>ENABLE_NON_FOOTBALL_RESEARCH||!/numerology|astrolog|lettrology|zodiac|birthday/i.test(message)),
         'v2.2 is retained as the frozen football control rather than silently changing its historical validation record.',
         'EXP-025 is shadow-only until independent multi-season validation supports promotion.',
-        'PURE Astrology is a separate private-engine result; the public client receives only a sanitized winner/status/coverage summary, not proprietary source rules or raw calculations.',
-        'Monte Carlo/scenario stability is tracked separately from calibrated win probability.',
+        'Numerology, astrology and Lettrology are excluded from the active prediction workflow.',
         ...(retrospective ? ['Retrospective leakage guard: present-day live personnel/injury context and EXP-025 live shadow modules are excluded from past-game control scoring.'] : [])
       ]
     } : aligned.dataFreshness,
