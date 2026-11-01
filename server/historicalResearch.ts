@@ -110,6 +110,7 @@ export async function advanceBackfill(state:ResearchState,games:ScheduledGame[],
  if(definition?.recordType!=='BACKFILL_JOB')throw new Error('Backfill job not found');
  const available=new Set(eligibleHistoricalGames(games,definition.options).map(g=>g.gameId));
  const ids:string[]=definition.gameIds,existing=new Map(events.filter(e=>e.event_kind==='INPUTS'&&e.event_key.startsWith('LIBRARY:')).map(e=>[e.event_key,e]));
+ const jobIds=new Set(ids);
  const outcomes=events.filter(e=>e.event_kind==='RUN'&&e.payload.recordType==='BACKFILL_GAME'&&e.payload.jobId===jobId);
  const done=new Map(outcomes.map(e=>[e.payload.gameId,e.payload]));
  for(const id of ids.filter(id=>!done.has(id)).slice(0,Math.min(50,Math.max(1,limit)))){
@@ -136,6 +137,6 @@ export async function advanceBackfill(state:ResearchState,games:ScheduledGame[],
  const complete=done.size===ids.length;
  const snapshots=historicalSnapshots(await state.all());
  return {jobId,options:definition.options,status:complete?(counts.failed||counts.blocked?'COMPLETED_WITH_ERRORS':'COMPLETE'):'RUNNING',eligible:ids.length,processed:done.size,...counts,updatedMetadataIfAllowed:0,
-  seasons:[...new Set(games.filter(g=>ids.includes(g.gameId)).map(g=>g.season))].sort().map(season=>{const these=games.filter(g=>g.season===season&&ids.includes(g.gameId));return {season,eligible:these.length,processed:these.filter(g=>done.has(g.gameId)).length,status:these.every(g=>done.has(g.gameId))?'complete':these.some(g=>done.has(g.gameId))?'running':'queued'};}),
+  seasons:[...new Set(games.filter(g=>jobIds.has(g.gameId)).map(g=>g.season))].sort().map(season=>{const these=games.filter(g=>g.season===season&&jobIds.has(g.gameId));return {season,eligible:these.length,processed:these.filter(g=>done.has(g.gameId)).length,status:these.every(g=>done.has(g.gameId))?'complete':these.some(g=>done.has(g.gameId))?'running':'queued'};}),
   coverageBefore:definition.coverageBefore,coverage:coverageReport(snapshots),evidenceMode:'HISTORICAL_RECONSTRUCTION',independentProspectiveGamesAdded:0};
 }

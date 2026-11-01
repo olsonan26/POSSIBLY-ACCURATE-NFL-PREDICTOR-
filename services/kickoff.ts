@@ -1,3 +1,4 @@
+const kickoffCache=new Map<string,string>();
 function datePartsInZone(date: Date, timeZone: string): Record<string, number> {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
@@ -21,6 +22,8 @@ function datePartsInZone(date: Date, timeZone: string): Record<string, number> {
 
 export function easternKickoffIso(gameday: string, gametime: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(gameday) || !/^\d{1,2}:\d{2}$/.test(gametime)) return null;
+  const cacheKey=`${gameday}T${gametime}`;
+  const cached=kickoffCache.get(cacheKey);if(cached)return cached;
   const [year, month, day] = gameday.split('-').map(Number);
   const [hour, minute] = gametime.split(':').map(Number);
   if (
@@ -46,6 +49,10 @@ export function easternKickoffIso(gameday: string, gametime: string): string | n
   }
 
   const resolved = new Date(guessMs);
-  return Number.isFinite(resolved.getTime()) ? resolved.toISOString() : null;
+  if(!Number.isFinite(resolved.getTime()))return null;
+  const iso=resolved.toISOString();
+  // Season-wide backfills repeatedly verify the same official kickoffs.
+  if(kickoffCache.size>=10000)kickoffCache.clear();
+  kickoffCache.set(cacheKey,iso);return iso;
 }
 
