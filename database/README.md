@@ -25,4 +25,6 @@ Import an existing local reconstruction library with `bun run research:import-hi
 
 Scheduler/status reads omit large experiment input payloads. The research engine retrieves the exact immutable archives referenced by a manifest in bounded batches of three records and verifies their existing input hash before evaluation. Explicit historical-library reads remain separate. This allows interrupted large-history experiments to resume without pulling every archived experiment into a single response.
 
+New manifests use a versioned, deterministic feature-key hash that survives PostgreSQL JSONB key ordering. Legacy manifests keep their original hash: compatibility recovery requires identical numeric evidence in the still-immutable source records, restores only the original feature order in memory, and verifies that unchanged legacy hash. Missing sources, altered values and unknown hash versions fail closed.
+
 Automatic paid Coach generation additionally needs `OPENROUTER_API_KEY` and `NFL_RESEARCH_ACCESS_KEY` in the worker's secrets. Missing provider credentials produce an explicit blocked status while ordinary prediction capture continues. Existing budget, horizon, source-verification and immutable-capture guards still apply. Storing more games does not by itself prove improved accuracy or authorize promoting a challenger.

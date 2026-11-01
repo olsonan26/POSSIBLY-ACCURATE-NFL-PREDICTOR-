@@ -7,8 +7,12 @@ import {walkForward,evaluateChallenger} from './research-walk-forward.js';
 import type {ResearchState,ResearchEvent} from './research-state.js';
 export const ENGINE_VERSION='autoresearch-v2.1';
 const completed=(s:Snapshot)=>Boolean(s.actualWinner&&s.actualWinner!=='TIE');
-function inputSignature(rows:Snapshot[]){return digest(rows.map(s=>({id:s.snapshotId,model:s.sourceModelVersion,p:s.homeWinProbability,
-  features:numericResearchFeatures(s.unifiedSnapshot),actual:s.actualWinner,cutoff:s.dataCutoffTimestamp})));}
+const INPUT_HASH_VERSION='canonical-features-v1';
+function inputSignature(rows:Snapshot[],canonical=true){return digest(rows.map(s=>{
+ const features=numericResearchFeatures(s.unifiedSnapshot);
+ return {id:s.snapshotId,model:s.sourceModelVersion,p:s.homeWinProbability,
+  features:canonical?Object.fromEntries(Object.keys(features).sort().map(key=>[key,features[key]])):features,actual:s.actualWinner,cutoff:s.dataCutoffTimestamp};
+}));}
 export function checkResearchInputs(rows:Snapshot[],asOf=new Date().toISOString()) {
   if(!Number.isFinite(Date.parse(asOf)))throw new Error('Invalid research clock');
   const invariant=leakageInvariant(rows);
@@ -26,6 +30,24 @@ function materialize(s:Snapshot):Snapshot {
   return {...s,unifiedSnapshot:{...unified,features:Object.fromEntries(Object.entries(numericResearchFeatures(unified)).filter(([,v])=>v!==null)
     .map(([key,value])=>[key,{value,status:'known',source:`Frozen input archive:${digest(unified)}`,observedAt:s.dataCutoffTimestamp,capturedAt:unified.capturedAt,
       version:'research-encoding-v2',includedInProduction:key.startsWith('football_core.')&&!key.endsWith('restLogit'),timestampKind:'derived_cutoff',sourceObservedAt:null}]))}};
+}
+function verifiedArchiveHash(inputs:Snapshot[],manifest:any,sourceRows:Snapshot[]){
+ if(manifest.input_hash_version===INPUT_HASH_VERSION)return inputSignature(inputs)===manifest.input_hash;
+ if(manifest.input_hash_version!=null)return false;
+ if(inputSignature(inputs,false)===manifest.input_hash)return true;
+ // Legacy manifests hashed feature insertion order, which JSONB does not retain.
+ // Recover that order only from the still-immutable source snapshots, require
+ // identical projected values, then verify the ORIGINAL legacy hash unchanged.
+ const sources=new Map(sourceRows.map(s=>[s.snapshotId,s])),restored:Snapshot[]=[];
+ for(const input of inputs){
+  const source=sources.get(input.snapshotId);if(!source)return false;
+  const original=materialize(source);
+  if(inputSignature([input])!==inputSignature([original]))return false;
+  const archivedFeatures=input.unifiedSnapshot!.features;
+  restored.push({...input,unifiedSnapshot:{...input.unifiedSnapshot!,features:Object.fromEntries(
+   Object.keys(original.unifiedSnapshot!.features).map(key=>[key,archivedFeatures[key]]))}});
+ }
+ return inputSignature(restored,false)===manifest.input_hash;
 }
 export interface EngineOptions {state:ResearchState;now?:string;codeCommit:string;manual?:any[];plans?:CohortPlan[];discoveryBudget?:number;bootstrapRepetitions?:number}
 export async function freezeChallengerForecasts(rows:Snapshot[],state:ResearchState,now=new Date().toISOString()) {
@@ -125,7 +147,7 @@ export async function runResearchEngine(rows:Snapshot[],options:EngineOptions) {
     active={experiment_id,hypothesis_id:selected.hypothesis.hypothesisId,cluster_id:selected.hypothesis.sourceClusterId,created_at:now,
       parent_model:selected.plan.modelVersion,code_commit:options.codeCommit,engine_version:ENGINE_VERSION,encoding_version:'research-encoding-v2',
       feature_change:selected.hypothesis.featuresInvolved,action_type:selected.hypothesis.actionType,parameter_grid:selected.hypothesis.parameterGrid,
-      hypothesis:selected.hypothesis,plan:selected.plan,input_event_ids:inputEvents,input_hash:inputSignature(inputs),eligible_population:inputs.map(s=>s.snapshotId),
+      hypothesis:selected.hypothesis,plan:selected.plan,input_event_ids:inputEvents,input_hash:inputSignature(inputs),input_hash_version:INPUT_HASH_VERSION,eligible_population:inputs.map(s=>s.snapshotId),
       discovery_range:selected.plan.ranges.filter(r=>r.role==='DISCOVERY'),validation_range:selected.plan.ranges.filter(r=>r.role==='VALIDATION'),
       confirmation_range:selected.plan.ranges.filter(r=>r.role==='FUTURE_LOCKBOX'||r.role==='LEGACY_TEST'),
       primary_metrics:['accuracy','Brier','log loss'],secondary_metrics:['ECE','paired comparison','week bootstrap','origin population','season','selected side'],
@@ -138,7 +160,7 @@ export async function runResearchEngine(rows:Snapshot[],options:EngineOptions) {
   if(active) {
     const archived=state.byIds?await state.byIds(active.input_event_ids):await state.all();
     const inputs=active.input_event_ids.flatMap((id:string)=>archived.find(e=>e.event_id===id)?.payload||[]) as Snapshot[];
-    if(inputSignature(inputs)!==active.input_hash)throw new Error('Preregistered input archive integrity failure');
+    if(!verifiedArchiveHash(inputs,active,rows))throw new Error('Preregistered input archive integrity failure');
     const gate=checkResearchInputs(inputs,now);if(!gate.passed)throw new Error('Archived inputs failed leakage/replay');
     const d=cohortRows(inputs,active.plan,'DISCOVERY'),v=cohortRows(inputs,active.plan,'VALIDATION'),legacy=cohortRows(inputs,active.plan,'LEGACY_TEST');
     const rolling=walkForward(v,active.hypothesis,40,d);

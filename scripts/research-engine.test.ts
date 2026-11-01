@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {buildUnifiedSnapshot,numericResearchFeatures} from '../services/researchSnapshot.js';
 import {runResearchEngine,freezeChallengerForecasts,checkResearchInputs} from './research-engine.js';
 import {MemoryResearchState} from './research-state.js';
-import {defaultCohortPlan,validateCohortPlan} from './research-cohorts.js';
+import {defaultCohortPlan,validateCohortPlan,digest} from './research-cohorts.js';
 import {validateHypothesis,manualHypotheses,generateResearchHypotheses} from './research-hypotheses.js';
 import {buildFailureFeatureRows,type ResearchPredictionSnapshot as Snapshot} from './research-core.js';
 import {walkForward,evaluateChallenger} from './research-walk-forward.js';
@@ -74,13 +74,35 @@ class LazyArchiveState extends MemoryResearchState {
  async all(){return (await super.all()).filter(e=>e.event_kind!=='INPUTS');}
  async byIds(ids:string[]){this.inputReads++;return (await super.all()).filter(e=>ids.includes(e.event_id));}
 }
-const restart=new LazyArchiveState();restart.events=JSON.parse(JSON.stringify(state.events.filter(e=>e.event_kind!=='RESULT'&&e.event_kind!=='RUN'&&e.event_kind!=='PROMOTION'&&e.event_kind!=='SHADOW_FORECAST'&&(e.event_kind!=='MANIFEST'||e.event_key===prior.experimentId))));
+function jsonbRoundtrip(value:any):any{
+ if(Array.isArray(value))return value.map(jsonbRoundtrip);
+ if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort((a,b)=>a.length-b.length||(a<b?-1:a>b?1:0)).map(key=>[key,jsonbRoundtrip(value[key])]));
+ return value;
+}
+const frozenEvents=state.events.filter(e=>e.event_kind!=='RESULT'&&e.event_kind!=='RUN'&&e.event_kind!=='PROMOTION'&&e.event_kind!=='SHADOW_FORECAST'&&(e.event_kind!=='MANIFEST'||e.event_key===prior.experimentId));
+const restart=new LazyArchiveState();restart.events=jsonbRoundtrip(JSON.parse(JSON.stringify(frozenEvents)));
 const resumed=await runResearchEngine(rows,{state:restart,now,codeCommit:'synthetic-test'});
 check('restart resumes the original manifest and frozen inputs instead of forgetting/retesting it',()=>{
  assert.equal(resumed.experiment.experimentId,prior.experimentId);assert.equal(restart.events.filter(e=>e.event_kind==='MANIFEST').length,1);
  assert.equal(resumed.experiment.selectedParameter,prior.selectedParameter);
  assert.ok(restart.inputReads>0,'Resume retrieves only the frozen manifest input archives');
 });
+const legacy=new LazyArchiveState();legacy.events=structuredClone(frozenEvents);
+const legacyManifest=legacy.events.find(e=>e.event_kind==='MANIFEST')!.payload;
+const legacyInputs=legacyManifest.input_event_ids.flatMap((id:string)=>legacy.events.find(e=>e.event_id===id)!.payload) as Snapshot[];
+legacyManifest.input_hash=digest(legacyInputs.map(s=>({id:s.snapshotId,model:s.sourceModelVersion,p:s.homeWinProbability,
+ features:numericResearchFeatures(s.unifiedSnapshot),actual:s.actualWinner,cutoff:s.dataCutoffTimestamp})));
+delete legacyManifest.input_hash_version;const legacyHash=legacyManifest.input_hash;
+legacy.events=jsonbRoundtrip(legacy.events);
+const legacyResume=await runResearchEngine(rows,{state:legacy,now,codeCommit:'synthetic-test'});
+check('legacy JSONB replay verifies the original hash without changing frozen values',()=>{
+ assert.equal(legacyResume.experiment.selectedParameter,prior.selectedParameter);
+ assert.equal(legacy.events.find(e=>e.event_kind==='MANIFEST')!.payload.input_hash,legacyHash);
+});
+const tampered=new LazyArchiveState();tampered.events=jsonbRoundtrip(legacy.events.filter(e=>e.event_kind!=='RESULT'&&e.event_kind!=='RUN'));
+tampered.events.find(e=>e.event_kind==='INPUTS')!.payload[0].homeWinProbability+=.01;
+await assert.rejects(runResearchEngine(rows,{state:tampered,now,codeCommit:'synthetic-test'}),/archive integrity failure/);
+assertions++;console.log('PASS JSONB key-order compatibility still rejects modified frozen probabilities');
 const duplicate=await restart.append('RESULT',prior.experimentId,{decision:'FORGED'});
 check('append-only state does not overwrite a prior result',()=>assert.notEqual(duplicate.payload.decision,'FORGED'));
 check('required hypothesis fields and manual populations are actually validated',()=>{
