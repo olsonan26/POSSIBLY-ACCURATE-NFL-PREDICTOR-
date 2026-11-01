@@ -1,5 +1,5 @@
 {
-  "name": "Remix NFL Numerology Predictor",
+  "name": "Remix NFL Sports Predictor",
   "description": "An application that predicts NFL game outcomes based on numerological patterns derived from team and personnel data.",
   "requestFramePermissions": [],
   "majorCapabilities": [
