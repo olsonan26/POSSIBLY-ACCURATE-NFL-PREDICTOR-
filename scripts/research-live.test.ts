@@ -19,7 +19,11 @@ globalThis.fetch=async(input,init)=>{
    const row=JSON.parse(String(init.body));const old=events.find(e=>e.event_id===row.event_id);if(old)return json([]);
    const saved={...row,recorded_at:new Date().toISOString()};events.push(saved);return json([saved],201);
   }
-  const id=path.searchParams.get('event_id')?.slice(3);return json(events.filter(e=>!id||e.event_id===id));
+  const id=path.searchParams.get('event_id');
+  const filtered=events.filter(e=>(!id||(id.startsWith('eq.')?e.event_id===id.slice(3):id.slice(4,-1).split(',').includes(e.event_id)))&&
+   (path.searchParams.get('event_kind')!=='neq.INPUTS'||e.event_kind!=='INPUTS')&&
+   (!path.searchParams.has('or')||e.event_kind!=='INPUTS'||e.event_key.startsWith('LIBRARY:')));
+  const offset=Number(path.searchParams.get('offset')||0),limit=Number(path.searchParams.get('limit')||1000);return json(filtered.slice(offset,offset+limit));
  }
  if(path.pathname.endsWith('nfl_prediction_snapshots'))return json([{id:'frozen-fixture',game_id:'fixture-0',season:2026,week:7,game_date:'2026-10-20',
   kickoff_at:'2026-10-20T17:00:00Z',captured_at:'2026-10-20T12:00:00Z',home_team:'BUF',away_team:'TEN',model_version:'test-control',home_win_probability:.6,predicted_winner:'BUF',feature_snapshot:{}}]);
@@ -33,6 +37,10 @@ try{
  assert.equal(run.body.research.durableState,true);assert.equal(run.body.research.status,'BLOCKED_DATA');assert.ok(events.some(e=>e.event_kind==='COHORT'));assert.ok(events.some(e=>e.event_kind==='RUN'));
  const state=new DatabaseResearchState(),prior=events.find(e=>e.event_kind==='RUN');
  const duplicate=await state.append('RUN',prior.event_key,{forged:true});assert.deepEqual(duplicate.payload,prior.payload);
+ const archives=await Promise.all(Array.from({length:4},(_,i)=>state.append('INPUTS',`manifest-fixture:${i}`,[{archived:i}])));
+ assert.ok(!(await state.all()).some(e=>e.event_key.startsWith('manifest-fixture:')),'Status reads exclude large experiment input payloads');
+ assert.equal((await state.byIds(archives.map(e=>e.event_id))).length,4,'Bounded archive requests retrieve all manifest IDs');
+ await assert.rejects(state.byIds(['invalid-id']),/Invalid immutable/);
  const capturedAt=new Date().toISOString(),unified=buildUnifiedSnapshot({gameId:'historical-fixture',modelVersion:'test-control',kickoffAt:'2024-10-20T17:00:00Z',capturedAt,cutoffAt:'2024-10-20T00:00:00Z',horizon:'T-24h',mode:'HISTORICAL_RECONSTRUCTION',result:{},controlProbability:.6,homeTeam:'BUF',awayTeam:'TEN'});
  await state.append('INPUTS','LIBRARY:historical-fixture',{recordType:'HISTORICAL_RECONSTRUCTION',snapshot:{snapshotId:'historical-fixture',gameId:'historical-fixture',sourceModelVersion:'test-control',season:2024,week:7,gameday:'2024-10-20',predictionTimestamp:capturedAt,dataCutoffTimestamp:unified.cutoffAt,homeTeam:'BUF',awayTeam:'TEN',neutralSite:false,homeWinProbability:.6,awayWinProbability:.4,predictedWinner:'BUF',actualWinner:'BUF',unifiedSnapshot:unified,featureSnapshot:{baseLogit:Math.log(1.5),formLogit:0,venueLogit:0,h2hLogit:0,personnelLogit:0,restLogit:0}}});
  const dashboard=await request(summary,{'x-research-key':'test-access'});assert.equal(dashboard.status,200);assert.equal(dashboard.body.source,'LIVE_DATABASE');assert.equal(dashboard.body.durable.eligible,1);assert.equal(dashboard.body.durable.correct,1);

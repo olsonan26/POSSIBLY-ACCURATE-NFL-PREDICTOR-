@@ -23,4 +23,6 @@ Configure `NFL_LEARNING_SUPABASE_URL` and `NFL_LEARNING_SUPABASE_KEY` in encrypt
 
 Import an existing local reconstruction library with `bun run research:import-history --local-state=research/state-backfill-all` to validate and preview it, then add `--apply` to persist it. Only canonical historical INPUTS records transfer. Local hypotheses, experiment results, synthetic fixtures and promotions never transfer. Repeating the import safely skips records already saved.
 
+Scheduler/status reads omit large experiment input payloads. The research engine retrieves the exact immutable archives referenced by a manifest in bounded batches of three records and verifies their existing input hash before evaluation. Explicit historical-library reads remain separate. This allows interrupted large-history experiments to resume without pulling every archived experiment into a single response.
+
 Automatic paid Coach generation additionally needs `OPENROUTER_API_KEY` and `NFL_RESEARCH_ACCESS_KEY` in the worker's secrets. Missing provider credentials produce an explicit blocked status while ordinary prediction capture continues. Existing budget, horizon, source-verification and immutable-capture guards still apply. Storing more games does not by itself prove improved accuracy or authorize promoting a challenger.

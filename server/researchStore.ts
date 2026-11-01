@@ -8,7 +8,20 @@ import {historicalSnapshots} from './historicalResearch.js';
 export class DatabaseResearchState implements ResearchState {
   durable=true;
   constructor(private includeHistoricalLibrary=false){}
-  async all(){return readAll<ResearchEvent>('nfl_research_events','recorded_at.asc,event_id.asc',this.includeHistoricalLibrary?'':'&event_key=not.like.LIBRARY%3A*');}
+  // Large experiment input archives are loaded by manifest ID, never with every
+  // scheduler/status read. Historical library reads are an explicit opt-in.
+  async all(){return readAll<ResearchEvent>('nfl_research_events','recorded_at.asc,event_id.asc',this.includeHistoricalLibrary?
+    '&or=(event_kind.neq.INPUTS,event_key.like.LIBRARY%3A*)':'&event_kind=neq.INPUTS');}
+  async byIds(ids:string[]){
+    if(ids.some(id=>!/^[0-9a-f]{64}$/.test(id)))throw new Error('Invalid immutable research event ID');
+    const result:ResearchEvent[]=[];
+    // An individual input archive can be several MB. Bound response size by
+    // archive count rather than the ordinary 250-row metadata page size.
+    for(let i=0;i<ids.length;i+=3){
+      result.push(...await storage<ResearchEvent[]>(`nfl_research_events?select=*&event_id=in.(${ids.slice(i,i+3).join(',')})&limit=3`));
+    }
+    return result;
+  }
   async append(kind:EventKind,key:string,payload:unknown){
     const record={event_id:digest({kind,key}),event_kind:kind,event_key:key,payload};
     const rows=await storage<ResearchEvent[]>('nfl_research_events?on_conflict=event_kind,event_key',{

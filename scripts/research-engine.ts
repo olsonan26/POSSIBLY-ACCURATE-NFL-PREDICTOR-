@@ -136,7 +136,8 @@ export async function runResearchEngine(rows:Snapshot[],options:EngineOptions) {
   }
   let experiment:any=null;
   if(active) {
-    const all=await state.all(),inputs=active.input_event_ids.flatMap((id:string)=>all.find(e=>e.event_id===id)?.payload||[]) as Snapshot[];
+    const archived=state.byIds?await state.byIds(active.input_event_ids):await state.all();
+    const inputs=active.input_event_ids.flatMap((id:string)=>archived.find(e=>e.event_id===id)?.payload||[]) as Snapshot[];
     if(inputSignature(inputs)!==active.input_hash)throw new Error('Preregistered input archive integrity failure');
     const gate=checkResearchInputs(inputs,now);if(!gate.passed)throw new Error('Archived inputs failed leakage/replay');
     const d=cohortRows(inputs,active.plan,'DISCOVERY'),v=cohortRows(inputs,active.plan,'VALIDATION'),legacy=cohortRows(inputs,active.plan,'LEGACY_TEST');

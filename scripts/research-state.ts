@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {digest} from './research-cohorts.js';
 export type EventKind='COHORT'|'SEARCH'|'INPUTS'|'MANIFEST'|'RESULT'|'SHADOW_FORECAST'|'PROMOTION'|'RUN';
 export interface ResearchEvent {event_id:string;event_kind:EventKind;event_key:string;payload:any;recorded_at:string}
-export interface ResearchState {durable:boolean;all():Promise<ResearchEvent[]>;append(kind:EventKind,key:string,payload:unknown):Promise<ResearchEvent>}
+export interface ResearchState {durable:boolean;all():Promise<ResearchEvent[]>;byIds?(ids:string[]):Promise<ResearchEvent[]>;append(kind:EventKind,key:string,payload:unknown):Promise<ResearchEvent>}
 export class FileResearchState implements ResearchState {
   durable=false;
   constructor(private directory:string){mkdirSync(directory,{recursive:true});}

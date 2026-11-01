@@ -69,11 +69,17 @@ check('confirmation joins only real pre-kickoff frozen forecasts and preserves p
  const promotion=confirmed.promotions.find(p=>p.experimentId===prior.experimentId);assert.equal(promotion?.prospectiveN,400);assert.equal(promotion?.exactFrozenPredictions,true);assert.equal(promotion?.status,'SHADOW_CANDIDATE');
 });
 // Simulate process interruption after manifest and restart from serialized immutable events.
-const restart=new MemoryResearchState();restart.events=JSON.parse(JSON.stringify(state.events.filter(e=>e.event_kind!=='RESULT'&&e.event_kind!=='RUN'&&e.event_kind!=='PROMOTION'&&e.event_kind!=='SHADOW_FORECAST'&&(e.event_kind!=='MANIFEST'||e.event_key===prior.experimentId))));
+class LazyArchiveState extends MemoryResearchState {
+ inputReads=0;
+ async all(){return (await super.all()).filter(e=>e.event_kind!=='INPUTS');}
+ async byIds(ids:string[]){this.inputReads++;return (await super.all()).filter(e=>ids.includes(e.event_id));}
+}
+const restart=new LazyArchiveState();restart.events=JSON.parse(JSON.stringify(state.events.filter(e=>e.event_kind!=='RESULT'&&e.event_kind!=='RUN'&&e.event_kind!=='PROMOTION'&&e.event_kind!=='SHADOW_FORECAST'&&(e.event_kind!=='MANIFEST'||e.event_key===prior.experimentId))));
 const resumed=await runResearchEngine(rows,{state:restart,now,codeCommit:'synthetic-test'});
 check('restart resumes the original manifest and frozen inputs instead of forgetting/retesting it',()=>{
  assert.equal(resumed.experiment.experimentId,prior.experimentId);assert.equal(restart.events.filter(e=>e.event_kind==='MANIFEST').length,1);
  assert.equal(resumed.experiment.selectedParameter,prior.selectedParameter);
+ assert.ok(restart.inputReads>0,'Resume retrieves only the frozen manifest input archives');
 });
 const duplicate=await restart.append('RESULT',prior.experimentId,{decision:'FORGED'});
 check('append-only state does not overwrite a prior result',()=>assert.notEqual(duplicate.payload.decision,'FORGED'));

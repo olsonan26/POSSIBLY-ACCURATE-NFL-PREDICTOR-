@@ -43,7 +43,7 @@ export async function storage<T>(path: string, init: RequestInit = {}): Promise<
   if (!url || !key) throw new Error('Learning storage is not configured.');
   const response = await fetch(`${url}/rest/v1/${path}`, {
     ...init,
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(30000),
     headers: { apikey: key,
       // New sb_secret_ keys are not JWTs. Supabase maps the apikey to service_role.
       ...(/^(sb_secret_|sb_publishable_)/.test(key) ? {} : { Authorization: `Bearer ${key}` }),
