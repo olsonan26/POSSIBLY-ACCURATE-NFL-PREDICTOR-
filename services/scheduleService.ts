@@ -136,11 +136,11 @@ async function loadSchedule(): Promise<ScheduledGame[]> {
 }
 
 function kickoffMinutes(gametime?: string): number {
-  if (!gametime) return Number.MAX_SAFE_INTEGER;
+  if (!gametime || !/^\d{1,2}:\d{2}$/.test(gametime)) return Number.MAX_SAFE_INTEGER;
   const [hourText, minuteText] = gametime.split(':');
   const hour = Number(hourText);
   const minute = Number(minuteText);
-  return Number.isFinite(hour) && Number.isFinite(minute)
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59
     ? hour * 60 + minute
     : Number.MAX_SAFE_INTEGER;
 }
@@ -193,6 +193,10 @@ async function sortForCbsPickem(games: ScheduledGame[]): Promise<ScheduledGame[]
   if (!cbsOrder) return fallback;
 
   return [...fallback].sort((a, b) => {
+    // Kickoff comes first, even if CBS has partial or differently grouped rows.
+    const chronological = a.gameday.localeCompare(b.gameday) ||
+      kickoffMinutes(a.gametime) - kickoffMinutes(b.gametime);
+    if (chronological) return chronological;
     const aOrder = cbsOrder.get(`${a.awayTeam}@${a.homeTeam}`);
     const bOrder = cbsOrder.get(`${b.awayTeam}@${b.homeTeam}`);
     if (aOrder != null && bOrder != null) return aOrder - bOrder;

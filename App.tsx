@@ -396,7 +396,7 @@ const App: React.FC = () => {
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm font-black text-white">{awayName} @ {homeName}</span>
                                 {game.neutralSite && <span className="rounded-full border border-gray-600 px-2 py-0.5 text-[10px] text-gray-400">Neutral</span>}
-                                <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] text-gray-500">{game.gameday}</span>
+                                <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] text-gray-500">{game.gameday} · {game.gametime ? `${game.gametime} ET` : 'Time TBD'}</span>
                                 {row?.ledger?.state === 'frozen' && <span title={row.ledger.message} className="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">Server Frozen</span>}
                                 {row?.ledger?.state === 'outcome_recorded' && <span title={row.ledger.message} className="rounded-full border border-cyan-500/30 bg-cyan-950/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">Outcome Logged</span>}
                                 {(row?.ledger?.state === 'rejected' || row?.ledger?.state === 'failed') && <span title={row.ledger.message} className="rounded-full border border-rose-500/30 bg-rose-950/30 px-2 py-0.5 text-[10px] font-bold text-rose-300">Not Frozen</span>}
